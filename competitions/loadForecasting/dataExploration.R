@@ -42,6 +42,28 @@ checkTrue(is.na(subset(lh, lh$zone_id == 11 & lh$year == 2008 & lh$month == 7 & 
 checkTrue(is.na(subset(lh, lh$zone_id == 11 & lh$year == 2005 & lh$month == 12 & lh$day == 26)$h1))
 lh = na.omit(lh)
 
+library(reshape)
+lhLong = melt(lh, id.vars=c("zone_id","year","month","day"), variable_name="hour")
+lhTimeSeries = do.call("rbind", 
+              apply(lhLong, 1, function(x) { 
+    hourOfDay = as.numeric(substring(x[['hour']], 2)) - 1
+    hourStr = as.character(hourOfDay)
+    if(hourOfDay < 10) {
+        hourStr = paste('0', hourStr, sep='')
+    }
+    dtString = paste(x[['year']], 
+                     x[['month']], 
+                     x[['day']], 
+                     hourStr,
+                     '00',
+                     '30'
+                     )
+    dt = strptime(dtString, "%Y %m %d %H %M %S")
+    data.frame(time=dt, load=as.numeric(sub(pattern=',', replacement='', x=x[['value']], fixed=T)))
+    }
+))
+
+
 # "Column A is station_id ranging from 1 to 11
 # Three columns of calendar variables: year, month of the year and day of the month. The last 24 columns are the 24 hours of the day."
 th <- read.csv("temperature_history.csv", na.strings = "")
