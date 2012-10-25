@@ -1,5 +1,5 @@
-library('ggplot2')
-library('testthat')
+library(ggplot2)
+library(testthat)
 
 setwd('~/rework/competitions/loadForecasting/data')
 
@@ -102,7 +102,8 @@ qplot(zone_id, load,
       color=timepoint,
       geom='path') + scale_area()
 
-# Good comparison of load over time for each zone
+# Good comparison of load over time for each zone, note that some zones have a lot of 
+# daily fluctuation whereas others have much less
 qplot(timepoint, load, 
       data=lhts[lhts$timepoint > as.POSIXlt('2004-05-01') & lhts$timepoint < as.POSIXlt('2004-12-03'), ], 
       facets= zone_id ~ .,
