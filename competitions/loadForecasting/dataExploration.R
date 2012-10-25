@@ -42,6 +42,7 @@ checkTrue(is.na(subset(lh, lh$zone_id == 11 & lh$year == 2008 & lh$month == 7 & 
 checkTrue(is.na(subset(lh, lh$zone_id == 11 & lh$year == 2005 & lh$month == 12 & lh$day == 26)$h1))
 lh = na.omit(lh)
 
+startTime=date(); startTime
 library(reshape)
 lhLong = melt(lh, id.vars=c("zone_id","year","month","day"), variable_name="hour")
 lhTimeSeries = do.call("rbind", 
@@ -62,7 +63,7 @@ lhTimeSeries = do.call("rbind",
     data.frame(time=dt, load=as.numeric(sub(pattern=',', replacement='', x=x[['value']], fixed=T)))
     }
 ))
-
+stopTime=date(); stopTime
 
 # "Column A is station_id ranging from 1 to 11
 # Three columns of calendar variables: year, month of the year and day of the month. The last 24 columns are the 24 hours of the day."
