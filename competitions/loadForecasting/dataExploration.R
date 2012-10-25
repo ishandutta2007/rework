@@ -1,5 +1,5 @@
-library('ggplot2')
-library('testthat')
+library(ggplot2)
+library(testthat)
 
 setwd('~/rework/competitions/loadForecasting/data')
 
