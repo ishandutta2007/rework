@@ -18,5 +18,7 @@ with open(dataDir + 'Load_history.csv', 'rb') as csvinfile:
                                               hour-1,
                                               30)
                 writer.writerow({'zone_id': row['zone_id'],
-                                 'timepoint': timepoint.isoformat(),
+                                 # R does not support ISO8601 easily
+                                 #'timepoint': timepoint.isoformat(),
+                                 'timepoint': timepoint.strftime("%Y-%m-%d %H:%M:%S"),
                                  'load': row['h'+str(hour)].replace(',','')})
