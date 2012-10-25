@@ -84,10 +84,56 @@ if(iFeelLikeWaitingHours) {
 }
 stopTime=date(); stopTime
 
+# see also http://learnr.wordpress.com/2010/02/25/ggplot2-plotting-dates-hours-and-minutes/
+
+# Looks like some zones have more variability in their load depending upon the time of day
 qplot(timepoint, load, 
       data=lhts[lhts$timepoint > as.POSIXlt('2004-05-01') & lhts$timepoint < as.POSIXlt('2004-05-10'), ], 
-      color=zone_id,
+      facets= zone_id ~ .,
       geom='line')
+
+qplot(timepoint, load, 
+      data=lhts[lhts$timepoint > as.POSIXlt('2004-05-01') & lhts$timepoint < as.POSIXlt('2004-05-03'), ], 
+      facets= zone_id ~ .,
+      geom='line')
+
+qplot(zone_id, load, 
+      data=lhts[lhts$timepoint > as.POSIXlt('2004-05-01') & lhts$timepoint < as.POSIXlt('2004-12-03'), ], 
+      color=timepoint,
+      geom='path') + scale_area()
+
+# Good comparison of load over time for each zone
+qplot(timepoint, load, 
+      data=lhts[lhts$timepoint > as.POSIXlt('2004-05-01') & lhts$timepoint < as.POSIXlt('2004-12-03'), ], 
+      facets= zone_id ~ .,
+      geom='line')
+
+qplot(load, 
+      ..density..,
+      data=lhts,
+      facets= zone_id ~ .,
+      geom='histogram')
+
+# Interesting, looks like three different types load distributions depending upon zones
+qplot(load, 
+      data=lhts,
+      facets= zone_id ~ .,
+      geom='histogram')
+
+qplot(load, 
+      data=lhts[lhts$zone_id %in% c(2,3,6,7,11,12,18),],
+      facets= zone_id ~ .,
+      geom='histogram')
+
+qplot(load, 
+      data=lhts[lhts$zone_id %in% c(1,4,5,8,13,14,16,17),],
+      facets= zone_id ~ .,
+      geom='histogram')
+
+qplot(load, 
+      data=lhts[lhts$zone_id %in% c(9,10,15,19,20),],
+      facets= zone_id ~ .,
+      geom='histogram')
 
 # 'Column A is station_id ranging from 1 to 11
 # Three columns of calendar variables: year, month of the year and day of the month. The last 24 columns are the 24 hours of the day.'
