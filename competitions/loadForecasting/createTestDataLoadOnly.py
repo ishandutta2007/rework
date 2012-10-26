@@ -29,7 +29,7 @@ dataDir = os.path.expanduser('~/rework/competitions/loadForecasting/data/')
 with open(dataDir + 'predictionDates.csv', 'rb') as csvinfile:
     reader = csv.DictReader(csvinfile)
     
-    with open(dataDir + 'testData_for_ML.csv','wb') as csvoutfile:
+    with open(dataDir + 'testData_for_LoadOnly.csv','wb') as csvoutfile:
         writer = csv.DictWriter(csvoutfile, fieldnames=['load',
                                                         'zone_id',
                                                         'day_of_year',
