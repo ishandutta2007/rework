@@ -38,15 +38,15 @@ with open(dataDir + 'predictionDates.csv', 'rb') as csvinfile:
                                                         ])
         writer.writeheader()
         for row in reader:
-            for hour in range(1,25):
-                load = -1 # flag that we must predict the value
+            for zone in range(1,21):
+                for hour in range(1,25):
+                    load = -1 # flag that we must predict the value
             
-                timepoint = datetime.datetime(int(row['year']),
-                                              int(row['month']),
-                                              int(row['day']),
-                                              hour-1,
-                                              30)
-                for zone in range(1,20):
+                    timepoint = datetime.datetime(int(row['year']),
+                                                  int(row['month']),
+                                                  int(row['day']),
+                                                  hour-1,
+                                                  30)
                     writer.writerow(
                         {
                             'load': load,
