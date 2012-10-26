@@ -57,3 +57,16 @@ system(paste('python2.7 ~/rework/competitions/loadForecasting/transformLoadOnlyT
 
 rdataOutputFile = paste('loadOnly', gsub(' ', '_', stopTime), '.RData', sep='')
 save.image(file=rdataOutputFile)
+
+#-----
+
+test$load <- round(interactionPredictions)
+
+predictionOutputFile = paste('loadOnlyInteractionRFPredictions', gsub(' ', '_', stopTime), '.csv', sep='')
+write.csv(test, file=predictionOutputFile)
+
+submissionOutputFile = paste('loadOnlyInteractionRFSubmission', gsub(' ', '_', stopTime), '.csv', sep='')
+system(paste('python2.7 ~/rework/competitions/loadForecasting/transformLoadOnlyToSubmission.py',
+             predictionOutputFile,
+             submissionOutputFile))
+
