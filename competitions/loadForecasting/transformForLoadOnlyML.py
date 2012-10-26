@@ -1,11 +1,13 @@
-import csv, os.path, datetime, string
+import sys, csv, os.path, datetime, string
 
 dataDir = os.path.expanduser('~/rework/competitions/loadForecasting/data/')
 
+# this source file from Kaggle is checked into git
 with open(dataDir + 'Load_history.csv', 'rb') as csvinfile:
     reader = csv.DictReader(csvinfile)
     
-    with open(dataDir + 'Load_history_for_ML.csv','wb') as csvoutfile:
+    # TODO upgrade to argparse if I ever reuse this script
+    with open(dataDir + sys.argv[1],'wb') as csvoutfile:
         writer = csv.DictWriter(csvoutfile, fieldnames=['load',
                                                         'zone_id',
                                                         'day_of_year',

@@ -69,8 +69,9 @@ if(iFeelLikeWaitingHours) {
         }
     ))
 } else{
-    system('python2.7 ~/rework/competitions/loadForecasting/dataTransform.py')
-    lhts = read.csv('Load_history_timeseries.csv', na.strings = '', colClasses=c('numeric', 'character', 'numeric'))
+    outfile = 'Load_history_timeseries.csv'
+    system(paste('python2.7 ~/rework/competitions/loadForecasting/dataTransform.py', outfile)
+    lhts = read.csv(outfile, na.strings = '', colClasses=c('numeric', 'character', 'numeric'))
     names(lhts)
     dim(lhts)
     str(lhts)

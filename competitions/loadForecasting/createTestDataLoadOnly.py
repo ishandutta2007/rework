@@ -1,4 +1,4 @@
-import csv, os.path, datetime, string
+import sys, csv, os.path, datetime, string
 
 # From http://www.kaggle.com/c/global-energy-forecasting-competition-2012-load-forecasting
 # "Given actual temperature history, the 8 weeks below in the load history are set to be missing and are required to be backcasted. It's OK to use the entire history to backcast these 8 weeks.
@@ -26,10 +26,12 @@ import csv, os.path, datetime, string
 
 dataDir = os.path.expanduser('~/rework/competitions/loadForecasting/data/')
 
+# this source file encoding the prediction dates is checked into git
 with open(dataDir + 'predictionDates.csv', 'rb') as csvinfile:
     reader = csv.DictReader(csvinfile)
     
-    with open(dataDir + 'testData_for_LoadOnly.csv','wb') as csvoutfile:
+    # TODO upgrade to argparse if I ever reuse this script
+    with open(dataDir + sys.argv[1],'wb') as csvoutfile:
         writer = csv.DictWriter(csvoutfile, fieldnames=['load',
                                                         'zone_id',
                                                         'day_of_year',
