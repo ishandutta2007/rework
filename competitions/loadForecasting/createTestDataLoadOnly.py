@@ -51,8 +51,8 @@ with open(dataDir + 'predictionDates.csv', 'rb') as csvinfile:
                         {
                             'load': load,
                             'zone_id': zone,
-                            'day_of_year': timepoint.strftime ("%j"),
-                            'hour_of_day': timepoint.strftime ("%H"),
+                            'day_of_year': timepoint.strftime("%j"),
+                            'hour_of_day': timepoint.strftime("%H"),
                             'year': timepoint.strftime ("%Y")
                             }
                         )
