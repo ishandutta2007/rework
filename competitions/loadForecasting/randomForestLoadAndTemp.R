@@ -3,7 +3,7 @@ library(testthat)
 
 setwd('~/rework/competitions/loadForecasting/data')
 
-trainInputFilename = 'loadAndTempTrainData.csv'
+trainInputFilename = 'fullLoadAndTempTrainData.csv'
 system(paste('python2.7 ~/rework/competitions/loadForecasting/transformForLoadAndTempML.py', trainInputFilename))
 lh = read.csv(trainInputFilename, header=TRUE)
 names(lh)
@@ -50,16 +50,37 @@ rowsForInteraction=seq(nrow(lh)-numRowsForInteraction, nrow(lh), 1)
 interactionRF <- randomForest(load ~ ., 
                               lh[rowsForInteraction,], 
                               xtest=test[,-1], 
+                              keep.forest=TRUE,
                               ntree=500)
 interactionRF
 interactionPredictions <- interactionRF$test$predicted
 
+
+#-----
+stopTime=date(); stopTime
+test$load <- round(interactionPredictions)
+
+predictionOutputFile = paste('loadAndTempInteractionRFPredictions', gsub(' ', '_', stopTime), '.csv', sep='')
+write.csv(test, file=predictionOutputFile)
+
+submissionOutputFile = paste('loadAndTempInteractionRFSubmission', gsub(' ', '_', stopTime), '.csv', sep='')
+system(paste('python2.7 ~/rework/competitions/loadForecasting/transformLoadOnlyToSubmission.py',
+             predictionOutputFile,
+             submissionOutputFile))
+
+rdataOutputFile = paste('loadAndTempInteraction', gsub(' ', '_', stopTime), '.RData', sep='')
+save.image(file=rdataOutputFile)
+
+rm(interactionRF)
+
+#-----
 zoneRFs <- list()
 zonePredictions <- vector(mode = 'numeric', length = length(interactionPredictions))
 for (zone in 1:20) {
   zoneRFs[[zone]] <- randomForest(load ~ ., 
                                   lh[lh$zone_id==zone,], 
                                   xtest=test[test$zone_id==zone,-1], 
+                                  keep.forest=FALSE,
                                   ntree=2000)
   print(zoneRFs[[zone]])
   zonePredictions[test$zone_id==zone] <- zoneRFs[[zone]]$test$predicted
