@@ -42,7 +42,7 @@ curs.execute('CREATE INDEX IF NOT EXISTS index_t_year ON t (year)')
 curs.execute('CREATE INDEX IF NOT EXISTS index_t_month ON t (month)')
 curs.execute('CREATE INDEX IF NOT EXISTS index_t_day ON t (day)')
 curs.execute('CREATE INDEX IF NOT EXISTS index_t_station_id ON t (station_id)')
-
+conn.commit()
 
 # this source file encoding the prediction dates is checked into git
 with open(dataDir + 'predictionDates.csv', 'rb') as csvinfile:
@@ -90,21 +90,24 @@ with open(dataDir + 'predictionDates.csv', 'rb') as csvinfile:
                     # Add the temperatures measured at each station, as applicable
                     for station in range(1,12):
                         queryYear = row['year']
-                        if(2008 == queryYear):
+                        if('2008' == queryYear):
                             # Use 2007 temperatures for forecasted dates
                             # from prior dates
-                            queryYear = 2007
+                            queryYear = '2007'
                             
-                        # try:
-                        curs.execute('SELECT h' + str(hour) + ' from t WHERE '
-                                     + queryYear + ' = t.year AND '
-                                     + row['month'] + ' = t.month AND '
-                                     + row['day'] + ' = t.day AND '
-                                     + str(station) + ' = t.station_id')
-                        temp = curs.fetchone()[0]
-                        if(temp == u''):
+                        query = "".join(['SELECT h', str(hour),
+                                               ' from t WHERE ',
+                                               queryYear, ' = t.year AND ',
+                                               row['month'], ' = t.month AND ',
+                                               row['day'], ' = t.day AND ',
+                                               str(station), ' = t.station_id'])
+                        curs.execute(query)
+                        result = curs.fetchone()
+                        if(None == result):
                             # redundant since we'll wind up with an NA anyway
+                            print('No results for query: ' + query)
                             continue
+                        temp = result[0]
                         newRow['t'+str(station)] = temp
 
                         
