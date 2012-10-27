@@ -96,7 +96,7 @@ with open(dataDir + 'predictionDates.csv', 'rb') as csvinfile:
                             queryYear = 2007
                             
                         # try:
-                        curs.execute('SELECT ' + hourColumnName + ' from t WHERE '
+                        curs.execute('SELECT h' + str(hour) + ' from t WHERE '
                                      + queryYear + ' = t.year AND '
                                      + row['month'] + ' = t.month AND '
                                      + row['day'] + ' = t.day AND '

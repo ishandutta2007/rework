@@ -17,6 +17,7 @@ test = read.csv(testInputFilename, header=TRUE)
 names(test)
 dim(test)
 str(test)
+expect_that(nrow(test), equals(sum(complete.cases(test))))
 
 #--------------------------------------------------------------------------------------------------------
 # Add a few tests to check that the data was transformed correctly by the python scripts
@@ -92,3 +93,5 @@ system(paste('python2.7 ~/rework/competitions/loadForecasting/transformLoadOnlyT
              predictionOutputFile,
              submissionOutputFile))
 
+rdataOutputFile = paste('loadAndTempInteraction', gsub(' ', '_', stopTime), '.RData', sep='')
+save.image(file=rdataOutputFile)
