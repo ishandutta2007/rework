@@ -3,15 +3,23 @@ library(testthat)
 
 setwd('~/rework/competitions/loadForecasting/data')
 
-trainInputFilename = 'loadOnlyTrainData.csv'
-system(paste('python2.7 ~/rework/competitions/loadForecasting/transformForLoadOnlyML.py', trainInputFilename))
+trainInputFilename = 'loadAndTempTrainData.csv'
+system(paste('python2.7 ~/rework/competitions/loadForecasting/transformForLoadAndTempML.py', trainInputFilename))
 lh = read.csv(trainInputFilename, header=TRUE)
 names(lh)
 dim(lh)
 str(lh)
 expect_that(nrow(lh), equals(sum(complete.cases(lh))))
 
-# Add a few tests to check that the data was transformed correctly by the python script
+testInputFilename = 'loadAndTempTestData.csv'
+system(paste('python2.7 ~/rework/competitions/loadForecasting/createTestDataLoadAndTemp.py', testInputFilename))
+test = read.csv(testInputFilename, header=TRUE)
+names(test)
+dim(test)
+str(test)
+
+#--------------------------------------------------------------------------------------------------------
+# Add a few tests to check that the data was transformed correctly by the python scripts
 lhOrig <- read.csv('Load_history.csv', na.strings = '')
 lhOrig = na.omit(lhOrig)
 expect_that(nrow(lh), equals(nrow(lhOrig)*24 + 6*20), 
@@ -22,14 +30,16 @@ expect_that(as.character(lhOrig[lhOrig$zone_id == 2 & lhOrig$year == 2004 & lhOr
             equals('202,770'))
 rm(lhOrig)
 
+thOrig = read.csv('temperature_history.csv', header=TRUE)
+names(thOrig)
+dim(thOrig)
+str(thOrig)
+expect_that(lh[lh$zone_id == 2 & lh$year == 2004 & lh$day_of_year == 166 & lh$hour_of_day == 11, 't9'], 
+            equals(thOrig[thOrig$station_id == 9 & thOrig$year == 2004 & thOrig$month == 6 & thOrig$day == 14, 'h12']))
 
-testInputFilename = 'loadOnlyTestData.csv'
-system(paste('python2.7 ~/rework/competitions/loadForecasting/createTestDataLoadOnly.py', testInputFilename))
-test = read.csv(testInputFilename, header=TRUE)
-names(test)
-dim(test)
-str(test)
+rm(thOrig)
 
+#--------------------------------------------------------------------------------------------------------
 startTime=date(); startTime
 
 # Note, when passing all zones in, we run out of memory.  Instead building a model per zone plus
