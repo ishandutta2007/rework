@@ -1,5 +1,7 @@
 import sys, csv, os.path, datetime, string, sqlite3
 
+# TODO try pandas next time and see if its less coding than this
+
 dataDir = os.path.expanduser('~/rework/competitions/loadForecasting/data/')
 
 conn = sqlite3.connect(':memory:')
@@ -78,5 +80,7 @@ with open(dataDir + 'Load_history.csv', 'rb') as csvinfile:
                         # redundant since we'll wind up with an NA anyway
                         continue
                     newRow['t'+str(station)] = temp
+                    # TODO cache this reformatted temp data since we need it
+                    # 19 more times for the other zones
                 
                 writer.writerow(newRow)
