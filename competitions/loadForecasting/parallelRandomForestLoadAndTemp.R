@@ -1,11 +1,14 @@
 library(randomForest)
 library(testthat)
 library(foreach)
+library(doMC)
+
+registerDoMC()
+getDoParWorkers()
 
 setwd('~/rework/competitions/loadForecasting/data')
 
 trainInputFilename = 'fullLoadAndTempTrainData.csv'
-system(paste('python2.7 ~/rework/competitions/loadForecasting/transformForLoadAndTempML.py', trainInputFilename))
 lh = read.csv(trainInputFilename, header=TRUE)
 names(lh)
 dim(lh)
@@ -13,7 +16,6 @@ str(lh)
 expect_that(nrow(lh), equals(sum(complete.cases(lh))))
 
 testInputFilename = 'loadAndTempTestData.csv'
-system(paste('python2.7 ~/rework/competitions/loadForecasting/createTestDataLoadAndTemp.py', testInputFilename))
 test = read.csv(testInputFilename, header=TRUE)
 names(test)
 dim(test)
@@ -66,13 +68,13 @@ test$load <- round(interactionPredictions)
 predictionOutputFile = paste('loadAndTemp200kInteractionRFPredictions', gsub(' ', '_', stopTime), '.csv', sep='')
 write.csv(test, file=predictionOutputFile)
 
+rdataOutputFile = paste('loadAndTemp200kInteraction', gsub(' ', '_', stopTime), '.RData', sep='')
+save.image(file=rdataOutputFile)
+
 submissionOutputFile = paste('loadAndTemp200kInteractionRFSubmission', gsub(' ', '_', stopTime), '.csv', sep='')
 system(paste('python2.7 ~/rework/competitions/loadForecasting/transformLoadOnlyToSubmission.py',
              predictionOutputFile,
              submissionOutputFile))
-
-rdataOutputFile = paste('loadAndTemp200kInteraction', gsub(' ', '_', stopTime), '.RData', sep='')
-save.image(file=rdataOutputFile)
 
 rm(interactionRF)
 gc()
