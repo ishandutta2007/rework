@@ -95,7 +95,7 @@ predictionOutputFile = paste('loadAndTempRFPredictions', gsub(' ', '_', stopTime
 write.csv(test, file=predictionOutputFile)
 
 submissionOutputFile = paste('loadAndTempRFSubmission', gsub(' ', '_', stopTime), '.csv', sep='')
-system(paste('python2.7 ~/rework/competitions/loadForecasting/transformloadOnlyToSubmission.py',
+system(paste('python2.7 ~/rework/competitions/loadForecasting/transformLoadOnlyToSubmission.py',
              predictionOutputFile,
              submissionOutputFile))
 
