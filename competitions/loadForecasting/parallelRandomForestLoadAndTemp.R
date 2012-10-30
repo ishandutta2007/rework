@@ -99,14 +99,15 @@ zoneRFResults <- foreach(zone=1:20) %dopar% buildZoneRF(zone)
 
 stopTime=date(); stopTime
 
-# Take the mean of the interaction prediction and zone prediction for each case
-test$load <- round(zonePredictions) # round((interactionPredictions + zonePredictions)/2)
+for (zone in 1:20) {
+  test$load[test$zone_id==zone] <- round(zoneRFResults[[zone]])
+}
 
 predictionOutputFile = paste('loadAndTempRFPredictions', gsub(' ', '_', stopTime), '.csv', sep='')
 write.csv(test, file=predictionOutputFile)
 
 submissionOutputFile = paste('loadAndTempRFSubmission', gsub(' ', '_', stopTime), '.csv', sep='')
-system(paste('python2.7 ~/rework/competitions/loadForecasting/transformloadOnlyToSubmission.py',
+system(paste('python2.7 ~/rework/competitions/loadForecasting/transformLoadOnlyToSubmission.py',
              predictionOutputFile,
              submissionOutputFile))
 
