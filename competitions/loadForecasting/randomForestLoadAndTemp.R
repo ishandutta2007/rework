@@ -104,15 +104,12 @@ save.image(file=rdataOutputFile)
 
 #-----
 
-test$load <- round(interactionPredictions)
+test$load <- round(zonePredictions)
 
-predictionOutputFile = paste('loadAndTempInteractionRFPredictions', gsub(' ', '_', stopTime), '.csv', sep='')
+predictionOutputFile = paste('loadAndTempZoneRFPredictions', gsub(' ', '_', stopTime), '.csv', sep='')
 write.csv(test, file=predictionOutputFile)
 
-submissionOutputFile = paste('loadAndTempInteractionRFSubmission', gsub(' ', '_', stopTime), '.csv', sep='')
+submissionOutputFile = paste('loadAndTempZoneRFSubmission', gsub(' ', '_', stopTime), '.csv', sep='')
 system(paste('python2.7 ~/rework/competitions/loadForecasting/transformLoadOnlyToSubmission.py',
              predictionOutputFile,
              submissionOutputFile))
-
-rdataOutputFile = paste('loadAndTempInteraction', gsub(' ', '_', stopTime), '.RData', sep='')
-save.image(file=rdataOutputFile)
