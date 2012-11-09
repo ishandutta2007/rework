@@ -78,46 +78,39 @@ system(paste('python2.7 ~/rework/competitions/loadForecasting/transformLoadOnlyT
 
 rm(interactionRF)
 gc()
-#-----
-zoneRFs <- list()
-zonePredictions <- vector(mode = 'numeric', length = length(interactionPredictions))
-for (zone in 1:20) {
-  zoneRFs[[zone]] <- randomForest(load ~ ., 
+
+#-----------------------------------------------------------------------------------------------------
+buildZoneRF <- function(zone) {
+  zoneRF <- randomForest(load ~ ., 
                                   lh[lh$zone_id==zone,], 
                                   xtest=test[test$zone_id==zone,-1], 
-                                  keep.forest=FALSE,
-                                  ntree=2000)
-  print(zoneRFs[[zone]])
-  zonePredictions[test$zone_id==zone] <- zoneRFs[[zone]]$test$predicted
+                                  keep.forest=TRUE,
+                                  ntree=500)
+  print(zoneRF)
+  stopTime=date(); stopTime
+  predictionOutputFile = paste('loadAndTempZone', zone, 'RFPredictions', gsub(' ', '_', stopTime), '.csv', sep='')
+  write.csv(zoneRF$test$predicted, file=predictionOutputFile)
+  rdataOutputFile = paste('loadAndTempZone', zone, gsub(' ', '_', stopTime), '.RData', sep='')
+  save.image(file=rdataOutputFile)
+  zoneRF$test$predicted
 }
+
+zoneRFResults <- foreach(zone=1:20) %dopar% buildZoneRF(zone) 
 
 stopTime=date(); stopTime
 
-# Take the mean of the interaction prediction and zone prediction for each case
-test$load <- round((interactionPredictions + zonePredictions)/2)
+for (zone in 1:20) {
+  test$load[test$zone_id==zone] <- round(zoneRFResults[[zone]])
+}
 
 predictionOutputFile = paste('loadAndTempRFPredictions', gsub(' ', '_', stopTime), '.csv', sep='')
 write.csv(test, file=predictionOutputFile)
 
 submissionOutputFile = paste('loadAndTempRFSubmission', gsub(' ', '_', stopTime), '.csv', sep='')
-system(paste('python2.7 ~/rework/competitions/loadForecasting/transformloadOnlyToSubmission.py',
+system(paste('python2.7 ~/rework/competitions/loadForecasting/transformLoadOnlyToSubmission.py',
              predictionOutputFile,
              submissionOutputFile))
 
 rdataOutputFile = paste('loadAndTemp', gsub(' ', '_', stopTime), '.RData', sep='')
 save.image(file=rdataOutputFile)
 
-#-----
-
-test$load <- round(interactionPredictions)
-
-predictionOutputFile = paste('loadAndTempInteractionRFPredictions', gsub(' ', '_', stopTime), '.csv', sep='')
-write.csv(test, file=predictionOutputFile)
-
-submissionOutputFile = paste('loadAndTempInteractionRFSubmission', gsub(' ', '_', stopTime), '.csv', sep='')
-system(paste('python2.7 ~/rework/competitions/loadForecasting/transformLoadOnlyToSubmission.py',
-             predictionOutputFile,
-             submissionOutputFile))
-
-rdataOutputFile = paste('loadAndTempInteraction', gsub(' ', '_', stopTime), '.RData', sep='')
-save.image(file=rdataOutputFile)
