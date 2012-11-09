@@ -57,6 +57,7 @@ with open(dataDir + sys.argv[1], 'rb') as csvinfile:
                     summaryRow['h'+str(i)] = 0
 
             hour = 'h' +  str(int(row['hour_of_day']) + 1)
+            print(row['year']+row['day_of_year']+row['load'])
             summaryRow[hour] += int(row['load'])
             
             if('h1' == hour):

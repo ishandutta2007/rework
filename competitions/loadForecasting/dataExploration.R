@@ -22,7 +22,7 @@ bm <- read.csv('Benchmark.csv')
 names(bm)
 str(bm)
 
-expect_that(bm$id, equals(st$id), info="benchmark matches template")
+expect_that(bm$id, equals(st$id), info='benchmark matches template')
 expect_that(bm$zone_id, equals(st$zone_id))
 expect_that(bm$year, equals(st$year))
 expect_that(bm$month, equals(st$month))
@@ -88,10 +88,29 @@ stopTime=date(); stopTime
 # see also http://learnr.wordpress.com/2010/02/25/ggplot2-plotting-dates-hours-and-minutes/
 
 # Looks like some zones have more variability in their load depending upon the time of day
+# Also their are distinct groups of similar zones
 qplot(timepoint, load, 
-      data=lhts[lhts$timepoint > as.POSIXlt('2004-05-01') & lhts$timepoint < as.POSIXlt('2004-05-10'), ], 
+      data=lhts[lhts$timepoint > as.POSIXlt('2008-05-01') & lhts$timepoint < as.POSIXlt('2008-05-10'), ], 
       facets= zone_id ~ .,
-      geom='line')
+      geom='line',
+      main='Some zones have more variability in their load over time than others',
+      xlab='Time',
+      ylab='Load')
+
+# See transformMLToTimeseries.py for how this data was created
+lthts <- read.csv('LoadAndTemp_history_timeseries.csv', na.strings = '')
+lthts$timepoint <- as.POSIXlt(lthts$timepoint)
+load <- qplot(timepoint, load, 
+      data=lthts[lthts$timepoint > as.POSIXlt('2008-05-01') & lthts$timepoint < as.POSIXlt('2008-05-10'), ], 
+      facets= zone_id ~ .,
+      color=temp,
+      geom='line',
+      main='Some zones have more variability in their load over time than others',
+      xlab='Time',
+      ylab='Load')
+load + scale_color_gradientn(colours=c("blue", "yellow", "red"))
+# TODO it would be better to have the background display the color instead of the line itself
+load + scale_fill_gradientn(colours=c("blue", "yellow", "red"))
 
 qplot(timepoint, load, 
       data=lhts[lhts$timepoint > as.POSIXlt('2004-05-01') & lhts$timepoint < as.POSIXlt('2004-05-03'), ], 
