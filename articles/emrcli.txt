@@ -1,0 +1,160 @@
+Usage: elastic-mapreduce [options]
+
+  Creating Job Flows
+        --create                     Create a new job flow
+        --name NAME                  The name of the job flow being created
+        --alive                      Create a job flow that stays running even though it has executed all its steps
+        --with-termination-protection
+                                     Create a job with termination protection (default is no termination protection)
+        --visible-to-all-users       Create a job other IAM users can perform API calls (default is false)
+        --with-supported-products PRODUCTS
+                                     Add supported products
+        --num-instances NUM          Number of instances in the job flow
+        --slave-instance-type TYPE   The type of the slave instances to launch
+        --master-instance-type TYPE  The type of the master instance to launch
+        --ami-version VERSION        The version of ami to launch the job flow with
+        --key-pair KEY_PAIR          The name of your Amazon EC2 Keypair
+        --availability-zone A_Z      Specify the Availability Zone in which to launch the job flow
+        --info INFO                  Specify additional info to job flow creation
+        --hadoop-version VERSION     Specify the Hadoop Version to install
+        --plain-output               Return the job flow id from create step as simple text
+        --subnet EC2-SUBNET_ID       Specify the VPC subnet that you want to run in
+        --instance-group ROLE        Specify an instance group while creating a jobflow
+        --bid-price PRICE            The bid price for this instance group
+
+  Passing arguments to steps
+        --args ARGS                  A command separated list of arguments to pass to the step
+        --arg ARG                    An argument to pass to the step
+        --step-name STEP_NAME        Set name for the step
+        --step-action STEP_ACTION    Action to take when step finishes. One of CANCEL_AND_WAIT, TERMINATE_JOB_FLOW or CONTINUE
+
+  Specific Steps
+        --resize-jobflow             Add a step to resize the job flow
+        --enable-debugging           Enable job flow debugging (you must be signed up to SimpleDB for this to work)
+        --wait-for-steps             Wait for all steps to reach a terminal state
+        --script SCRIPT_PATH         Add a step that runs a script in S3
+
+  Adding Steps from a Json File to Job Flows
+        --json FILE                  Add a sequence of steps stored in the json file FILE
+        --param VARIABLE=VALUE ARGS  Substitute the string VARIABLE with the string VALUE in the json file
+
+  Pig Steps
+        --pig-script [SCRIPT]        Add a step that runs a Pig script
+        --pig-interactive            Add a step that sets up the job flow for an interactive (via SSH) pig session
+        --pig-versions VERSIONS      A comma separated list of Pig versions
+
+  Hive Steps
+        --hive-script [SCRIPT]       Add a step that runs a Hive script
+        --hive-interactive           Add a step that sets up the job flow for an interactive (via SSH) hive session
+        --hive-site HIVE_SITE        Override Hive configuration with configuration from HIVE_SITE
+        --hive-versions VERSIONS     A comma separated list of Hive versions
+
+  HBase Options
+        --hbase                      Install HBase on the cluster
+        --hbase-backup               Backup HBase to S3
+        --hbase-restore              Restore HBase from S3
+        --hbase-schedule-backup      Schedule regular backups to S3
+        --backup-dir DIRECTORY       Location where backup is stored
+        --consistent                 Perform a consistent backup (inconsistent is default)
+        --backup-version VERSION     Backup version to restore
+        --full-backup-time-interval  TIME_INTERVAL
+                                     The time between full backups
+        --full-backup-time-unit      TIME_UNIT
+                                     time units for full backup's time-interval either minutes, hours or days
+        --start-time START_TIME      The time of the first backup
+        --disable-full-backups       Stop scheduled full backups from running
+        --incremental-backup-time-interval TIME_INTERVAL
+                                     The time between incremental backups
+        --incremental-backup-time-unit TIME_UNIT
+                                     time units for incremental backup's time-interval either minutes, hours or days
+        --disable-incremental-backups
+                                     Stop scheduled incremental backups from running
+
+  Adding Jar Steps to Job Flows
+        --jar JAR                    Run a Hadoop Jar in a step
+        --main-class MAIN_CLASS      The main class of the jar
+
+  Adding Streaming Steps to Job Flows
+        --stream                     Add a step that performs hadoop streaming
+        --input INPUT                Input to the steps, e.g. s3n://mybucket/input
+        --output OUTPUT              The output to the steps, e.g. s3n://mybucket/output
+        --mapper MAPPER              The mapper program or class
+        --cache CACHE_FILE           A file to load into the cache, e.g. s3n://mybucket/sample.py#sample.py
+        --cache-archive CACHE_FILE   A file to unpack into the cache, e.g. s3n://mybucket/sample.jar
+        --jobconf KEY=VALUE          Specify jobconf arguments to pass to streaming, e.g. mapred.task.timeout=800000
+        --reducer REDUCER            The reducer program or class
+
+  Adding and Modifying Instance Groups
+        --modify-instance-group INSTANCE_GROUP
+                                     Modify an existing instance group
+        --add-instance-group ROLE    Add an instance group to an existing jobflow
+        --unarrest-instance-group ROLE
+                                     Unarrest an instance group of the supplied jobflow
+        --instance-count INSTANCE_COUNT
+                                     Set the instance count of an instance group
+        --instance-type INSTANCE_TYPE
+                                     Set the instance type of an instance group
+
+  Contacting the Master Node
+        --ssh [COMMAND]              SSH to the master node and optionally run a command
+        --put SRC                    Copy a file to the job flow using scp
+        --get SRC                    Copy a file from the job flow using scp
+        --scp SRC                    Copy a file to the job flow using scp
+        --to DEST                    Destination location when copying files
+        --socks                      Start a socks proxy tunnel to the master node
+        --logs                       Display the step logs for the last executed step
+
+  Assigning Elastic IP to Master Node
+        --eip [ElasticIP]            Associate ElasticIP to master node. If no ElasticIP is specified, allocate and associate a new one.
+
+  Settings common to all step types
+        --no-wait                    Don't wait for the Master node to start before executing scp or ssh or assigning EIP
+        --key-pair-file FILE_PATH    Path to your local pem file for your EC2 key pair
+
+  Specifying Bootstrap Actions
+        --bootstrap-action SCRIPT    Run a bootstrap action script on all instances
+        --bootstrap-name NAME        Set the name of the bootstrap action
+
+  Listing and Describing Job flows
+        --list                       List all job flows created in the last 2 days
+        --describe                   Dump a JSON description of the supplied job flows
+        --print-hive-version         Prints the version of Hive that's currently active on the job flow
+        --state NAME                 Set the name of the bootstrap action
+        --active                     List running, starting or shutting down job flows
+        --all                        List all job flows in the last 2 weeks
+        --created-after=DATETIME     List all jobflows created after DATETIME (xml date time format)
+        --created-before=DATETIME    List all jobflows created before DATETIME (xml date time format)
+        --no-steps                   Do not list steps when listing jobs
+
+  Terminating Job Flows
+        --set-termination-protection BOOL
+                                     Enable or disable job flow termination protection. Either true or false
+        --set-visible-to-all-users BOOL
+                                     Enable or disable job flow visible to other IAM users. Either true or false
+        --terminate                  Terminate job flows
+
+  Common Options
+        --jobflow JOB_FLOW_ID        The job flow to act on
+        --verbose                    Turn on verbose logging of program interaction
+        --trace                      Trace commands made to the webservice
+        --credentials CRED_FILE      File containing access-id and private-key
+        --access-id ACCESS_ID        AWS Access Id
+        --private-key PRIVATE_KEY    AWS Private Key
+        --log-uri LOG_URI            Location in S3 to store logs from the job flow, e.g. s3n://mybucket/logs
+        --version                    Print version string
+        --help                       Show help message
+
+  Uncommon Options
+        --debug                      Print stack traces when exceptions occur
+        --endpoint ENDPOINT          EMR web service host to connect to
+        --region REGION              The region to use for the endpoint
+        --apps-path APPS_PATH        Specify s3:// path to the base of the emr public bucket to use. e.g s3://us-east-1.elasticmapreduce
+        --beta-path BETA_PATH        Specify s3:// path to the base of the emr public bucket to use for beta apps. e.g s3://beta.elasticmapreduce
+
+  Short Options
+    -h                               Show help message
+    -v                               Turn on verbose logging of program interaction
+    -c CRED_FILE                     File containing access-id and private-key
+    -a ACCESS_ID                     AWS Access Id
+    -p PRIVATE_KEY                   AWS Private Key
+    -j JOB_FLOW_ID                   The job flow to act on

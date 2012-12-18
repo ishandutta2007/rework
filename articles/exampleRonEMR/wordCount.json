@@ -1,0 +1,30 @@
+[
+  {
+    "Name": "R Word Count MapReduce Step 1: small input file",
+    "ActionOnFailure": "CANCEL_AND_WAIT",
+    "HadoopJarStep": {
+       "Jar":
+           "/home/hadoop/contrib/streaming/hadoop-streaming.jar",
+             "Args": [
+                 "-input","s3n://nicole.deflaux/emr/wordcount/input/TinyTestInputFile.txt",
+                 "-output","s3n://nicole.deflaux/emr/wordcount/output/aLittleText",
+                 "-mapper","s3n://nicole.deflaux/emr/wordcount/scripts/mapper.R",
+                 "-reducer","s3n://nicole.deflaux/emr/wordcount/scripts/reducer.R",
+             ]
+         }
+  },
+  {
+    "Name": "R Word Count MapReduce Step 2: lots of input",
+    "ActionOnFailure": "CANCEL_AND_WAIT",
+    "HadoopJarStep": {
+       "Jar":
+           "/home/hadoop/contrib/streaming/hadoop-streaming.jar",
+             "Args": [
+                 "-input","s3://elasticmapreduce/samples/wordcount/input",
+                 "-output","s3n://nicole.deflaux/emr/wordcount/output/aLotOfText",
+                 "-mapper","s3n://nicole.deflaux/emr/wordcount/scripts/mapper.R",
+                 "-reducer","s3n://nicole.deflaux/emr/wordcount/scripts/reducer.R",
+             ]
+         }
+  }
+]
