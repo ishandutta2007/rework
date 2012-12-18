@@ -12,7 +12,7 @@ accumulateCounts <- function(line, env) {
     split <- splitLine(line)
     word <- split$word
     count <- split$count
-    if (exists(word, envir = env, inherits = FALSE)) {
+    if (!is.na(word) && exists(word, envir = env, inherits = FALSE)) {
         oldcount <- get(word, envir = env)
         assign(word, oldcount + count, envir = env)
     }
