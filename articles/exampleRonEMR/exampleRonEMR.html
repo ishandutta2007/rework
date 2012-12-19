@@ -1,0 +1,329 @@
+<html>
+  <head>
+    <title>Word Count In R</title>
+    <style>
+      h1, h2, h3, h4, h5, h6, strong {
+      color: #146EB4;
+      font-weight: bold;
+      }
+      h2 {
+      font-size: 145%;
+      font-weight: normal;
+      margin: 1em 0;
+      padding: 0;
+      }
+      p, fieldset, table, pre {
+      margin-bottom: 1em;
+      }
+      table {
+      border-left: 1px solid #CCCCCC;
+      border-top: 1px solid #CCCCCC;
+      margin-right: 20px;
+      padding: 0;
+      width: 100%;
+      border-collapse: collapse;
+      border-spacing: 0;
+      text-align: left;
+      }
+      td {
+      border-bottom: 1px solid #CCCCCC;
+      border-right: 1px solid #CCCCCC;
+      font-size: 12px;
+      padding: 5px;
+      vertical-align: top;
+      }
+      pre {
+      background-color: #EFF7FF;
+      border: 1px dashed #333333;
+      font-family: "Courier New",Courier,mono;
+      font-size: 10px;
+      overflow: auto;
+      padding: 10px 10px 10px 10px;
+      text-align: left;
+      width: 95%;
+      line-height: 100%;
+      }
+    </style>
+
+  </head>
+  <body>
+
+    <div>
+<h1>Word Count In R</h1>
+
+The following example in R performs MapReduce on a large input corpus and counts the number of times each word occurs in the input.<p>
+
+You can run this application using <a href="https://console.aws.amazon.com/">AWS  Management Console</a> or <a href="http://developer.amazonwebservices.com/connect/entry.jspa?externalID=2264&categoryID=266">Command  Line Tools</a>
+
+<h2>Create the bootstrap script</h2>
+
+The following script will download and install the latest version of R on each of your Elastic MapReduce hosts.  (The version of R preinstalled on the EMR image is very old.)  Name this script <code>bootstrapLatestR.sh</code> and it should contain the following code:
+<pre><code>#!/bin/bash
+
+# For more information about what this script is doing, see http://cran.fhcrc.org/bin/linux/debian/
+
+cp /etc/apt/sources.list ~/sources.listOrig
+cat > ~/sources.list &lt;&lt;EOF
+deb http://cran.fhcrc.org/bin/linux/debian squeeze-cran/
+EOF
+cat ~/sources.listOrig &gt;&gt; ~/sources.list
+sudo cp ~/sources.list /etc/apt/sources.list
+sudo apt-key adv --keyserver subkeys.pgp.net --recv-key 381BA480
+sudo apt-get update
+sudo apt-get -t squeeze-cran install --yes r-base r-base-dev
+R --version
+exit 0
+
+</code></pre>    
+
+<h2>Create the mapper script</h2>
+The following script will output each word found in the input passed line by line to STDIN with its count of 1.
+
+Name this script <code>mapper.R</code> and it should contain the following code:
+<pre><code>#!/usr/bin/env Rscript
+ 
+trimWhiteSpace <- function(line) gsub("(^ +)|( +$)", "", line)
+splitIntoWords <- function(line) unlist(strsplit(line, "[[:space:]]+"))
+     
+con <- file("stdin", open = "r")
+while (length(line <- readLines(con, n = 1, warn = FALSE)) > 0) {
+    line <- trimWhiteSpace(line)
+    words <- splitIntoWords(line)
+    cat(paste(words, "\t1\n", sep=""), sep="")
+}
+
+## Add the R version to the output as a sanity check to see what all the mappers are running
+cat(R.version.string, "\t1\n", sep="")
+             
+close(con)
+
+</code></pre>    
+
+<h2>Create the reducer script</h2>
+The following script will aggregate the counts for each word found and output the final tally.
+
+Name this script <code>reducer.R</code> and it should contain the following code:
+<pre><code>#!/usr/bin/env Rscript
+ 
+trimWhiteSpace <- function(line) gsub("(^ +)|( +$)", "", line)
+ 
+splitLine <- function(line) {
+    val <- unlist(strsplit(line, "\t"))
+    list(word = val[1], count = as.integer(val[2]))
+}
+
+accumulateCounts <- function(line, env) {
+    line <- trimWhiteSpace(line)
+    split <- splitLine(line)
+    word <- split$word
+    count <- split$count
+    if (exists(word, envir = env, inherits = FALSE)) {
+        oldcount <- get(word, envir = env)
+        assign(word, oldcount + count, envir = env)
+    }
+    else assign(word, count, envir = env)
+}
+
+env <- new.env(hash = TRUE)
+
+con <- file("stdin", open = "r")
+while (length(line <- readLines(con, n = 1, warn = FALSE)) > 0) {
+  tryCatch(
+           accumulateCounts(line=line, env=env),
+           error = function(e) { message("Got error ", e, " for line ", line)}
+           )
+}
+close(con)
+
+for (w in ls(env, all = TRUE))
+    cat(w, "\t", get(w, envir = env), "\n", sep = "")
+
+</code></pre>    
+
+<h2>Create a small input file for testing</h2>
+Name this file <code>TinyTestInputFile.txt</code> and it should contain a small amount of text such as the following:
+<pre><code>Jack and Jill went up the hill
+To fetch a pail of water.
+Jack fell down and broke his crown,
+And Jill came tumbling after.
+Up Jack got, and home did trot,
+As fast as he could caper,
+To old Dame Dob, who patched his nob
+With vinegar and brown paper.
+</code></pre>    
+
+<h2>Sanity check . . . run it locally first</h2>
+First make your R scripts executable:
+
+<pre><code>chmod u+x *.R
+</code></pre>
+
+The run the pipeline locally to ensure that the code works correctly on a small amount of input:
+
+<pre><code>~>cat TinyTestInputFile.txt | ./mapper.R | sort | ./reducer.R
+a       1
+after.  1
+and     4
+And     1
+as      1
+...
+who     1
+With    1
+</code></pre>
+
+<h2>Upload your scripts and input file to S3</h2>
+
+You can use the <a href="https://console.aws.amazon.com/">AWS Managment Console</a> or a command line tool such as <a href="http://aws.amazon.com/code/128">s3curl</a> to upload your files.
+
+<h2>Start your map reduce cluster</h2>
+
+When you are trying out new jobs for the first time, specifying <code>--alive</code> will keep your hosts alive as you work through the any bugs. But in general you do not want to run jobs with <code>--alive</code> because you'll need to remember to explicitly shut the hosts down when the job is done.
+
+<pre><code>~/>elastic-mapreduce --create --num-instances=3 \
+    --enable-debugging --log-uri s3n://_YOUR_BUCKET_/debugLogs \
+    --bootstrap-action s3://_YOUR_BUCKET_/bootstrapLatestR.sh \
+    --name RWordCount --alive
+ 
+Created job flow j-1H8GKG5L6WAB4
+ 
+~/>elastic-mapreduce --list
+j-1H8GKG5L6WAB4     STARTING                                                         RWordCount
+   PENDING        Setup Hadoop Debugging
+</code></pre>    
+
+Tip: Stash the job flow id in a shell environment variable for subsequent commands.
+<pre><code>export JOB_FLOW_ID=j-1H8GKG5L6WAB4
+</code></pre>    
+
+<h2>Look around on the AWS Console</h2>
+
+See your new job listed in the <a href="https://console.aws.amazon.com/elasticmapreduce/home">Elastic MapReduce tab</a><br>
+
+<img width=600px  src="RunningEMRJob.png" alt="Running EMR Job shown in AWS Console" /><p>
+
+
+See the individual hosts listed in the <a href="https://console.aws.amazon.com/ec2/home">EC2 tab</a><br>
+
+
+<img width=600px  src="RunningEC2Instances.png" alt="Running EC2 Instances shown in AWS Console" /><p>
+
+
+Perhaps ssh to your master host and run R interactively if you like:
+<pre><code>
+~/>elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh
+
+Warning: Permanently added 'ec2-174-129-151-238.compute-1.amazonaws.com,174.129.151.238' (RSA) to the list of known hosts.
+Linux (none) 3.2.30-49.59.amzn1.i686 #1 SMP Wed Oct 3 19:55:00 UTC 2012 i686
+--------------------------------------------------------------------------------
+
+Welcome to Amazon Elastic MapReduce running Hadoop and Debian/Squeeze.
+ 
+Hadoop is installed in /home/hadoop. Log files are in /mnt/var/log/hadoop. Check
+/mnt/var/log/hadoop/steps for diagnosing step failures.
+
+The Hadoop UI can be accessed via the following commands: 
+
+  JobTracker    lynx http://localhost:9100/
+  NameNode      lynx http://localhost:9101/
+ 
+--------------------------------------------------------------------------------
+hadoop@ip-10-80-193-99:~$ R           
+
+R version 2.15.2 (2012-10-26) -- "Trick or Treat"
+Copyright (C) 2012 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+Platform: i486-pc-linux-gnu (32-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> sessionInfo()
+R version 2.15.2 (2012-10-26)
+Platform: i486-pc-linux-gnu (32-bit)
+
+locale:
+[1] C
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+>
+</code></pre>
+
+<h2>Create your job step file</h2>
+
+Create the following local file of job configuration for the Elastic MapReduce command line client.  It will be used to kick off sequential steps on two different sources of input using your word count R scripts. Name this file <code>wordCount.json</code>
+<pre><code>[
+  {
+    "Name": "R Word Count MapReduce Step 1: a small input file",
+    "ActionOnFailure": "CANCEL_AND_WAIT",
+    "HadoopJarStep": {
+       "Jar":
+           "/home/hadoop/contrib/streaming/hadoop-streaming.jar",
+             "Args": [
+                 "-input","s3n://_YOUR_BUCKET_/TinyTestInputFile.txt",
+                 "-output","s3n://_YOUR_BUCKET_/step1Output",
+                 "-mapper","s3n://_YOUR_BUCKET_/mapper.R",
+                 "-reducer","s3n://_YOUR_BUCKET_/reducer.R",
+             ]
+         }
+  },
+  {
+    "Name": "R Word Count MapReduce Step 2: lots of input",
+    "ActionOnFailure": "CANCEL_AND_WAIT",
+    "HadoopJarStep": {
+       "Jar":
+           "/home/hadoop/contrib/streaming/hadoop-streaming.jar",
+             "Args": [
+                 "-input","s3://elasticmapreduce/samples/wordcount/input",
+                 "-output","s3n://_YOUR_BUCKET_/step2Output",
+                 "-mapper","s3n://_YOUR_BUCKET_/mapper.R",
+                 "-reducer","s3n://_YOUR_BUCKET_/reducer.R",
+             ]
+         }
+  }
+]
+</code></pre>
+
+<h2>Add the steps to your jobflow</h2>
+
+<pre><code>~/>elastic-mapreduce --jobflow $JOB_FLOW_ID --json wordCount.json
+Added jobflow steps
+</code></pre>    
+
+<h2>Check progress by "Debugging" your job flow</h2>
+
+<img width=600px  src="ProgressViaDebug.png" alt="Progress of Job steps shown in Debug display" /><p>
+
+If there are any bugs in your R script, you'll be able to see the error messages from R in your <em><code>Task Attempts</code></em> stderr log files.<p>
+
+<img width=600px  src="HowToDebugErrors.png" alt="Debug display for failed jobs" /><p>
+
+In this example, since the hosts were created with option <code>--alive</code> and the job configuration specified <code>"ActionOnFailure": "CANCEL_AND_WAIT"</code>, you can simply resubmit your jobs to your running cluster via:
+<ol>
+<li>fix any bugs in the script(s)
+<li>test again locally on small input
+<li>re-upload the fixed script(s) to S3
+<li>edit <code>wordCount.json</code> to specify new output folders
+<li>resubmit your jobs via <code>elastic-mapreduce --jobflow $JOB_FLOW_ID --json wordCount.json</code>
+</ol>
+
+<h2>Once your jobs complete successfully, look for your output in your S3 bucket</h2>
+
+<h2>When you are all done, be sure to terminate your hosts</h2>
+
+<pre><code>~/>elastic-mapreduce --jobflow $JOB_FLOW_ID --terminate
+</code></pre>
+
+    </div>
+    </div>
+  </body>
+</html>
