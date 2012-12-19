@@ -23,10 +23,7 @@ env <- new.env(hash = TRUE)
 
 con <- file("stdin", open = "r")
 while (length(line <- readLines(con, n = 1, warn = FALSE)) > 0) {
-  tryCatch(
-           accumulateCounts(line=line, env=env),
-           error = function(e) { message("Got error ", e, " for line ", line)}
-           )
+    accumulateCounts(line=line, env=env),
 }
 close(con)
 
