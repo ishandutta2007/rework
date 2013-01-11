@@ -1,0 +1,28 @@
+[
+  {
+    "Name": "R Word Count MapReduce Step 1: small input file",
+    "ActionOnFailure": "CANCEL_AND_WAIT",
+    "HadoopJarStep": {
+       "Jar":
+           "s3n://nicole.deflaux/emr/wordcount/scripts/HadoopJobs-1.0-SNAPSHOT.jar",
+       "MainClass": "org.deflaux.WordCount",
+             "Args": [
+                 "s3n://nicole.deflaux/emr/wordcount/input/TinyTestInputFile.txt",
+                 "s3n://nicole.deflaux/emr/wordcount/output/step1OutputJava",
+             ]
+         }
+  },
+  {
+    "Name": "R Word Count MapReduce Step 2: lots of input",
+    "ActionOnFailure": "CANCEL_AND_WAIT",
+    "HadoopJarStep": {
+       "Jar":
+           "s3n://nicole.deflaux/emr/wordcount/scripts/HadoopJobs-1.0-SNAPSHOT.jar",
+       "MainClass": "org.deflaux.WordCount",
+             "Args": [
+                 "s3://elasticmapreduce/samples/wordcount/input",
+                 "s3n://nicole.deflaux/emr/wordcount/output/step2OutputJava",
+             ]
+         }
+  }
+]
