@@ -8,6 +8,7 @@ normalizeCharacters <- function(line) {
 }
 
 parseWords <- function(line) {
+    line <- normalizeCharacters(line)
     # Trim whitespace on each end
     line <- gsub("(^\\s+)|(\\s+$)", "", line, perl=TRUE)
     # Now split the line at whitespace to obtain the individual words
@@ -16,7 +17,6 @@ parseWords <- function(line) {
 
 con <- file("stdin", open = "r")
 while (length(line <- readLines(con, n = 1, warn = FALSE)) > 0) {
-    line <- normalizeCharacters(line)
     words <- parseWords(line)
     for (w in words)
         cat(w, "\t1\n", sep="")

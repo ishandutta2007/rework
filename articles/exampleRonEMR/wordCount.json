@@ -7,7 +7,7 @@
            "/home/hadoop/contrib/streaming/hadoop-streaming.jar",
              "Args": [
                  "-input","s3n://nicole.deflaux/emr/wordcount/input/TinyTestInputFile.txt",
-                 "-output","s3n://nicole.deflaux/emr/wordcount/output/aLittleText",
+                 "-output","s3n://nicole.deflaux/emr/wordcount/output/step1Output",
                  "-mapper","s3n://nicole.deflaux/emr/wordcount/scripts/mapper.R",
                  "-reducer","s3n://nicole.deflaux/emr/wordcount/scripts/reducer.R",
              ]
@@ -21,7 +21,7 @@
            "/home/hadoop/contrib/streaming/hadoop-streaming.jar",
              "Args": [
                  "-input","s3://elasticmapreduce/samples/wordcount/input",
-                 "-output","s3n://nicole.deflaux/emr/wordcount/output/aLotOfText",
+                 "-output","s3n://nicole.deflaux/emr/wordcount/output/step2Output",
                  "-mapper","s3n://nicole.deflaux/emr/wordcount/scripts/mapper.R",
                  "-reducer","s3n://nicole.deflaux/emr/wordcount/scripts/reducer.R",
              ]

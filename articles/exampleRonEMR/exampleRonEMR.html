@@ -74,7 +74,7 @@ sudo apt-get -t squeeze-cran install --yes r-base r-base-dev
 R --version
 exit 0
 
-</code></pre>    
+</code></pre>
 
 <h2>Create the mapper script</h2>
 The following script will output each word found in the input passed line by line to STDIN with its count of 1.
@@ -82,22 +82,30 @@ The following script will output each word found in the input passed line by lin
 Name this script <code>mapper.R</code> and it should contain the following code:
 <pre><code>#!/usr/bin/env Rscript
  
-trimWhiteSpace <- function(line) gsub("(^ +)|( +$)", "", line)
-splitIntoWords <- function(line) unlist(strsplit(line, "[[:space:]]+"))
-     
-con <- file("stdin", open = "r")
-while (length(line <- readLines(con, n = 1, warn = FALSE)) > 0) {
-    line <- trimWhiteSpace(line)
-    words <- splitIntoWords(line)
-    cat(paste(words, "\t1\n", sep=""), sep="")
+normalizeCharacters <- function(line) {
+    # Convert all characters to lower case
+    line <- tolower(line)
+    # Discard punctuation by keeping only whitespace, letters, numbers, and hyphens
+    line <- gsub("[^\\sa-z0-9-]", "", line, perl=TRUE)
 }
 
-## Add the R version to the output as a sanity check to see what all the mappers are running
-cat(R.version.string, "\t1\n", sep="")
-             
-close(con)
+parseWords <- function(line) {
+    line <- normalizeCharacters(line)
+    # Trim whitespace on each end
+    line <- gsub("(^\\s+)|(\\s+$)", "", line, perl=TRUE)
+    # Now split the line at whitespace to obtain the individual words
+    words <- unlist(strsplit(line, "[\\s]+", perl=TRUE))
+}
 
-</code></pre>    
+con <- file("stdin", open = "r")
+while (length(line <- readLines(con, n = 1, warn = FALSE)) > 0) {
+    words <- parseWords(line)
+    for (w in words)
+        cat(w, "\t1\n", sep="")
+}
+
+close(con)
+</code></pre>
 
 <h2>Create the reducer script</h2>
 The following script will aggregate the counts for each word found and output the final tally.
@@ -105,18 +113,23 @@ The following script will aggregate the counts for each word found and output th
 Name this script <code>reducer.R</code> and it should contain the following code:
 <pre><code>#!/usr/bin/env Rscript
  
-trimWhiteSpace <- function(line) gsub("(^ +)|( +$)", "", line)
- 
-splitLine <- function(line) {
-    val <- unlist(strsplit(line, "\t"))
-    list(word = val[1], count = as.integer(val[2]))
+parseKeyValuePair <- function(line) {
+    # Trim whitespace on each end
+    line <- gsub("(^\\s+)|(\\s+$)", "", line, perl=TRUE)
+    # Skip malformed lines
+    if(!grepl("\t", line)) {
+      warning("Skipping malformed line: ", line)
+      return(NULL)
+    }
+    keyValuePair <- unlist(strsplit(line, "\t"))
+    list(key = keyValuePair[1], value = as.integer(keyValuePair[2]))
 }
 
 accumulateCounts <- function(line, env) {
-    line <- trimWhiteSpace(line)
-    split <- splitLine(line)
-    word <- split$word
-    count <- split$count
+    keyValuePair <- parseKeyValuePair(line)
+    if(is.null(keyValuePair)) return()
+    word <- keyValuePair$key
+    count <- keyValuePair$value
     if (exists(word, envir = env, inherits = FALSE)) {
         oldcount <- get(word, envir = env)
         assign(word, oldcount + count, envir = env)
@@ -128,17 +141,14 @@ env <- new.env(hash = TRUE)
 
 con <- file("stdin", open = "r")
 while (length(line <- readLines(con, n = 1, warn = FALSE)) > 0) {
-  tryCatch(
-           accumulateCounts(line=line, env=env),
-           error = function(e) { message("Got error ", e, " for line ", line)}
-           )
+    accumulateCounts(line=line, env=env)
 }
 close(con)
 
 for (w in ls(env, all = TRUE))
     cat(w, "\t", get(w, envir = env), "\n", sep = "")
 
-</code></pre>    
+</code></pre>
 
 <h2>Create a small input file for testing</h2>
 Name this file <code>TinyTestInputFile.txt</code> and it should contain a small amount of text such as the following:
@@ -150,7 +160,7 @@ Up Jack got, and home did trot,
 As fast as he could caper,
 To old Dame Dob, who patched his nob
 With vinegar and brown paper.
-</code></pre>    
+</code></pre>
 
 <h2>Sanity check . . . run it locally first</h2>
 First make your R scripts executable:
@@ -162,13 +172,12 @@ The run the pipeline locally to ensure that the code works correctly on a small 
 
 <pre><code>~>cat TinyTestInputFile.txt | ./mapper.R | sort | ./reducer.R
 a       1
-after.  1
-and     4
-And     1
-as      1
-...
+after   1
+and     5
+. . .
+went    1
 who     1
-With    1
+with    1
 </code></pre>
 
 <h2>Upload your scripts and input file to S3</h2>
@@ -189,11 +198,11 @@ Created job flow j-1H8GKG5L6WAB4
 ~/>elastic-mapreduce --list
 j-1H8GKG5L6WAB4     STARTING                                                         RWordCount
    PENDING        Setup Hadoop Debugging
-</code></pre>    
+</code></pre>
 
 Tip: Stash the job flow id in a shell environment variable for subsequent commands.
 <pre><code>export JOB_FLOW_ID=j-1H8GKG5L6WAB4
-</code></pre>    
+</code></pre>
 
 <h2>Look around on the AWS Console</h2>
 
@@ -317,6 +326,8 @@ In this example, since the hosts were created with option <code>--alive</code> a
 </ol>
 
 <h2>Once your jobs complete successfully, look for your output in your S3 bucket</h2>
+
+<img width=600px  src="JobOutputInS3.png" alt="Job Output Stored in S3" /><p>
 
 <h2>When you are all done, be sure to terminate your hosts</h2>
 
