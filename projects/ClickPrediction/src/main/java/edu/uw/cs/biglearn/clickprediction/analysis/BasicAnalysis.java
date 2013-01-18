@@ -12,19 +12,37 @@ public class BasicAnalysis {
 	 * 
 	 * @param dataset
 	 * @return
+	 * @throws Exception 
 	 */
-	public Set<Integer> uniqTokens(DataSet dataset) {
-		// Fill in your code here
-		return null;
-	}
+	public static Set<Integer> uniqTokens(DataSet dataset) throws Exception {
+		int count = 0;
+		Set<Integer> tokens = new HashSet<Integer>();
+		logger.info("Counting unique tokens in " + dataset.path + " ... ");
+		while (dataset.hasNext()) {
+			DataInstance instance = dataset.nextInstance();
+			count++;
+			if (count % 100000 == 0) {
+				logger.info("Counted " + count + " lines");
+			}
+			for (int token : instance.tokens) {
+				tokens.add(token);
+			}
+		}
+		if (count < dataset.size) {
+			logger.error("The real size of the data is less than the input size: "
+							+ dataset.size + "<" + count);
+		}
+		logger.info("Done. Total processed instances: " + count);
+		return tokens;	}
 
 	/**
 	 * Return the unique users in the dataset.
 	 * 
 	 * @param dataset
 	 * @return
+	 * @throws Exception 
 	 */
-	public static Set<Integer> uniqUsers(DataSet dataset) {
+	public static Set<Integer> uniqUsers(DataSet dataset) throws Exception {
 		int count = 0;
 		Set<Integer> users = new HashSet<Integer>();
 		logger.info("Counting unique users in " + dataset.path + " ... ");
@@ -46,10 +64,28 @@ public class BasicAnalysis {
 
 	/**
 	 * @return the average CTR for the training set.
+	 * @throws Exception 
 	 */
-	public double averageCtr(DataSet dataset) {
-		// Fill in your code here
-		return 0.0;
+	public static double averageCtr(DataSet dataset) throws Exception {
+		int count = 0;
+		int clicks = 0;
+		logger.info("Counting clicks in " + dataset.path + " ... ");
+		while (dataset.hasNext()) {
+			DataInstance instance = dataset.nextInstance();
+			count++;
+			if (count % 100000 == 0) {
+				logger.info("Counted " + count + " lines");
+			}
+			if(1 == instance.clicked) {
+				clicks++;
+			}
+		}
+		if (count < dataset.size) {
+			logger.error("The real size of the data is less than the input size: "
+							+ dataset.size + "<" + count);
+		}
+		logger.info("Done. Total processed instances: " + count);
+		return (double)clicks/(double)count;
 	}
 
 	public static void main(String args[]) throws Exception {

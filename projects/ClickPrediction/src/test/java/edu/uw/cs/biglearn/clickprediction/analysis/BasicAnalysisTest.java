@@ -12,6 +12,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class BasicAnalysisTest {
+	static final double DELTA = 1e-15;
+
 	static DataSet training;
 	static DataSet testing;
 
@@ -41,12 +43,24 @@ public class BasicAnalysisTest {
 	}
 
 	@Test
-	public void testUniqTokens() {
-		fail("Not yet implemented");
+	public void testUniqTokens() throws Exception {
+		Set<Integer> trainingTokens = BasicAnalysis.uniqTokens(training);
+		assertEquals("Number of unique tokens in training dataset", 141063,
+				trainingTokens.size());
+
+		Set<Integer> testingTokens = BasicAnalysis.uniqTokens(testing);
+		assertEquals("Number of unique tokens in testing dataset", 109459,
+				testingTokens.size());
+
+		Set<Integer> userIntersection = new HashSet<Integer>(trainingTokens);
+		userIntersection.retainAll(testingTokens);
+		assertEquals(
+				"Number of unique tokens residing in both the testing and training dataset (intersection)",
+				79261, userIntersection.size());
 	}
 
 	@Test
-	public void testUniqUsers() {
+	public void testUniqUsers() throws Exception {
 		Set<Integer> trainingUsers = BasicAnalysis.uniqUsers(training);
 		assertEquals("Number of unique users in training dataset", 982432,
 				trainingUsers.size());
@@ -54,16 +68,6 @@ public class BasicAnalysisTest {
 		Set<Integer> testingUsers = BasicAnalysis.uniqUsers(testing);
 		assertEquals("Number of unique users in testing dataset", 574907,
 				testingUsers.size());
-
-		// Note that the question "How many users appear in both datasets?" is
-		// ambiguous so I've reported answers for both interpretations. But if I
-		// had to pick the most likely interpretation, I think what is wanted is the intersection.
-		
-		Set<Integer> userUnion = new HashSet<Integer>(trainingUsers);
-		userUnion.addAll(testingUsers);
-		assertEquals(
-				"Number of unique users in the COMBINED testing and training dataset (union)",
-				1501263, userUnion.size());
 
 		Set<Integer> userIntersection = new HashSet<Integer>(trainingUsers);
 		userIntersection.retainAll(testingUsers);
@@ -73,8 +77,8 @@ public class BasicAnalysisTest {
 	}
 
 	@Test
-	public void testAverageCtr() {
-		fail("Not yet implemented");
+	public void testAverageCtr() throws Exception {
+		double clickThruRate = BasicAnalysis.averageCtr(training);
+		assertEquals("Click through rate in training dataset", 0.03365528484381977, clickThruRate, DELTA);
 	}
-
 }

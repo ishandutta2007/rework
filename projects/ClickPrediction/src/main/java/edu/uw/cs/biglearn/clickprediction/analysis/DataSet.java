@@ -49,8 +49,9 @@ public class DataSet {
 
 	/**
 	 * @return the next data instance.
+	 * @throws Exception 
 	 */
-	public DataInstance nextInstance() {
+	public DataInstance nextInstance() throws Exception {
 		counter++;
 		return new DataInstance(sc.nextLine(), hasLabel);
 	}
