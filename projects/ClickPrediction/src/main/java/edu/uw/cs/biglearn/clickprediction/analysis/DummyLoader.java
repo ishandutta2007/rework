@@ -8,11 +8,10 @@ public class DummyLoader {
 	 * Scan the data and print out to the stdout.
 	 * 
 	 * @return
-	 * @throws Exception 
 	 * @throws IOException
 	 * @throws FileNotFoundException
 	 */
-	public void scanAndPrint(DataSet dataset) throws Exception {
+	public void scanAndPrint(DataSet dataset) {
 		int count = 0;
 		System.err.println("Loading data from " + dataset.path + " ... ");
 		while (dataset.hasNext()) {
@@ -39,7 +38,7 @@ public class DummyLoader {
 						// you are done with processing.
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws FileNotFoundException {
 		DummyLoader loader = new DummyLoader();
 		int size = 10;
 

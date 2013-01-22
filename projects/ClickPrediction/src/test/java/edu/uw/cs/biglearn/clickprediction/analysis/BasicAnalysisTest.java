@@ -43,12 +43,12 @@ public class BasicAnalysisTest {
 	}
 
 	@Test
-	public void testUniqTokens() throws Exception {
-		Set<Integer> trainingTokens = BasicAnalysis.uniqTokens(training);
+	public void testUniqTokens() {
+		Set<Integer> trainingTokens = BasicAnalysis.uniqTokens(training, true);
 		assertEquals("Number of unique tokens in training dataset", 141063,
 				trainingTokens.size());
 
-		Set<Integer> testingTokens = BasicAnalysis.uniqTokens(testing);
+		Set<Integer> testingTokens = BasicAnalysis.uniqTokens(testing, true);
 		assertEquals("Number of unique tokens in testing dataset", 109459,
 				testingTokens.size());
 
@@ -60,25 +60,26 @@ public class BasicAnalysisTest {
 	}
 
 	@Test
-	public void testUniqUsers() throws Exception {
-		Set<Integer> trainingUsers = BasicAnalysis.uniqUsers(training);
-		assertEquals("Number of unique users in training dataset", 982432,
+	public void testUniqUsers() {
+		Set<Integer> trainingUsers = BasicAnalysis.uniqUsers(training, true);
+		assertEquals("Number of unique users in training dataset", 982431,
 				trainingUsers.size());
 
-		Set<Integer> testingUsers = BasicAnalysis.uniqUsers(testing);
-		assertEquals("Number of unique users in testing dataset", 574907,
+		Set<Integer> testingUsers = BasicAnalysis.uniqUsers(testing, true);
+		assertEquals("Number of unique users in testing dataset", 574906,
 				testingUsers.size());
 
 		Set<Integer> userIntersection = new HashSet<Integer>(trainingUsers);
 		userIntersection.retainAll(testingUsers);
 		assertEquals(
 				"Number of unique users residing in both the testing and training dataset (intersection)",
-				56076, userIntersection.size());
+				56075, userIntersection.size());
 	}
 
 	@Test
-	public void testAverageCtr() throws Exception {
-		double clickThruRate = BasicAnalysis.averageCtr(training);
+	public void testAverageCtr() {
+		double clickThruRate = BasicAnalysis.averageCtr(training, true);
 		assertEquals("Click through rate in training dataset", 0.03365528484381977, clickThruRate, DELTA);
 	}
+
 }

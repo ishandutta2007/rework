@@ -8,7 +8,7 @@ import java.util.Scanner;
 /**
  * This class represents a dataset object.
  * 
- * @author haijieg
+ * @author haijieg, deflaux
  * 
  */
 public class DataSet {
@@ -49,13 +49,12 @@ public class DataSet {
 
 	/**
 	 * @return the next data instance.
-	 * @throws Exception 
 	 */
-	public DataInstance nextInstance() throws Exception {
+	public DataInstance nextInstance() {
 		counter++;
 		return new DataInstance(sc.nextLine(), hasLabel);
 	}
-
+	
 	/**
 	 * @return the next data instance with hashed feature.
 	 */
