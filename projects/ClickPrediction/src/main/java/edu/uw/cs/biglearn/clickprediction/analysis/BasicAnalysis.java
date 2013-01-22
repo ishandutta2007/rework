@@ -89,8 +89,16 @@ public class BasicAnalysis {
 			if (discardInvalidDataInstances && !instance.isValid()) {
 				continue;
 			}
-			if (1 == instance.clicked) {
+			
+			switch(instance.clicked) {
+			case 0:
+				break;
+			case 1:
 				clicks++;
+				break;
+			default:
+				// note that click values are -1 in the test data instances, but we should not be passing that data to this method
+				throw new RuntimeException("invalid click data value: " + instance.clicked);
 			}
 		}
 		if (count < dataset.size) {
@@ -98,6 +106,7 @@ public class BasicAnalysis {
 					+ dataset.size + "<" + count);
 		}
 		logger.info("Done. Total processed instances: " + count);
+		logger.info("Clicks: " + clicks);
 		return (double) clicks / (double) count;
 	}
 

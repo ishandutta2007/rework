@@ -52,11 +52,11 @@ public class BasicAnalysisTest {
 		assertEquals("Number of unique tokens in testing dataset", 109459,
 				testingTokens.size());
 
-		Set<Integer> userIntersection = new HashSet<Integer>(trainingTokens);
-		userIntersection.retainAll(testingTokens);
+		Set<Integer> tokenIntersection = new HashSet<Integer>(trainingTokens);
+		tokenIntersection.retainAll(testingTokens);
 		assertEquals(
 				"Number of unique tokens residing in both the testing and training dataset (intersection)",
-				79261, userIntersection.size());
+				79261, tokenIntersection.size());
 	}
 
 	@Test
