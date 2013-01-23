@@ -55,5 +55,9 @@ public class LogisticRegressionTest {
 		ArrayList<Double> predictions = lr.predict(weights, testing);
 		assertEquals("1.4.2 (b) RMSE of predicted CTR", 0.3022793809306685,
 				EvalUtil.eval(DATA_PATH + "test_label.txt", predictions), DELTA);
+
+		assertEquals("1.4.2 (b) RMSE of baseline CTR", 0.3022793809306685,
+				EvalUtil.evalBaseLine(DATA_PATH + "test_label.txt", 0.033655),
+				DELTA);
 	}
 }

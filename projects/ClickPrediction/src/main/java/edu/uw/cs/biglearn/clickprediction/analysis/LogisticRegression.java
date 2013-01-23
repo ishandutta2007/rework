@@ -80,6 +80,37 @@ public class LogisticRegression {
 		public int l0norm() {
 			return 4 + wTokens.size();
 		}
+
+		public void accumulate(Weights weight) {
+			this.w0 += weight.w0;
+			this.wDepth += weight.wDepth;
+			this.wPosition += weight.wPosition;
+			this.wAge += weight.wAge;
+			this.wGender += weight.wGender;
+
+			for (Map.Entry<Integer, Double> entry : weight.wTokens.entrySet()) {
+				int token = entry.getKey();
+				double tokenWeight = entry.getValue();
+				if (this.wTokens.containsKey(token)) {
+					tokenWeight += this.wTokens.get(token);
+				}
+				this.wTokens.put(token, tokenWeight);
+			}
+		}
+
+		public void average(int divisor) {
+			w0 = w0 / divisor;
+			wDepth = wDepth / divisor;
+			wPosition = wPosition / divisor;
+			wAge = wAge / divisor;
+			wGender = wGender / divisor;
+
+			for (Map.Entry<Integer, Double> entry : wTokens.entrySet()) {
+				int token = entry.getKey();
+				double tokenWeight = entry.getValue() / divisor;
+				wTokens.put(token, tokenWeight);
+			}
+		}
 	}
 
 	/**
@@ -107,10 +138,9 @@ public class LogisticRegression {
 		}
 		for (int token : instance.tokens) {
 			if (weights.wTokens.containsKey(token)) {
-				dotProduct += weights.wTokens.get(token); // if token is
-															// present,
-															// its "value" is 1,
-															// otherwise zero
+				dotProduct += weights.wTokens.get(token);
+				// if token is present, its "value" is 1, otherwise zero
+				// since x_token = 1, not bothering with w_token*1
 			}
 		}
 		return dotProduct;
@@ -152,6 +182,7 @@ public class LogisticRegression {
 		// }
 
 		Weights weights = new Weights();
+		Weights weightAccumulator = new Weights();
 		int count = 0;
 		double lossAccumulator = 0.0;
 		AvgLoss.add(lossAccumulator);
@@ -175,8 +206,6 @@ public class LogisticRegression {
 			}
 
 			if (0 != lambda) {
-				// TODO regularize position and depth
-				// TODO regularize age and gender if applicable
 				// TODO regularize tokens
 				performDelayedRegularization(instance.tokens, weights, count,
 						step, lambda);
@@ -220,6 +249,8 @@ public class LogisticRegression {
 					if (weights.wTokens.containsKey(token)) {
 						tokenWeight = weights.wTokens.get(token);
 					}
+					// TODO this is not correct because we already performed
+					// delayed reg on these
 					weights.wTokens
 							.put(token,
 									tokenWeight
@@ -227,9 +258,10 @@ public class LogisticRegression {
 											* ((-1 * lambda * tokenWeight) + 1 * (instance.clicked - prediction)));
 				}
 			}
-
+			weightAccumulator.accumulate(weights);
 		}
-		return weights;
+		weightAccumulator.average(count);
+		return weightAccumulator;
 	}
 
 	/**
@@ -241,7 +273,7 @@ public class LogisticRegression {
 	 */
 	public ArrayList<Double> predict(Weights weights, DataSet dataset) {
 		ArrayList<Double> predictions = new ArrayList<Double>();
-		
+
 		while (dataset.hasNext()) {
 			DataInstance instance = dataset.nextInstance();
 			double partialResult = Math.exp(computeWeightFeatureProduct(
