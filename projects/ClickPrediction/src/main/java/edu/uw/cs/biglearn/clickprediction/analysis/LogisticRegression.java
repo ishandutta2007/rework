@@ -144,17 +144,11 @@ public class LogisticRegression {
 			ArrayList<Double> AvgLoss) {
 
 		// Fill in your code here. The structure should look like:
-
 		// For each data point: {
-
 		// Your code: perform delayed regularization
-
 		// Your code: predict the label, record the loss
-
 		// Your code: compute w0 + <w, x>, and gradient
-
 		// Your code: update weights along the negative gradient
-
 		// }
 
 		Weights weights = new Weights();
@@ -169,43 +163,69 @@ public class LogisticRegression {
 			if (count % LOSS_AVG_INTERVAL == 0) {
 				double avgLoss = lossAccumulator / LOSS_AVG_INTERVAL;
 				AvgLoss.add(avgLoss);
-				logger.info("Trained (lambda:" + lambda + ", step:" + step + ") with " + count + " cases so far with avg loss for this 100 case interval: "
+				logger.info("Trained (lambda:"
+						+ lambda
+						+ ", step:"
+						+ step
+						+ ") with "
+						+ count
+						+ " cases so far with avg loss for this 100 case interval: "
 						+ avgLoss);
 				lossAccumulator = 0.0;
 			}
 
 			if (0 != lambda) {
-				// regularize position and depth
-				// regularize age and gender if applicable
-				// regularize tokens
+				// TODO regularize position and depth
+				// TODO regularize age and gender if applicable
+				// TODO regularize tokens
 				performDelayedRegularization(instance.tokens, weights, count,
 						step, lambda);
 			}
 
-			double prediction = 1 / (1 + Math.exp(computeWeightFeatureProduct(
-					weights, instance)));
+			double partialResult = Math.exp(computeWeightFeatureProduct(
+					weights, instance));
+			double prediction = partialResult / (1 + partialResult);
 
 			// Only update our weights if the prediction did not match the
 			// outcome
 			if (prediction != instance.clicked) {
-				lossAccumulator += Math.pow((prediction - instance.clicked), 2);
-			}
 
-			weights.w0 = weights.w0 + step * ((-1*lambda*weights.w0) + 1*(instance.clicked - prediction));
-			weights.wDepth = weights.wDepth + step * ((-1*lambda*weights.wDepth) + instance.depth*(instance.clicked - prediction));
-			weights.wPosition = weights.wPosition + step * ((-1*lambda*weights.wPosition) + instance.position*(instance.clicked - prediction));
-			if (instance.age != DataInstance.MISSING_AGE) {
-				weights.wAge = weights.wAge + step * ((-1*lambda*weights.wAge) + instance.age*(instance.clicked - prediction));
-			}
-			if (instance.gender != DataInstance.MISSING_GENDER) {
-				weights.wGender = weights.wGender + step * ((-1*lambda*weights.wGender) + instance.gender*(instance.clicked - prediction));
-			}
-			for (int token : instance.tokens) {
-				double tokenWeight = 0.0;
-				if (weights.wTokens.containsKey(token)) {
-					tokenWeight = weights.wTokens.get(token);
+				lossAccumulator += Math.pow((prediction - instance.clicked), 2);
+
+				weights.w0 = weights.w0
+						+ step
+						* ((-1 * lambda * weights.w0) + 1 * (instance.clicked - prediction));
+				weights.wDepth = weights.wDepth
+						+ step
+						* ((-1 * lambda * weights.wDepth) + instance.depth
+								* (instance.clicked - prediction));
+				weights.wPosition = weights.wPosition
+						+ step
+						* ((-1 * lambda * weights.wPosition) + instance.position
+								* (instance.clicked - prediction));
+				if (instance.age != DataInstance.MISSING_AGE) {
+					weights.wAge = weights.wAge
+							+ step
+							* ((-1 * lambda * weights.wAge) + instance.age
+									* (instance.clicked - prediction));
 				}
-				weights.wTokens.put(token, tokenWeight + step * ((-1*lambda*tokenWeight) + 1*(instance.clicked - prediction)));
+				if (instance.gender != DataInstance.MISSING_GENDER) {
+					weights.wGender = weights.wGender
+							+ step
+							* ((-1 * lambda * weights.wGender) + instance.gender
+									* (instance.clicked - prediction));
+				}
+				for (int token : instance.tokens) {
+					double tokenWeight = 0.0;
+					if (weights.wTokens.containsKey(token)) {
+						tokenWeight = weights.wTokens.get(token);
+					}
+					weights.wTokens
+							.put(token,
+									tokenWeight
+											+ step
+											* ((-1 * lambda * tokenWeight) + 1 * (instance.clicked - prediction)));
+				}
 			}
 
 		}
@@ -220,11 +240,20 @@ public class LogisticRegression {
 	 * @return An array storing the CTR for each datapoint in the test data.
 	 */
 	public ArrayList<Double> predict(Weights weights, DataSet dataset) {
-		// Fill in your code here
-		return null;
+		ArrayList<Double> predictions = new ArrayList<Double>();
+		
+		while (dataset.hasNext()) {
+			DataInstance instance = dataset.nextInstance();
+			double partialResult = Math.exp(computeWeightFeatureProduct(
+					weights, instance));
+			predictions.add(partialResult / (1 + partialResult));
+		}
+		return predictions;
 	}
 
 	public static void main(String args[]) throws IOException {
 		// Fill in your code here
+		System.out.println("See unit tests for answers to homework questions");
+
 	}
 }
