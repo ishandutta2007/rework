@@ -81,34 +81,29 @@ public class LogisticRegression {
 			return 4 + wTokens.size();
 		}
 
-		public void accumulate(Weights weight) {
-			this.w0 += weight.w0;
-			this.wDepth += weight.wDepth;
-			this.wPosition += weight.wPosition;
-			this.wAge += weight.wAge;
-			this.wGender += weight.wGender;
+		public void runningAverage(Weights currentWeight, int[] tokens,
+				int count) {
+			double impact = 1 / count;
+			this.w0 = this.w0 - impact * (this.w0 - currentWeight.w0);
+			this.wDepth = this.wDepth - impact
+					* (this.wDepth - currentWeight.wDepth);
+			this.wPosition = this.wPosition - impact
+					* (this.wPosition - currentWeight.wPosition);
+			// Note: we may not have changed the weights for age and gender so
+			// these two updates could be skipped in those cases
+			this.wAge = this.wAge - impact * (this.wAge - currentWeight.wAge);
+			this.wGender = this.wGender - impact
+					* (this.wGender - currentWeight.wGender);
 
-			for (Map.Entry<Integer, Double> entry : weight.wTokens.entrySet()) {
-				int token = entry.getKey();
-				double tokenWeight = entry.getValue();
-				if (this.wTokens.containsKey(token)) {
-					tokenWeight += this.wTokens.get(token);
+			// Only update averages for tokens in this instance
+			for (int token : tokens) {
+				Double wTokenPrevious = this.wTokens.get(token); // can be null
+				double wTokenCurrent = currentWeight.wTokens.get(token);
+				if (null == wTokenPrevious) {
+					wTokenPrevious = 0.0;
 				}
-				this.wTokens.put(token, tokenWeight);
-			}
-		}
-
-		public void average(int divisor) {
-			w0 = w0 / divisor;
-			wDepth = wDepth / divisor;
-			wPosition = wPosition / divisor;
-			wAge = wAge / divisor;
-			wGender = wGender / divisor;
-
-			for (Map.Entry<Integer, Double> entry : wTokens.entrySet()) {
-				int token = entry.getKey();
-				double tokenWeight = entry.getValue() / divisor;
-				wTokens.put(token, tokenWeight);
+				this.wTokens.put(token, wTokenPrevious - impact
+						* (wTokenPrevious - wTokenCurrent));
 			}
 		}
 	}
@@ -132,9 +127,6 @@ public class LogisticRegression {
 		}
 		if (instance.gender != DataInstance.MISSING_GENDER) {
 			dotProduct += weights.wGender * instance.gender;
-		}
-		if (instance.age != DataInstance.MISSING_AGE) {
-			dotProduct += weights.wAge * instance.age;
 		}
 		for (int token : instance.tokens) {
 			if (weights.wTokens.containsKey(token)) {
@@ -186,7 +178,6 @@ public class LogisticRegression {
 		int count = 0;
 		double lossAccumulator = 0.0;
 		AvgLoss.add(lossAccumulator);
-		logger.info("Training on data in " + dataset.path + " ... ");
 
 		while (dataset.hasNext()) {
 			DataInstance instance = dataset.nextInstance();
@@ -211,57 +202,55 @@ public class LogisticRegression {
 						step, lambda);
 			}
 
-			double partialResult = Math.exp(computeWeightFeatureProduct(
-					weights, instance));
-			double prediction = partialResult / (1 + partialResult);
+			double prediction = computePrediction(weights, instance);
 
 			// Only update our weights if the prediction did not match the
 			// outcome
 			if (prediction != instance.clicked) {
 
-				lossAccumulator += Math.pow((prediction - instance.clicked), 2);
+				// TODO getting confused by ascent/descent, is this the correct
+				// order for use in the weight update formula?
+				// Is the issue log likelihood see Equation from page 29 of
+				// http://www.cs.washington.edu/education/courses/cse599c1/13wi/slides/perceptron-kernels-sgd-annotated.pdf
+				// versus negative log likelihood in KN p 247 eqn 8.5
+				double error = instance.clicked - prediction;
 
-				weights.w0 = weights.w0
-						+ step
-						* ((-1 * lambda * weights.w0) + 1 * (instance.clicked - prediction));
+				lossAccumulator += Math.pow((error), 2);
+
+				weights.w0 = weights.w0 + step * error; // no reg and assumed x0 = 1 
 				weights.wDepth = weights.wDepth
 						+ step
 						* ((-1 * lambda * weights.wDepth) + instance.depth
-								* (instance.clicked - prediction));
+								* (error));
 				weights.wPosition = weights.wPosition
 						+ step
 						* ((-1 * lambda * weights.wPosition) + instance.position
-								* (instance.clicked - prediction));
-				if (instance.age != DataInstance.MISSING_AGE) {
+								* (error));
+				if (instance.age != DataInstance.MISSING_AGE) { // TODO correct?
 					weights.wAge = weights.wAge
 							+ step
 							* ((-1 * lambda * weights.wAge) + instance.age
-									* (instance.clicked - prediction));
+									* (error));
 				}
-				if (instance.gender != DataInstance.MISSING_GENDER) {
+				if (instance.gender != DataInstance.MISSING_GENDER) { // TODO correct?
 					weights.wGender = weights.wGender
 							+ step
 							* ((-1 * lambda * weights.wGender) + instance.gender
-									* (instance.clicked - prediction));
+									* (error));
 				}
 				for (int token : instance.tokens) {
-					double tokenWeight = 0.0;
-					if (weights.wTokens.containsKey(token)) {
-						tokenWeight = weights.wTokens.get(token);
+					Double tokenWeight = weights.wTokens.get(token); // can be null
+					if (null == tokenWeight) {
+						tokenWeight = 0.0;
 					}
-					// TODO this is not correct because we already performed
-					// delayed reg on these
-					weights.wTokens
-							.put(token,
-									tokenWeight
-											+ step
-											* ((-1 * lambda * tokenWeight) + 1 * (instance.clicked - prediction)));
+					weights.wTokens.put(token, tokenWeight + step
+							* error);
 				}
+				weightAccumulator.runningAverage(weights, instance.tokens, count);
 			}
-			weightAccumulator.accumulate(weights);
 		}
-		weightAccumulator.average(count);
-		return weightAccumulator;
+		// Do not return the running average of weights for this HW problem
+		return weights; // weightAccumulator; 
 	}
 
 	/**
@@ -276,11 +265,18 @@ public class LogisticRegression {
 
 		while (dataset.hasNext()) {
 			DataInstance instance = dataset.nextInstance();
-			double partialResult = Math.exp(computeWeightFeatureProduct(
-					weights, instance));
-			predictions.add(partialResult / (1 + partialResult));
+			predictions.add(computePrediction(weights, instance));
 		}
 		return predictions;
+	}
+
+	private double computePrediction(Weights weights, DataInstance instance) {
+		double partialResult = Math.exp(computeWeightFeatureProduct(weights,
+				instance));
+		// TODO is this correct or should it be 1 / (1 + partialResult)
+		// see page 246 in KM versus formula in homework question 1.2 (a)
+		// see page 21 in KM
+		return partialResult / (1 + partialResult);
 	}
 
 	public static void main(String args[]) throws IOException {
