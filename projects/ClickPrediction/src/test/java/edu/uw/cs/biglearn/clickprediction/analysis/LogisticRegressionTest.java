@@ -62,7 +62,7 @@ public class LogisticRegressionTest {
 			// Write losses to a file for later plotting
 			FileWriter writer = new FileWriter(step + "output.csv"); 
 			for(Double avgLoss : avgLosses) {
-			  writer.write(avgLoss.toString());
+			  writer.write(avgLoss.toString()+ "\n");
 			}
 			writer.close();
 
