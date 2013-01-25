@@ -22,7 +22,7 @@ public class LogisticRegressionTest {
 	static final String DATA_PATH = "/Users/deflaux/rework/projects/ClickPrediction/data/";
 
 	static boolean debug = false; // true;
-	static boolean printAssertions = false; // true;
+	static boolean printAssertions = true;
 	static int debugSize = 100;
 	static DataSet training;
 	static DataSet testing;
@@ -58,11 +58,11 @@ public class LogisticRegressionTest {
 			ArrayList<Double> avgLosses = new ArrayList<Double>();
 			Weights weights = LogisticRegression.train(training, lambda, step,
 					avgLosses);
-			
+
 			// Write losses to a file for later plotting
-			FileWriter writer = new FileWriter(step + "output.csv"); 
-			for(Double avgLoss : avgLosses) {
-			  writer.write(avgLoss.toString()+ "\n");
+			FileWriter writer = new FileWriter(step + "output.csv");
+			for (Double avgLoss : avgLosses) {
+				writer.write(avgLoss.toString() + "\n");
 			}
 			writer.close();
 
@@ -73,45 +73,86 @@ public class LogisticRegressionTest {
 					predictions);
 
 			if (0.001 == step) {
-				assertEqualsHelper("1.4.2 (b) l2 norm of weights for step size 0.001",
+				assertEqualsHelper(
+						"1.4.2 (b) l2 norm of weights for step size 0.001",
 						3.8018789742819346, l2norm, DELTA);
 
-				assertEqualsHelper("1.4.2 (b) RMSE of predicted CTR for step size 0.001",
+				assertEqualsHelper(
+						"1.4.2 (b) RMSE of predicted CTR for step size 0.001",
 						0.17117218852652383, rmse, DELTA);
-			}
-			else if (0.01 == step) {
-				assertEqualsHelper("1.4.2 (b) l2 norm of weights for step size 0.01",
+			} else if (0.01 == step) {
+				assertEqualsHelper(
+						"1.4.2 (b) l2 norm of weights for step size 0.01",
 						9.057169765210123, l2norm, DELTA);
 
-				assertEqualsHelper("1.4.2 (b) RMSE of predicted CTR for step size 0.01",
+				assertEqualsHelper(
+						"1.4.2 (b) RMSE of predicted CTR for step size 0.01",
 						0.1713282869636794, rmse, DELTA);
-				assertEqualsHelper("1.4.2 (c) weight for intercept for step size 0.01",
+				assertEqualsHelper(
+						"1.4.2 (c) weight for intercept for step size 0.01",
 						-2.429819110781506, weights.w0, DELTA);
-				assertEqualsHelper("1.4.2 (c) weight for depth for step size 0.01",
+				assertEqualsHelper(
+						"1.4.2 (c) weight for depth for step size 0.01",
 						0.17221938765761013, weights.wDepth, DELTA);
-				assertEqualsHelper("1.4.2 (c) weight for position for step size 0.01",
+				assertEqualsHelper(
+						"1.4.2 (c) weight for position for step size 0.01",
 						-0.7735761366536621, weights.wPosition, DELTA);
-				assertEqualsHelper("1.4.2 (c) weight for age for step size 0.01",
+				assertEqualsHelper(
+						"1.4.2 (c) weight for age for step size 0.01",
 						-0.040948015124305764, weights.wAge, DELTA);
-				assertEqualsHelper("1.4.2 (c) weight for gender for step size 0.01",
+				assertEqualsHelper(
+						"1.4.2 (c) weight for gender for step size 0.01",
 						0.10413821477220414, weights.wGender, DELTA);
-			}
-			else if (0.05 == step) {
-				assertEqualsHelper("1.4.2 (b) l2 norm of weights for step size 0.05",
+			} else if (0.05 == step) {
+				assertEqualsHelper(
+						"1.4.2 (b) l2 norm of weights for step size 0.05",
 						22.29195102596319, l2norm, DELTA);
 
-				assertEqualsHelper("1.4.2 (b) RMSE of predicted CTR for step size 0.05",
+				assertEqualsHelper(
+						"1.4.2 (b) RMSE of predicted CTR for step size 0.05",
 						0.17340495195443922, rmse, DELTA);
-			}
-			else {
+			} else {
 				fail("this step size is not one requested by the homework problem");
 			}
 			resetData();
 		}
 	}
 
-	// n 1.4.3 Regularization part, please set \lambda from 0 to 0.014 spaced by
-	// 0.002. (0, 0.002, 0.004, ..., 0.014).
+	@Test
+	public void test_homework_1_4_3() throws IOException {
+		// n 1.4.3 Regularization part, please set \lambda from 0 to 0.014
+		// spaced by
+		// 0.002. (0, 0.002, 0.004, ..., 0.014).
+		final double MIN_LAMBDA = 0.0;
+		final double MAX_LAMBDA = 0.014;
+		final double LAMBDA_INCREMENT = 0.002;
+		double lambda = 0;
+		double step = 0.05;
+
+		// Write lambda and RMSE to a file for later plotting
+		FileWriter writer = new FileWriter("regularizationOutput.csv");
+
+		while (lambda <= MAX_LAMBDA) {
+			ArrayList<Double> avgLosses = new ArrayList<Double>();
+			Weights weights = LogisticRegression.train(training, lambda, step,
+					avgLosses);
+
+			ArrayList<Double> predictions = LogisticRegression.predict(weights,
+					testing);
+			double rmse = EvalUtil.eval(DATA_PATH + "test_label.txt",
+					predictions);
+
+			writer.write(lambda + ", " + rmse + "\n");
+
+			assertEqualsHelper(
+					"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda " + lambda,
+					0.17340495195443922, rmse, DELTA);
+			
+			lambda += LAMBDA_INCREMENT;
+			resetData();
+		}
+		writer.close();
+	}
 
 	void assertEqualsHelper(String testCase, Double expected, Double actual,
 			Double delta) {

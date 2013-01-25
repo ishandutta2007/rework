@@ -44,8 +44,9 @@ public class LogisticRegression {
 			dotProduct += weights.wGender * instance.gender;
 		}
 		for (int token : instance.tokens) {
-			if (weights.wTokens.containsKey(token)) {
-				dotProduct += weights.wTokens.get(token);
+			Double tokenWeight = weights.wTokens.get(token);
+			if (null != tokenWeight) {
+				dotProduct += tokenWeight;
 				// if token is present, its "value" is 1, otherwise zero
 				// since x_token = 1, not bothering with w_token*1
 			}
@@ -66,6 +67,15 @@ public class LogisticRegression {
 	private static void performDelayedRegularization(int[] tokens,
 			Weights weights, int now, double step, double lambda) {
 		// Fill in your code here.
+		for (int token : tokens) {
+			Integer accessTime = weights.accessTime.get(token);
+			if (null != accessTime) {
+				Double tokenWeight = weights.wTokens.get(token);
+				tokenWeight -= Math.pow((1- step* lambda), now-accessTime-1) * tokenWeight;
+				weights.wTokens.put(token, tokenWeight);
+			}
+			weights.accessTime.put(token, now);
+		}
 	}
 
 	/**
