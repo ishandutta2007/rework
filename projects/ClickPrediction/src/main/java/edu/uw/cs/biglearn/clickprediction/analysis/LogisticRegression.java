@@ -71,7 +71,9 @@ public class LogisticRegression {
 			Integer accessTime = weights.accessTime.get(token);
 			if (null != accessTime) {
 				Double tokenWeight = weights.wTokens.get(token);
-				tokenWeight -= Math.pow((1- step* lambda), now-accessTime-1) * tokenWeight;
+				tokenWeight -= Math.pow((1 - step * lambda), now - accessTime
+						- 1)
+						* tokenWeight;
 				weights.wTokens.put(token, tokenWeight);
 			}
 			weights.accessTime.put(token, now);
@@ -123,17 +125,17 @@ public class LogisticRegression {
 				lossAccumulator = 0.0;
 			}
 
-			if (0 != lambda) {
-				// TODO regularize tokens
-				performDelayedRegularization(instance.tokens, weights, count,
-						step, lambda);
-			}
-
 			double prediction = computePrediction(weights, instance);
 
 			// Only update our weights if the prediction did not match the
 			// outcome
 			if (prediction != instance.clicked) {
+
+				if (0 != lambda) {
+					// TODO regularize tokens
+					performDelayedRegularization(instance.tokens, weights,
+							count, step, lambda);
+				}
 
 				// TODO getting confused by ascent/descent, is this the correct
 				// order for use in the weight update formula?
