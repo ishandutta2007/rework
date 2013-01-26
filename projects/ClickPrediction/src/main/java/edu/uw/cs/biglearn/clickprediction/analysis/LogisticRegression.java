@@ -1,19 +1,10 @@
 package edu.uw.cs.biglearn.clickprediction.analysis;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.print.attribute.standard.DateTimeAtCompleted;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
-
-import edu.uw.cs.biglearn.clickprediction.util.EvalUtil;
 
 public class LogisticRegression {
 	static final int LOSS_AVG_INTERVAL = 100;
@@ -193,6 +184,7 @@ public class LogisticRegression {
 	 * @return An array storing the CTR for each datapoint in the test data.
 	 */
 	public static ArrayList<Double> predict(Weights weights, DataSet dataset) {
+		// Fill in your code here
 		ArrayList<Double> predictions = new ArrayList<Double>();
 
 		while (dataset.hasNext()) {
@@ -206,9 +198,6 @@ public class LogisticRegression {
 			DataInstance instance) {
 		double partialResult = Math.exp(computeWeightFeatureProduct(weights,
 				instance));
-		// TODO is this correct or should it be 1 / (1 + partialResult)
-		// see page 246 in KM versus formula in homework question 1.2 (a)
-		// see page 21 in KM
 		return partialResult / (1 + partialResult);
 	}
 

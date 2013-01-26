@@ -12,7 +12,6 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.uw.cs.biglearn.clickprediction.util.EvalUtil;
@@ -24,7 +23,7 @@ public class LogisticRegressionTest {
 	static final String DATA_PATH = "/Users/deflaux/rework/projects/ClickPrediction/data/";
 
 	static boolean debug = false; // true;
-	static boolean printAssertions = true;
+	static boolean printAssertions = false; // true;
 	static int debugSize = 100;
 	static DataSet training;
 	static DataSet testing;
@@ -46,7 +45,6 @@ public class LogisticRegressionTest {
 		testing.reset();
 	}
 
-	@Ignore
 	@Test
 	public void test_homework_1_4_2() throws IOException {
 		double lambda = 0.0;
@@ -126,17 +124,14 @@ public class LogisticRegressionTest {
 		// n 1.4.3 Regularization part, please set \lambda from 0 to 0.014
 		// spaced by
 		// 0.002. (0, 0.002, 0.004, ..., 0.014).
-		final double MIN_LAMBDA = 0.002; // 0.0;
-		final double MAX_LAMBDA = 0.014;
-		final double LAMBDA_INCREMENT = 0.002;
+		double lambdas[] = { 0.0, 0.002, 0.004, 0.006, 0.008, 0.010, 0.012,
+				0.014 };
 		final double step = 0.05;
-
-		double lambda = MIN_LAMBDA;
 
 		// Write lambda and RMSE to a file for later plotting
 		FileWriter writer = new FileWriter("regularizationOutput.csv");
 
-		while (lambda <= MAX_LAMBDA) {
+		for (double lambda : lambdas) {
 			ArrayList<Double> avgLosses = new ArrayList<Double>();
 			Weights weights = LogisticRegression.train(training, lambda, step,
 					avgLosses);
@@ -148,11 +143,41 @@ public class LogisticRegressionTest {
 
 			writer.write(lambda + ", " + rmse + "\n");
 
-			assertEqualsHelper(
-					"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda "
-							+ lambda, 0.17340495195443922, rmse, DELTA);
-
-			lambda += LAMBDA_INCREMENT;
+			if (0.0 == lambda) {
+				assertEqualsHelper(
+						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.0 ",
+						0.17340495195443922, rmse, DELTA);
+			} else if (0.002 == lambda) {
+				assertEqualsHelper(
+						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.002 ",
+						0.1730549402967381, rmse, DELTA);
+			} else if (0.004 == lambda) {
+				assertEqualsHelper(
+						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.004 ",
+						0.1730825345136964, rmse, DELTA);
+			} else if (0.006 == lambda) {
+				assertEqualsHelper(
+						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.006 ",
+						0.17312417728840185, rmse, DELTA);
+			} else if (0.008 == lambda) {
+				assertEqualsHelper(
+						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.008 ",
+						0.17316953543649385, rmse, DELTA);
+			} else if (0.010 == lambda) {
+				assertEqualsHelper(
+						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.010 ",
+						0.17321520161362647, rmse, DELTA);
+			} else if (0.012 == lambda) {
+				assertEqualsHelper(
+						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.012 ",
+						0.1732598683318878, rmse, DELTA);
+			} else if (0.014 == lambda) {
+				assertEqualsHelper(
+						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.014 ",
+						0.1733029944343876, rmse, DELTA);
+			} else {
+				fail("this lambda is not one requested by the homework problem");
+			}
 			resetData();
 		}
 		writer.close();
