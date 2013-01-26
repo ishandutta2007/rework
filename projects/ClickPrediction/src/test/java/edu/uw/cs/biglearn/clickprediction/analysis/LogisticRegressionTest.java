@@ -12,6 +12,7 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.uw.cs.biglearn.clickprediction.util.EvalUtil;
@@ -23,7 +24,7 @@ public class LogisticRegressionTest {
 	static final String DATA_PATH = "/Users/deflaux/rework/projects/ClickPrediction/data/";
 
 	static boolean debug = false; // true;
-	static boolean printAssertions = false; // true;
+	static boolean printAssertions = true;
 	static int debugSize = 100;
 	static DataSet training;
 	static DataSet testing;
@@ -45,10 +46,11 @@ public class LogisticRegressionTest {
 		testing.reset();
 	}
 
+	@Ignore
 	@Test
 	public void test_homework_1_4_2() throws IOException {
-		double lambda = 0.0;
-		double steps[] = { 0.001, 0.01, 0.05 };
+		final double lambda = 0.0;
+		final double steps[] = { 0.001, 0.01, 0.05 };
 
 		assertEqualsHelper("1.4.2 (b) RMSE of baseline CTR",
 				0.1730837340117073,
@@ -119,13 +121,14 @@ public class LogisticRegressionTest {
 		}
 	}
 
+	@Ignore
 	@Test
 	public void test_homework_1_4_3() throws IOException {
 		// n 1.4.3 Regularization part, please set \lambda from 0 to 0.014
 		// spaced by
 		// 0.002. (0, 0.002, 0.004, ..., 0.014).
-		double lambdas[] = { 0.0, 0.002, 0.004, 0.006, 0.008, 0.010, 0.012,
-				0.014 };
+		final double lambdas[] = { 0.0, 0.002, 0.004, 0.006, 0.008, 0.010,
+				0.012, 0.014 };
 		final double step = 0.05;
 
 		// Write lambda and RMSE to a file for later plotting
@@ -181,6 +184,65 @@ public class LogisticRegressionTest {
 			resetData();
 		}
 		writer.close();
+	}
+
+	@Ignore
+	@Test
+	public void test_homework_1_4_4() throws IOException {
+		final int dims[] = { 97, 12289, 1572869 };
+		final double lambda = 0.001;
+		final double step = 0.01;
+
+		for (int dim : dims) {
+			ArrayList<Double> avgLosses = new ArrayList<Double>();
+			WeightsWithHashedFeatures weights = LogisticRegressionWithHashing
+					.train(training, dim, lambda, step, avgLosses, false);
+
+			ArrayList<Double> predictions = LogisticRegressionWithHashing
+					.predict(weights, testing, false);
+			double rmse = EvalUtil.eval(DATA_PATH + "test_label.txt",
+					predictions);
+
+			switch (dim) {
+			case 97:
+				assertEqualsHelper(
+						"1.4.4 RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 97 ",
+						0.172837898388759, rmse, DELTA);
+				break;
+			case 12289:
+				assertEqualsHelper(
+						"1.4.4 RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 12289 ",
+						0.17283292677211962, rmse, DELTA);
+				break;
+			case 1572869:
+				assertEqualsHelper(
+						"1.4.4 RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 1572869 ",
+						0.17283147528224277, rmse, DELTA);
+				break;
+			default:
+				fail("this lambda is not one requested by the homework problem");
+			}
+			resetData();
+		}
+	}
+
+	@Test
+	public void test_homework_Personalization() throws IOException {
+		final int dim = 12289;
+		final double lambda = 0.001;
+		final double step = 0.01;
+
+		ArrayList<Double> avgLosses = new ArrayList<Double>();
+		WeightsWithHashedFeatures weights = LogisticRegressionWithHashing
+				.train(training, dim, lambda, step, avgLosses, true);
+
+		ArrayList<Double> predictions = LogisticRegressionWithHashing.predict(
+				weights, testing, false);
+		double rmse = EvalUtil.eval(DATA_PATH + "test_label.txt", predictions);
+
+		assertEqualsHelper(
+				"Extra Credit RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 12289 and PERSONALIZATION ",
+				0.172837898388759, rmse, DELTA);
 	}
 
 	void assertEqualsHelper(String testCase, Double expected, Double actual,

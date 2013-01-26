@@ -123,16 +123,10 @@ public class LogisticRegression {
 			if (prediction != instance.clicked) {
 
 				if (0 != lambda) {
-					// TODO regularize tokens
 					performDelayedRegularization(instance.tokens, weights,
 							count, step, lambda);
 				}
 
-				// TODO getting confused by ascent/descent, is this the correct
-				// order for use in the weight update formula?
-				// Is the issue log likelihood see Equation from page 29 of
-				// http://www.cs.washington.edu/education/courses/cse599c1/13wi/slides/perceptron-kernels-sgd-annotated.pdf
-				// versus negative log likelihood in KN p 247 eqn 8.5?
 				double error = instance.clicked - prediction;
 
 				lossAccumulator += Math.pow((error), 2);

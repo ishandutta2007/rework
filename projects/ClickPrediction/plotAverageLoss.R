@@ -1,6 +1,6 @@
 library(ggplot2)
 path = "/Users/deflaux/rework/projects/ClickPrediction/"
-suffix = "output.csv"
+suffix = "Output.csv"
 plotStep <- function(step) {
     averageLosses = read.table(paste(path, step, suffix, sep=""), header=F)
     head(averageLosses)
@@ -13,6 +13,17 @@ plotStep('0.0010')
 plotStep('0.01')
 plotStep('0.05')
 
+plotRMSE <- function(prefix) {
+    rmseData = read.table(paste(path, prefix, suffix, sep=""), sep=",", header=F)
+    colnames(rmseData) <- c('lambda', 'rmse')
+    print(head(rmseData))
+    qplot(rmseData$lambda, rmseData$rmse, 
+          geom=c("point", "smooth"), alpha=I(1/50),
+          main=paste("RMSE versus Lambda"))
+}
+
+plotRMSE('regularization')
+plotRMSE('regularizationA')
 
 # P(y=1)
 curve(1/(1 + exp(-1*(5 + 3*x))), from = -5, to = 5)
