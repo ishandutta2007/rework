@@ -4,12 +4,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Set;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 public class LogisticRegressionWithHashing {
 	static final int LOSS_AVG_INTERVAL = 100;
 	static Logger logger = Logger.getLogger("LogisticRegressionWithHashing");
 
+	static {
+		logger.setLevel(Level.INFO);
+	}
+	
 	/**
 	 * Helper function to compute inner product w^Tx.
 	 * 

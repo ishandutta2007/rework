@@ -12,7 +12,6 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import edu.uw.cs.biglearn.clickprediction.util.EvalUtil;
@@ -46,7 +45,6 @@ public class LogisticRegressionTest {
 		testing.reset();
 	}
 
-	@Ignore
 	@Test
 	public void test_homework_1_4_2() throws IOException {
 		final double lambda = 0.0;
@@ -121,7 +119,6 @@ public class LogisticRegressionTest {
 		}
 	}
 
-	@Ignore
 	@Test
 	public void test_homework_1_4_3() throws IOException {
 		// n 1.4.3 Regularization part, please set \lambda from 0 to 0.014
@@ -186,7 +183,6 @@ public class LogisticRegressionTest {
 		writer.close();
 	}
 
-	@Ignore
 	@Test
 	public void test_homework_1_4_4() throws IOException {
 		final int dims[] = { 97, 12289, 1572869 };
@@ -242,7 +238,7 @@ public class LogisticRegressionTest {
 
 		assertEqualsHelper(
 				"Extra Credit RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 12289 and PERSONALIZATION ",
-				0.172837898388759, rmse, DELTA);
+				0.17283669028140017, rmse, DELTA);
 	}
 
 	void assertEqualsHelper(String testCase, Double expected, Double actual,
