@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import edu.uw.cs.biglearn.clickprediction.util.HashUtil;
-import edu.uw.cs.biglearn.clickprediction.util.StringUtil;
 
 public class HashedDataInstance {
 	// Label

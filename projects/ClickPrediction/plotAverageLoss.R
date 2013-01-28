@@ -23,7 +23,6 @@ plotRMSE <- function(prefix) {
 }
 
 plotRMSE('regularization')
-plotRMSE('regularizationA')
 
 # P(y=1)
 curve(1/(1 + exp(-1*(5 + 3*x))), from = -5, to = 5)
@@ -48,23 +47,16 @@ model
 w0 = model$coefficients[1]
 w1 = model$coefficients[2]
 w2 = model$coefficients[3]
-# predictions (rounding to convert regression to classification)
-round(model$fitted.values)
 
-# number of classification errors on training set
-nrow(data) - sum(y == round(w0 + w1*x1 + w2*x2))
-plot + geom_vline(xintercept=5) + ggtitle("1.2 (a)")
+values <- exp(w0 + w1*x1 + w2*x2)
+values/(1+values)
 
-# number of classification errors with w0==0
-nrow(data) - sum(y == round(0 + w1*x1 + w2*x2))
-# this is wrong, really need to 3d plot
-plot + geom_smooth((0 + w1*x1 + w2*x2)) + ggtitle("1.2 (b)")
+values <- exp(w1*x1 + w2*x2)
+values/(1+values)
 
-nrow(data) - sum(y == round(w0   +  0*x1  +    w2*x2))
-nrow(data) - sum(y == round(w0   +  w1*x1  +    0*x2))
+values <- exp(w0 + w2*x2)
+values/(1+values)
 
-y
-round(w0 + w1*x1 + w2*x2)
-round(0 + w1*x1 + w2*x2)
-round(w0   +  0*x1  +    w2*x2)
-round(w0   +  w1*x1  +    0*x2)
+values <- exp(w0 + w1*x1)
+values/(1+values)
+
