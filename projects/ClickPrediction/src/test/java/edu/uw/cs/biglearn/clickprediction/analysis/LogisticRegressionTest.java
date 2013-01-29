@@ -7,6 +7,8 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
@@ -23,7 +25,7 @@ public class LogisticRegressionTest {
 	static final String DATA_PATH = "/Users/deflaux/rework/projects/ClickPrediction/data/";
 
 	static boolean debug = false; // true;
-	static boolean printAssertions = true;
+	static boolean printAssertions = false; // true;
 	static int debugSize = 100;
 	static DataSet training;
 	static DataSet testing;
@@ -228,17 +230,53 @@ public class LogisticRegressionTest {
 		final double lambda = 0.001;
 		final double step = 0.01;
 
-		ArrayList<Double> avgLosses = new ArrayList<Double>();
-		WeightsWithHashedFeatures weights = LogisticRegressionWithHashing
-				.train(training, dim, lambda, step, avgLosses, true);
+		ArrayList<Double> predictions = null;		
+		{ // nest this block so that we free unnecessary objects 
+			ArrayList<Double> avgLosses = new ArrayList<Double>();
+			WeightsWithHashedFeatures weights = LogisticRegressionWithHashing
+					.train(training, dim, lambda, step, avgLosses, true);
 
-		ArrayList<Double> predictions = LogisticRegressionWithHashing.predict(
-				weights, testing, false);
-		double rmse = EvalUtil.eval(DATA_PATH + "test_label.txt", predictions);
+			predictions = LogisticRegressionWithHashing.predict(weights,
+					testing, false);
+			double rmse = EvalUtil.eval(DATA_PATH + "test_label.txt",
+					predictions);
 
+			assertEqualsHelper(
+					"Extra Credit RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 12289 and PERSONALIZATION ",
+					0.17283669028140017, rmse, DELTA);
+		}
+		Set<Integer> userIntersection = null;
+		{ // nest this block so that we free unnecessary objects 
+			training.reset();
+			testing.reset();
+			Set<Integer> trainingUsers = BasicAnalysis
+					.uniqUsers(training, true);
+			Set<Integer> testingUsers = BasicAnalysis.uniqUsers(testing, true);
+			userIntersection = new HashSet<Integer>(trainingUsers);
+			userIntersection.retainAll(testingUsers);
+			assertEquals(
+					"Number of unique users residing in both the testing and training dataset (intersection)",
+					56075, userIntersection.size());
+		}
+
+		ArrayList<Boolean> includingList = new ArrayList<Boolean>(
+				predictions.size());
+		testing.reset();
+		while (testing.hasNext()) {
+			DataInstance instance = testing.nextInstance();
+			if (userIntersection.contains(instance.userid)) {
+				includingList.add(true);
+			} else {
+				includingList.add(false);
+			}
+		}
+
+		double subsetUsersRMSE = EvalUtil.evalWithIncludingList(DATA_PATH
+				+ "test_label.txt", predictions, includingList);
 		assertEqualsHelper(
-				"Extra Credit RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 12289 and PERSONALIZATION ",
-				0.17283669028140017, rmse, DELTA);
+				"Extra Credit RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 12289 and PERSONALIZATION over user intersection ",
+				0.14187369290793192, subsetUsersRMSE, DELTA);
+
 	}
 
 	void assertEqualsHelper(String testCase, Double expected, Double actual,
@@ -249,6 +287,5 @@ public class LogisticRegressionTest {
 		} else {
 			assertEquals(testCase, expected, actual, delta);
 		}
-
 	}
 }
