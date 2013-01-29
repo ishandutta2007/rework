@@ -28,12 +28,8 @@ public class LogisticRegression {
 		dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
 		dotProduct += weights.wDepth * instance.depth;
 		dotProduct += weights.wPosition * instance.position;
-		if (instance.age != DataInstance.MISSING_AGE) {
-			dotProduct += weights.wAge * instance.age;
-		}
-		if (instance.gender != DataInstance.MISSING_GENDER) {
-			dotProduct += weights.wGender * instance.gender;
-		}
+		dotProduct += weights.wAge * instance.age;
+		dotProduct += weights.wGender * instance.gender;
 		for (int token : instance.tokens) {
 			Double tokenWeight = weights.wTokens.get(token);
 			if (null != tokenWeight) {
@@ -141,18 +137,14 @@ public class LogisticRegression {
 						+ step
 						* ((-1 * lambda * weights.wPosition) + instance.position
 								* (error));
-				if (instance.age != DataInstance.MISSING_AGE) {
-					weights.wAge = weights.wAge
-							+ step
-							* ((-1 * lambda * weights.wAge) + instance.age
-									* (error));
-				}
-				if (instance.gender != DataInstance.MISSING_GENDER) {
-					weights.wGender = weights.wGender
-							+ step
-							* ((-1 * lambda * weights.wGender) + instance.gender
-									* (error));
-				}
+				weights.wAge = weights.wAge
+						+ step
+						* ((-1 * lambda * weights.wAge) + instance.age
+								* (error));
+				weights.wGender = weights.wGender
+						+ step
+						* ((-1 * lambda * weights.wGender) + instance.gender
+								* (error));
 				for (int token : instance.tokens) {
 					// Can be null if this is this data instance is the first
 					// time we've seen this token

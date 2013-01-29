@@ -38,8 +38,9 @@ public class HashedDataInstance {
 		position = Integer.valueOf(fields[offset + 1]);
 		userid = Integer.valueOf(fields[offset + 2]);
 		gender = Integer.valueOf(fields[offset + 3]);
-		gender = (int) ((gender - 1.5) * 2.0); // map gender from {1,2} to {-1,
-												// 1}
+		if (gender != 0)
+			gender = (int) ((gender - 1.5) * 2.0); // map gender from {0,1,2} to
+													// {-1, 1}
 		age = Integer.valueOf(fields[offset + 4]);
 
 		String[] tokens = fields[offset + 5].split(",");

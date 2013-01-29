@@ -14,10 +14,10 @@ import edu.uw.cs.biglearn.clickprediction.util.StringUtil;
  */
 public class DataInstance {
 	static Logger logger = Logger.getLogger("DataInstance");
-	
+
 	public static final int MISSING_CLICK = -1;
 	public static final int MISSING_USER_ID = 0;
-	public static final int MISSING_GENDER = -3;
+	public static final int MISSING_GENDER = 0;
 	public static final int MISSING_AGE = 0;
 
 	// Label
@@ -29,8 +29,9 @@ public class DataInstance {
 	int[] tokens; // list of token ids.
 
 	// Feature of the user
-	int userid; // zero if unavailable 
-	int gender; // user gender indicator -1 for male, 1 for female; -3 if unavailable
+	int userid; // zero if unavailable
+	int gender; // user gender indicator -1 for male, 1 for female; 0 if
+				// unavailable
 	int age; // user age indicator '1' for (0, 12], '2' for (12, 18], '3' for
 				// (18, 24], '4' for (24, 30],
 				// '5' for (30, 40], and '6' for greater than 40.
@@ -57,9 +58,9 @@ public class DataInstance {
 		position = Integer.valueOf(fields[offset + 1]);
 		userid = Integer.valueOf(fields[offset + 2]);
 		gender = Integer.valueOf(fields[offset + 3]);
-		gender = (int) ((gender - 1.5) * 2.0); // map gender from {1,2} to
-												// {-1,
-												// 1}
+		if (gender != 0)
+			gender = (int) ((gender - 1.5) * 2.0); // map gender from {0,1,2} to
+													// {-1, 1}
 		age = Integer.valueOf(fields[offset + 4]);
 		tokens = StringUtil.mapArrayStrToInt(fields[offset + 5].split(","));
 	}
