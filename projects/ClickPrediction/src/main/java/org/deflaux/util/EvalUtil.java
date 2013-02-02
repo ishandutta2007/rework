@@ -1,4 +1,4 @@
-package edu.uw.cs.biglearn.clickprediction.util;
+package org.deflaux.util;
 
 import java.io.BufferedReader;
 import java.io.FileReader;

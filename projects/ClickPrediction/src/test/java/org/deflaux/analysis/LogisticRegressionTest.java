@@ -1,4 +1,4 @@
-package edu.uw.cs.biglearn.clickprediction.analysis;
+package org.deflaux.analysis;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -12,11 +12,18 @@ import java.util.Set;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
+import org.deflaux.analysis.BasicAnalysis;
+import org.deflaux.analysis.DataInstance;
+import org.deflaux.analysis.DataSet;
+import org.deflaux.analysis.LogisticRegression;
+import org.deflaux.analysis.LogisticRegressionWithHashing;
+import org.deflaux.analysis.Weights;
+import org.deflaux.analysis.WeightsWithHashedFeatures;
+import org.deflaux.util.EvalUtil;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import edu.uw.cs.biglearn.clickprediction.util.EvalUtil;
 
 public class LogisticRegressionTest {
 

@@ -1,4 +1,4 @@
-package edu.uw.cs.biglearn.clickprediction.preprocess;
+package org.deflaux.preprocess;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -10,7 +10,8 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 
-import edu.uw.cs.biglearn.clickprediction.util.StringUtil;
+import org.deflaux.util.StringUtil;
+
 
 /**
  * The program to join the training and testing data with the additional feature

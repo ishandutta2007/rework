@@ -1,9 +1,10 @@
-package edu.uw.cs.biglearn.clickprediction.analysis;
+package org.deflaux.analysis;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.uw.cs.biglearn.clickprediction.util.HashUtil;
+import org.deflaux.util.HashUtil;
+
 
 public class HashedDataInstance {
 	// Label

@@ -1,15 +1,14 @@
-package edu.uw.cs.biglearn.clickprediction.analysis;
+package org.deflaux.analysis;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Set;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-public class LogisticRegressionWithHashing {
+public class LogisticRegression {
 	static final int LOSS_AVG_INTERVAL = 100;
-	static Logger logger = Logger.getLogger("LogisticRegressionWithHashing");
+	static Logger logger = Logger.getLogger("LogisticRegression");
 
 	static {
 		logger.setLevel(Level.INFO);
@@ -22,8 +21,8 @@ public class LogisticRegressionWithHashing {
 	 * @param instance
 	 * @return
 	 */
-	private static double computeWeightFeatureProduct(
-			WeightsWithHashedFeatures weights, HashedDataInstance instance) {
+	private static double computeWeightFeatureProduct(Weights weights,
+			DataInstance instance) {
 		// Fill in your code here
 		double dotProduct = 0.0;
 		dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
@@ -31,8 +30,13 @@ public class LogisticRegressionWithHashing {
 		dotProduct += weights.wPosition * instance.position;
 		dotProduct += weights.wAge * instance.age;
 		dotProduct += weights.wGender * instance.gender;
-		for (int featureid : instance.hashedTextFeature.keySet()) {
-			dotProduct += weights.wHashedFeature[featureid];
+		for (int token : instance.tokens) {
+			Double tokenWeight = weights.wTokens.get(token);
+			if (null != tokenWeight) {
+				dotProduct += tokenWeight;
+				// if token is present, its "value" is 1, otherwise zero
+				// since x_token = 1, not bothering with w_token*1
+			}
 		}
 		return dotProduct;
 	}
@@ -41,28 +45,26 @@ public class LogisticRegressionWithHashing {
 	 * Apply delayed regularization to the weights corresponding to the given
 	 * tokens.
 	 * 
-	 * @param featureids
+	 * @param tokens
 	 * @param weights
 	 * @param now
 	 * @param step
 	 * @param lambda
 	 */
-	private static void performDelayedRegularization(Set<Integer> featureids,
-			WeightsWithHashedFeatures weights, int now, double step,
-			double lambda) {
-		// Fill in your code here
-		for (int featureid : featureids) {
-			Integer accessTime = weights.accessTime.get(featureid);
+	private static void performDelayedRegularization(int[] tokens,
+			Weights weights, int now, double step, double lambda) {
+		// Fill in your code here.
+		for (int token : tokens) {
+			Integer accessTime = weights.accessTime.get(token);
 			if (null != accessTime) {
-				Double featureWeight = weights.wHashedFeature[featureid];
-				featureWeight -= Math.pow((1 - step * lambda), now - accessTime
+				Double tokenWeight = weights.wTokens.get(token);
+				tokenWeight -= Math.pow((1 - step * lambda), now - accessTime
 						- 1)
-						* featureWeight;
-				weights.wHashedFeature[featureid] = featureWeight;
+						* tokenWeight;
+				weights.wTokens.put(token, tokenWeight);
 			}
-			weights.accessTime.put(featureid, now);
+			weights.accessTime.put(token, now);
 		}
-
 	}
 
 	/**
@@ -74,11 +76,19 @@ public class LogisticRegressionWithHashing {
 	 * @param step
 	 * @return the weights for the model.
 	 */
-	public static WeightsWithHashedFeatures train(DataSet dataset, int dim,
-			double lambda, double step, ArrayList<Double> AvgLoss,
-			boolean personalized) {
-		// Fill in your code here
-		WeightsWithHashedFeatures weights = new WeightsWithHashedFeatures(dim);
+	public static Weights train(DataSet dataset, double lambda, double step,
+			ArrayList<Double> AvgLoss) {
+
+		// Fill in your code here. The structure should look like:
+		// For each data point: {
+		// Your code: perform delayed regularization
+		// Your code: predict the label, record the loss
+		// Your code: compute w0 + <w, x>, and gradient
+		// Your code: update weights along the negative gradient
+		// }
+
+		Weights weights = new Weights();
+		Weights weightAccumulator = new Weights();
 		int count = 0;
 		double lossAccumulator = 0.0;
 		AvgLoss.add(lossAccumulator);
@@ -86,8 +96,7 @@ public class LogisticRegressionWithHashing {
 				+ lambda + " and step size " + step);
 
 		while (dataset.hasNext()) {
-			HashedDataInstance instance = dataset.nextHashedInstance(dim,
-					personalized);
+			DataInstance instance = dataset.nextInstance();
 			count++;
 			if (count % LOSS_AVG_INTERVAL == 0) {
 				double avgLoss = lossAccumulator / LOSS_AVG_INTERVAL;
@@ -96,8 +105,6 @@ public class LogisticRegressionWithHashing {
 						+ lambda
 						+ ", step:"
 						+ step
-						+ ", dim:"
-						+ dim
 						+ ") with "
 						+ count
 						+ " cases so far with avg loss for this 100 case interval: "
@@ -112,8 +119,7 @@ public class LogisticRegressionWithHashing {
 			if (prediction != instance.clicked) {
 
 				if (0 != lambda) {
-					performDelayedRegularization(
-							instance.hashedTextFeature.keySet(), weights,
+					performDelayedRegularization(instance.tokens, weights,
 							count, step, lambda);
 				}
 
@@ -139,16 +145,21 @@ public class LogisticRegressionWithHashing {
 						+ step
 						* ((-1 * lambda * weights.wGender) + instance.gender
 								* (error));
-				for (int featureid : instance.hashedTextFeature.keySet()) {
+				for (int token : instance.tokens) {
 					// Can be null if this is this data instance is the first
-					// time we've seen this feature
-					double featureWeight = weights.wHashedFeature[featureid];
-					weights.wHashedFeature[featureid] = featureWeight + step
-							* error;
+					// time we've seen this token
+					Double tokenWeight = weights.wTokens.get(token);
+					if (null == tokenWeight) {
+						tokenWeight = 0.0;
+					}
+					weights.wTokens.put(token, tokenWeight + step * error);
 				}
+				weightAccumulator.runningAverage(weights, instance.tokens,
+						count);
 			}
 		}
-		return weights;
+		// Do _not_ return the running average of weights for this HW problem
+		return weights; // weightAccumulator;
 	}
 
 	/**
@@ -158,21 +169,19 @@ public class LogisticRegressionWithHashing {
 	 * @param dataset
 	 * @return An array storing the CTR for each datapoint in the test data.
 	 */
-	public static ArrayList<Double> predict(WeightsWithHashedFeatures weights,
-			DataSet dataset, boolean personalized) {
+	public static ArrayList<Double> predict(Weights weights, DataSet dataset) {
 		// Fill in your code here
 		ArrayList<Double> predictions = new ArrayList<Double>();
 
 		while (dataset.hasNext()) {
-			HashedDataInstance instance = dataset.nextHashedInstance(
-					weights.featuredim, personalized);
+			DataInstance instance = dataset.nextInstance();
 			predictions.add(computePrediction(weights, instance));
 		}
 		return predictions;
 	}
 
-	private static double computePrediction(WeightsWithHashedFeatures weights,
-			HashedDataInstance instance) {
+	private static double computePrediction(Weights weights,
+			DataInstance instance) {
 		double partialResult = Math.exp(computeWeightFeatureProduct(weights,
 				instance));
 		return partialResult / (1 + partialResult);
@@ -181,6 +190,5 @@ public class LogisticRegressionWithHashing {
 	public static void main(String args[]) throws IOException {
 		// Fill in your code here
 		System.out.println("See unit tests for answers to homework questions");
-
 	}
 }

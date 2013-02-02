@@ -60,3 +60,10 @@ values/(1+values)
 values <- exp(w0 + w1*x1)
 values/(1+values)
 
+# http://stackoverflow.com/questions/3979240/r-plotting-a-3d-surface-from-x-y-z
+persp(x1, x2, y)
+
+library(rgl)
+library(akima)
+s=interp(x1,x2,y)
+surface3d(s$x,s$y,s$z)

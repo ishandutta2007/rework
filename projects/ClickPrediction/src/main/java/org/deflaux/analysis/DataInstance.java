@@ -1,10 +1,10 @@
-package edu.uw.cs.biglearn.clickprediction.analysis;
+package org.deflaux.analysis;
 
 import java.util.Arrays;
 
 import org.apache.log4j.Logger;
+import org.deflaux.util.StringUtil;
 
-import edu.uw.cs.biglearn.clickprediction.util.StringUtil;
 
 /**
  * This class represents an instance of the data.

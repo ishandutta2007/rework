@@ -1,4 +1,4 @@
-package edu.uw.cs.biglearn.clickprediction.analysis;
+package org.deflaux.analysis;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;

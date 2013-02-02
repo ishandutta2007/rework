@@ -1,7 +1,9 @@
-package edu.uw.cs.biglearn.clickprediction.analysis;
+package org.deflaux.analysis;
 
 import static org.junit.Assert.*;
 import org.apache.log4j.BasicConfigurator;
+import org.deflaux.analysis.BasicAnalysis;
+import org.deflaux.analysis.DataSet;
 
 import java.io.FileNotFoundException;
 import java.util.HashSet;
