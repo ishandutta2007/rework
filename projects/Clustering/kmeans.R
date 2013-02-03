@@ -4,11 +4,36 @@ library(foreach)
 library(testthat)
 library(ggplot2)
 
-llyodsKmeans <- function(k, data, delta=0.01, plotFilename=NA) {
+randomSample <- function(k, data) {
     # Randomly choose our k centroids from our N data points
     centroids = data[sample(nrow(data),k),c('x1','x2')]
     centroids <- cbind(centroids, cluster=as.factor(seq(1,k)))
-    print(centroids)
+    print(paste("Random sample:", centroids))
+    centroids
+}
+
+kmeansPlusPlusSample <- function(k, data) {
+    # Randomly choose our first centroid from our N data points
+    centroids = data[sample(nrow(data),1),c('x1','x2')]
+    for(i in seq(2,k)) {
+        distances = apply(data[,c('x1','x2')], 1, function(x){
+            sqrt(sum((x - centroids[i-1,]) ^ 2))
+        })
+        probs = distances/sum(distances)
+        centroids <- rbind(centroids, 
+                           data[sample(nrow(data),1,prob=probs),c('x1','x2')])
+    }
+    expect_that(nrow(centroids), equals(k))
+    centroids <- cbind(centroids, cluster=as.factor(seq(1,k)))
+    print(paste("KMeans++ sample:", centroids))
+    expect_that(ncol(centroids), equals(3))
+    centroids
+}
+
+llyodsKmeans <- function(k, data, delta=0.01, samplingFunction=randomSample, plotFilename=NA) {
+    # Randomly choose our k centroids from our N data points
+    centroids = samplingFunction(k=k, data=data)
+    centroids <- cbind(centroids, cluster=as.factor(seq(1,k)))
 
     prevCost = NA
     currentCost = NA
@@ -57,8 +82,8 @@ llyodsKmeans <- function(k, data, delta=0.01, plotFilename=NA) {
 }
 
 plotClusters <- function(data, centroids) {
-    p <- ggplot(data=data, aes(x=x1, y=x2, color=cluster))
-    p <- p + geom_point() + geom_point(data=centroids, aes(x=x1, y=x2, color=cluster), size=5)
+    p <- ggplot(data=data, aes(x=x1, y=x2, color=cluster)) + geom_point()
+    p <- p + geom_point(data=centroids, aes(x=x1, y=x2, color=cluster), size=5)
     p <- p + geom_point(data=centroids, aes(x=x1, y=x2, color=cluster), shape=19, size=52, alpha=.5, show_guide=FALSE)
     p
 }
@@ -100,3 +125,13 @@ sd(unlist(allCosts))
 allCentroids = lapply(results, function(result) {result$centroids})
 plotAllCentroids(data, allCentroids)
 ggsave(file='3by20kmeans.pdf')
+
+# 2.2.2 (d)
+results = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=3, data=data, delta=0.01, samplingFunction=kmeansPlusPlusSample)
+allCosts = lapply(results, function(result) {result$costs})
+min(unlist(allCosts))
+mean(unlist(allCosts))
+sd(unlist(allCosts))
+allCentroids = lapply(results, function(result) {result$centroids})
+plotAllCentroids(data, allCentroids)
+ggsave(file='3by20kmeansPlusPlus.pdf')
