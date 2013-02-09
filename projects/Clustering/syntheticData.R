@@ -5,83 +5,8 @@ library(testthat)
 library(ggplot2)
 library(mvtnorm)
 
-randomSample <- function(k, data) {
-    # Randomly choose our k centroids from our N data points
-    centroids = data[sample(nrow(data),k),c('x1','x2')]
-    centroids <- cbind(centroids, cluster=as.factor(seq(1,k)))
-    print(paste("Random sample:", centroids))
-    centroids
-}
-
-kmeansPlusPlusSample <- function(k, data) {
-    # Randomly choose our _first_ centroid from our N data points
-    centroids = data[sample(nrow(data),1),c('x1','x2')]
-    # Choose the rest using the probability distribution given by the 
-    # distance from the most recently chosen centroid
-    for(i in seq(2,k)) {
-        distances = apply(data[,c('x1','x2')], 1, function(x){
-            sqrt(sum((x - centroids[i-1,]) ^ 2))
-        })
-        probs = distances/sum(distances)
-        centroids <- rbind(centroids, 
-                           data[sample(nrow(data),1,prob=probs),c('x1','x2')])
-    }
-    expect_that(nrow(centroids), equals(k))
-    centroids <- cbind(centroids, cluster=as.factor(seq(1,k)))
-    print(paste("KMeans++ sample:", centroids))
-    expect_that(ncol(centroids), equals(3))
-    centroids
-}
-
-llyodsKmeans <- function(k, data, delta, samplingFunction=randomSample, plotFilename=NA) {
-    # Randomly choose our k centroids from our N data points
-    centroids = samplingFunction(k=k, data=data)
-
-    prevCost = NA
-    currentCost = NA
-    iteration = 0
-    
-    while(TRUE) {
-        # E Step: Assign each data point to the closest cluster
-        clusters = apply(data[,c('x1','x2')], 
-                         1, 
-                         function(x) { 
-                             distances <- apply(centroids[,c('x1','x2')], 1, function(mu) { sqrt(sum((x - mu) ^ 2)) } )    
-                             which.min(distances)
-                         }
-        )
-        expect_that(length(clusters), equals(nrow(data)))
-        data$cluster <- as.factor(clusters)
-        expect_that(ncol(data), equals(4))
-        
-        # M Step: Compute the average of all points assigned to each centroid and then update each
-        newcentroids = sapply(seq(1:k), function(c) { colSums(data[data$cluster==c,c('x1','x2')])/nrow(data[data$cluster==c,c('x1','x2')]) })
-        centroids[,c('x1','x2')] = t(newcentroids)
-        
-        # Compute Cost
-        costs <- sapply(seq(1:k), 
-                        function(cluster) { sum(
-                            apply(data[data$cluster==cluster,c('x1','x2')], 
-                                  1, 
-                                  function(x) { (x - centroids[cluster,c('x1','x2')])^2 })) })
-        currentCost = sum(costs)
-        if(!is.na(prevCost)) {
-            if(delta > (prevCost - currentCost)) {
-                break;
-            }
-        }
-        prevCost = currentCost
-        iteration = iteration+1
-        print(paste('NumClusters:', k, 'Iteration:', iteration))
-        expect_that(data[,c('x1','x2')], equals(origData[,c('x1','x2')]))
-    }
-    
-    if(!is.na(plotFilename)) {
-        plotClusters(data, centroids)
-        ggsave(file=plotFilename)
-    }
-    list(k=k, numIterations=iteration, centroids=centroids, costs=costs)
-}
+source('centroidSamplingFunctions.R')
+source('kmeans.R')
 
 mixtureOfGaussians <- function(k, data, delta, samplingFunction=randomSample, plotFilename=NA) {
     # Randomly choose our k centroids from our N data points
@@ -192,41 +117,53 @@ mcoptions <- list(preschedule=FALSE, set.seed=TRUE)
 origData <- read.csv('./data/2DGaussianMixture.csv', header=TRUE)
 str(origData)
 expect_that(ncol(origData), equals(3))
-data <- cbind(origData, cluster=as.factor(rep(-1, nrow(origData))))
-str(data)
-expect_that(ncol(data), equals(4))
 DELTA = 0.000001
 
 # 2.2.1 (b)
 results = foreach(k=c(2, 3, 5, 10, 15, 20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=k, 
-                                                                                               data=data, 
-                                                                                               delta=DELTA, 
-                                                                                               plotFilename=paste(k,'kmeans.pdf',sep='_'))
-lapply(results, function(result) { print(paste('k:', result$k, 'number of iterations:', result$numIterations))})
+                                                                                               data=origData[,c('x1','x2')], 
+                                                                                               delta=DELTA)
+lapply(results, function(result) { 
+    print(paste('k:', result$k, 'number of iterations:', result$numIterations))
+    centroids <- as.data.frame(result$centroids)
+    centroids$cluster <- as.factor(seq(1,result$k))
+    expect_that(ncol(centroids), equals(3))
+    data <- as.data.frame(cbind(origData, cluster=as.factor(result$clusters)))
+    expect_that(ncol(data), equals(4))
+    plotFilename=paste(result$k,'kmeans.pdf',sep='_')
+    plotClusters(data, centroids)
+    ggsave(file=plotFilename)
+    })
 
 # 2.2.2 (c)
-results = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=3, data=data, delta=DELTA)
+results = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=3, 
+                                                                                  data=origData[,c('x1','x2')], 
+                                                                                  delta=DELTA)
 allCosts = lapply(results, function(result) {result$costs})
 min(unlist(allCosts))
 mean(unlist(allCosts))
 sd(unlist(allCosts))
-allCentroids = lapply(results, function(result) {result$centroids})
-plotAllCentroids(data, allCentroids)
+allCentroids = lapply(results, function(result) {as.data.frame(result$centroids)})
+# allCentroids = as.data.frame(do.call(rbind,allCentroids))
+plotAllCentroids(origData, allCentroids)
 ggsave(file='3by20kmeans.pdf')
 
 # 2.2.2 (d)
-results = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=3, data=data, delta=DELTA, samplingFunction=kmeansPlusPlusSample)
+results = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=3, 
+                                                                                  data=origData[,c('x1','x2')], 
+                                                                                  delta=DELTA, 
+                                                                                  samplingFunction=kmeansPlusPlusSample)
 allCosts = lapply(results, function(result) {result$costs})
 min(unlist(allCosts))
 mean(unlist(allCosts))
 sd(unlist(allCosts))
-allCentroids = lapply(results, function(result) {result$centroids})
-plotAllCentroids(data, allCentroids)
+allCentroids = lapply(results, function(result) {as.data.frame(result$centroids)})
+plotAllCentroids(origData, allCentroids)
 ggsave(file='3by20kmeansPlusPlus.pdf')
 
 # 2.2.2 (g)
 results = foreach(k=c(2, 3, 5), .options.multicore=mcoptions) %do% mixtureOfGaussians(k=k, 
-                                                                                   data=data, 
+                                                                                   data=origData[,c('x1','x2')], 
                                                                                    delta=DELTA, 
                                                                                    samplingFunction=kmeansPlusPlusSample,
                                                                                    plotFilename=paste(k,'mixed.pdf',sep='_'))
