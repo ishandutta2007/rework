@@ -4,6 +4,8 @@ library(foreach)
 library(testthat)
 library(Matrix)
 
+source('kmeans.R')
+
 # Constants and some environment initialization
 DELTA = 0.000001
 NUM_TERMS = 99
@@ -76,6 +78,7 @@ system(paste('cat', tfidfFile, '>>', tfidfMMFile))
 tfidfMatrix <- t(readMM(tfidfMMFile))
 expect_equal(tfidf[tfidf$docid==42 & tfidf$termid==23, 'tfidf'], tfidfMatrix[42,23])
 
+# 2.2.2.(a)
 for(class in seq(0,NUM_CLASSES-1)) {
     docsInClass = unlist(subset(docClasses, classid == class, docid))
     numDocsInClass = length(docsInClass)
@@ -86,3 +89,21 @@ for(class in seq(0,NUM_CLASSES-1)) {
                     '   avg tfidf:', sortedSums$x[termImportance]/numDocsInClass))
     }
 }
+
+hardcodedCentroids <- function(k, data) {
+    centers
+}
+
+# 2.2.2 (c)
+labels = as.factor(docClasses$classid+1) # 0-4 -> 1-5
+result = llyodsKmeans(k=NUM_CLASSES,
+                      data=tfidfMatrix,
+                      labels=labels,
+                      samplingFunction=hardcodedCentroids,
+                      delta=DELTA)
+losses = as.data.frame(cbind(loss=unlist(result$loss)[1:5], iteration=seq(1,5)))
+p <- qplot(loss, iteration, data=losses)
+p + geom_smooth()
+ggsave(file='bbckmeans.pdf')
+
+

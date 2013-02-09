@@ -102,9 +102,7 @@ plotClusters <- function(data, centroids) {
 
 plotAllCentroids <- function(data, allCentroids) {
     p <- ggplot(data=data, aes(x=x1, y=x2)) + geom_point(color='grey75')
-    for(centroids in allCentroids) {
-        p <- p + geom_point(data=centroids, aes(x=x1, y=x2), color='black', size=5)
-    }
+    p <- p + geom_point(data=allCentroids, aes(x=x1, y=x2), color='black', size=5)
     p
 }
 
@@ -138,13 +136,14 @@ lapply(results, function(result) {
 # 2.2.2 (c)
 results = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=3, 
                                                                                   data=origData[,c('x1','x2')], 
+                                                                                  labels=as.factor(origData[,'class']), 
                                                                                   delta=DELTA)
-allCosts = lapply(results, function(result) {result$costs})
+allCosts = lapply(results, function(result) {result$finalCosts})
 min(unlist(allCosts))
 mean(unlist(allCosts))
 sd(unlist(allCosts))
 allCentroids = lapply(results, function(result) {as.data.frame(result$centroids)})
-# allCentroids = as.data.frame(do.call(rbind,allCentroids))
+allCentroids = as.data.frame(do.call(rbind,allCentroids))
 plotAllCentroids(origData, allCentroids)
 ggsave(file='3by20kmeans.pdf')
 
@@ -153,11 +152,12 @@ results = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmean
                                                                                   data=origData[,c('x1','x2')], 
                                                                                   delta=DELTA, 
                                                                                   samplingFunction=kmeansPlusPlusSample)
-allCosts = lapply(results, function(result) {result$costs})
+allCosts = lapply(results, function(result) {result$finalCosts})
 min(unlist(allCosts))
 mean(unlist(allCosts))
 sd(unlist(allCosts))
 allCentroids = lapply(results, function(result) {as.data.frame(result$centroids)})
+allCentroids = as.data.frame(do.call(rbind,allCentroids))
 plotAllCentroids(origData, allCentroids)
 ggsave(file='3by20kmeansPlusPlus.pdf')
 

@@ -5,15 +5,18 @@ library(testthat)
 library(ggplot2)
 library(mvtnorm)
 
-llyodsKmeans <- function(k, data, delta, samplingFunction=randomSample) {
+llyodsKmeans <- function(k, data, delta, labels=NA, samplingFunction=randomSample) {
     # Randomly choose our k centroids from our N data points
     centroids = samplingFunction(k=k, data=data)
     
     prevCost = NA
     currentCost = NA
     iteration = 0
+    loss = list()
     
     while(TRUE) {
+        iteration = iteration+1
+        
         # E Step: Assign each data point to the closest cluster
         clusters = apply(data, 
                          1, 
@@ -29,6 +32,11 @@ llyodsKmeans <- function(k, data, delta, samplingFunction=randomSample) {
         newcentroids = sapply(seq(1:k), function(c) { colSums(data[clusters==c,])/nrow(data[clusters==c,]) })
         centroids = t(newcentroids)
         
+        # Compute Loss
+        if(0 == sum(is.na(labels))) {
+            loss[[iteration]] = sum(labels != clusters)            
+        }
+        
         # Compute Cost
         costs <- sapply(seq(1:k), 
                         function(cluster) { sum(
@@ -42,9 +50,8 @@ llyodsKmeans <- function(k, data, delta, samplingFunction=randomSample) {
             }
         }
         prevCost = currentCost
-        iteration = iteration+1
         print(paste('NumClusters:', k, 'Iteration:', iteration))
     }
     
-    list(k=k, numIterations=iteration, centroids=centroids, clusters=clusters, costs=costs)
+    list(k=k, numIterations=iteration, centroids=centroids, clusters=clusters, finalCosts=costs, loss=loss)
 }
