@@ -1,3 +1,5 @@
+require(testthat)
+
 randomSample <- function(k, data) {
     # Randomly choose our k centroids from our N data points
     centroids = data[sample(nrow(data),k),]

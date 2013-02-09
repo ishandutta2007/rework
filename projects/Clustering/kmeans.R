@@ -1,12 +1,7 @@
-library(multicore)
-library(doMC)
-library(foreach)
-library(testthat)
-library(ggplot2)
-library(mvtnorm)
+require(testthat)
 
 llyodsKmeans <- function(k, data, delta, labels=NA, samplingFunction=randomSample) {
-    # Randomly choose our k centroids from our N data points
+    # Choose our k centroids from our N data points
     centroids = samplingFunction(k=k, data=data)
     
     prevCost = NA
