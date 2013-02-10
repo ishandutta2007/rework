@@ -1,4 +1,4 @@
-package edu.uw.cs.biglearn.hadoop.kmeans.mapred;
+package org.deflaux.hadoop.kmeans.mapred;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -19,10 +19,10 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.StringUtils;
+import org.deflaux.hadoop.kmeans.Cluster;
+import org.deflaux.hadoop.kmeans.Document;
+import org.deflaux.hadoop.util.MathUtil;
 
-import edu.uw.cs.biglearn.hadoop.kmeans.Cluster;
-import edu.uw.cs.biglearn.hadoop.kmeans.Document;
-import edu.uw.cs.biglearn.util.MathUtil;
 
 /**
  * Mapper computes the cluster assignment of each document.

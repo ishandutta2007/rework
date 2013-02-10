@@ -1,4 +1,4 @@
-package edu.uw.cs.biglearn.hadoop.kmeans.io;
+package org.deflaux.hadoop.kmeans.io;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.lib.MultipleTextOutputFormat;

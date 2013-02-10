@@ -1,25 +1,32 @@
-package edu.uw.cs.biglearn.hadoop.kmeans;
+package org.deflaux.hadoop.kmeans;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Class representing a document with with its mean and id.
+ * Class representing a cluster center with its mean and id. 
  * @author haijieg
  */
-public class Document {
-	public String id;
+public class Cluster {
+	public int id;
 	public Map<Integer, Double> tfidf;
 	
-	public Document(String id, Map<Integer, Double> tfidf) {
-		this.id = id;
-		this.tfidf = new HashMap<Integer, Double>(tfidf);
+	/**
+	 * Creates an empty cluster with id=-1.
+	 */
+	public Cluster() {
+		id = -1;
+		tfidf = new HashMap<Integer, Double>();
 	}
 	
-	public Document(String line) {
+	/**
+	 * Parse the string and fill in the cluster.
+	 * @param line
+	 */
+	public void read(String line) {
 		String[] splits = line.split("\\|");
-		id = splits[0];
+		id = Integer.parseInt(splits[0]);
 		tfidf = new HashMap<Integer, Double>();
 		String[] tokens = (splits[1].split(","));
 		for (String token: tokens) {
@@ -28,14 +35,9 @@ public class Document {
 		}
 	}
 	
-	public Document(Document other) {
-		this.id = other.id;
-		this.tfidf = new HashMap<Integer, Double>(other.tfidf);
-	}
-	
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder(id + "\\|");
+		StringBuilder builder = new StringBuilder(id + "|");
 		boolean addcomma = false;
 		for (Entry<Integer, Double> pair : tfidf.entrySet()) {
 			if (addcomma) {

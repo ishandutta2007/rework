@@ -1,4 +1,4 @@
-package edu.uw.cs.biglearn.hadoop.kmeans.mapred;
+package org.deflaux.hadoop.kmeans.mapred;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,9 +20,9 @@ import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.TextInputFormat;
+import org.deflaux.hadoop.kmeans.Cluster;
+import org.deflaux.hadoop.kmeans.io.ClusterOutputFormat;
 
-import edu.uw.cs.biglearn.hadoop.kmeans.Cluster;
-import edu.uw.cs.biglearn.hadoop.kmeans.io.ClusterOutputFormat;
 
 public class KmeansMRDriver {
 	

@@ -1,4 +1,4 @@
-package edu.uw.cs.biglearn.util;
+package org.deflaux.hadoop.util;
 
 import java.util.Iterator;
 

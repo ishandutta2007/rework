@@ -1,4 +1,4 @@
-package edu.uw.cs.biglearn.hadoop.kmeans.mapred;
+package org.deflaux.hadoop.kmeans.mapred;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,10 +16,10 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.lib.MultipleOutputs;
+import org.deflaux.hadoop.kmeans.Cluster;
+import org.deflaux.hadoop.kmeans.Document;
+import org.deflaux.hadoop.util.MathUtil;
 
-import edu.uw.cs.biglearn.hadoop.kmeans.Cluster;
-import edu.uw.cs.biglearn.hadoop.kmeans.Document;
-import edu.uw.cs.biglearn.util.MathUtil;
 
 /**
  * Update the cluster center and compute the with-in class distances
