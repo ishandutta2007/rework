@@ -1,7 +1,7 @@
 require(testthat)
 require(mvtnorm)
 
-mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=randomSample) {
+mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=randomSample, lambda=0.2) {
     # Choose our k centroids from our N data points
     centroids = samplingFunction(k=k, data=data)
     clusterMu = as.matrix(centroids)
@@ -17,7 +17,7 @@ mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=rando
     losses = list()
     likelihoods = list()
     
-    for(i in seq(1,20)) {
+    for(i in seq(1,2000)) {
 #    while(TRUE) {
         iteration = iteration+1
         expect_that(sum(clusterPi), equals(1))
@@ -53,15 +53,19 @@ mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=rando
             numerator = squaredDistance * responsibilities[,cluster]
             expect_that(dim(numerator), equals(dim(X)))
             sigmaSquared = colSums(numerator)/sum(responsibilities[,cluster])
+            # Perform regularization
             expect_that(length(sigmaSquared), equals(ncol(X)))            
-            clusterSigma[[cluster]] = diag(sigmaSquared)
+            clusterSigma[[cluster]] = (1-lambda)*diag(sigmaSquared) + lambda*diag(ncol(X))
             expect_that(c(ncol(X),ncol(X)), equals(dim(clusterSigma[[cluster]])))
         }
                 
+        # Perform hard assignment
+        clusters = factor(x=apply(responsibilities, 1, which.max), levels=seq(1,k))
+        expect_that(nrow(X), equals(length(clusters)))
+        
         # Compute Loss
         if(0 == sum(is.na(labels))) {
-            # TODO FIX THIS, GET CLARIFICATION ON HOW TO DETERMINE CURRENT CLUSTERS
- #           loss[[iteration]] = sum(labels != clusters)            
+           loss[[iteration]] = sum(labels != clusters)            
         }
         
         # Compute likelihood
@@ -82,5 +86,5 @@ mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=rando
     }
     
     centriods <- clusterMu
-    list(k=k, numIterations=iteration, centroids=centroids, likelihoods=likelihoods, losses=losses)
+    list(k=k, numIterations=iteration, centroids=centroids, clusters=clusters, likelihoods=likelihoods, loss=loss)
 }
