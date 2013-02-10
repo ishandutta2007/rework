@@ -47,7 +47,6 @@ public class KmeansMapper  extends MapReduceBase implements Mapper<LongWritable,
 		}
 	}
 	
-	@Override
 	public void map(LongWritable id, Text line,
 			OutputCollector<IntWritable, Text> out, Reporter reporter)
 			throws IOException {

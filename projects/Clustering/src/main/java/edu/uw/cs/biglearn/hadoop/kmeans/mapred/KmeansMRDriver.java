@@ -120,7 +120,6 @@ public class KmeansMRDriver {
 			List<Entry<Integer, Double>> entries = new ArrayList<Entry<Integer, Double>>(c.tfidf.entrySet());
 			// sort the entries by tfidf
 			Collections.sort(entries, new Comparator<Entry<Integer, Double>> () {
-				@Override
 				public int compare(Entry<Integer, Double> arg0,
 						Entry<Integer, Double> arg1) {
 					if (arg0.getValue() < arg1.getValue())

@@ -27,7 +27,6 @@ import edu.uw.cs.biglearn.util.MathUtil;
  */
 public class KmeansReducer extends MapReduceBase implements Reducer<IntWritable, Text, Text, Text>{
 	
-	@Override
 	public void reduce(IntWritable key, Iterator<Text> values,
 			OutputCollector<Text, Text> out, Reporter reporter) throws IOException {
 		
