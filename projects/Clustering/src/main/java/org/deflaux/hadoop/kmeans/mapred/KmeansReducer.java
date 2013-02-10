@@ -32,10 +32,36 @@ public class KmeansReducer extends MapReduceBase implements Reducer<IntWritable,
 		
 		Cluster c = new Cluster();
 		double dist = 0.0;
+		int count = 0;
 	
 		/**
 		 * Your code goes in here.
 		 */
+		while (values.hasNext()) {
+			Text value = values.next();
+			Document document = new Document(value.toString());
+			
+			for(Entry<Integer,Double> entry : document.tfidf.entrySet()) {
+				Double tfidfAccumulator = c.tfidf.get(entry.getKey());
+				if(null == tfidfAccumulator) {
+					tfidfAccumulator = 0.0;
+				}
+				double tfidfSum = tfidfAccumulator + entry.getValue();
+				if(tfidfSum < tfidfAccumulator) {
+					throw new Error("overflowed accumulator, implement a running average instead");
+				}
+				c.tfidf.put(entry.getKey(), tfidfSum);
+				count++;
+			}
+
+			dist += MathUtil.computeDistance(c.tfidf, document.tfidf);
+		}
+
+		for(Entry<Integer,Double> entry : c.tfidf.entrySet()) {
+			double tfidfSum = c.tfidf.get(entry.getKey());
+			double tfidf = tfidfSum / count;
+			c.tfidf.put(entry.getKey(), tfidf);
+		}
 		
 		// Output the cluster center into file: clusteri
 		out.collect(new Text("cluster" + c.id), new Text(c.toString()));

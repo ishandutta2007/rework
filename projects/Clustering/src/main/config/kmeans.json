@@ -1,0 +1,11 @@
+[
+  {
+    "Name": "Java KMeans MapReduce",
+    "ActionOnFailure": "CANCEL_AND_WAIT",
+    "HadoopJarStep": {
+       "Jar":
+           "s3n://nicole.deflaux/emr/kmeans/Clustering-1.0-SNAPSHOT.jar",
+           "MainClass": "org.deflaux.hadoop.kmeans.mapred.KmeansMRDriver"
+         }
+  }
+]

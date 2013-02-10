@@ -8,6 +8,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane.MaximizeAction;
+
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -23,14 +25,15 @@ import org.deflaux.hadoop.kmeans.Cluster;
 import org.deflaux.hadoop.kmeans.Document;
 import org.deflaux.hadoop.util.MathUtil;
 
-
 /**
  * Mapper computes the cluster assignment of each document.
+ * 
  * @author haijieg
  */
-public class KmeansMapper  extends MapReduceBase implements Mapper<LongWritable, Text, IntWritable, Text>{
+public class KmeansMapper extends MapReduceBase implements
+		Mapper<LongWritable, Text, IntWritable, Text> {
 	ArrayList<Cluster> clusters;
-	
+
 	@Override
 	public void configure(JobConf job) {
 		super.configure(job);
@@ -43,10 +46,11 @@ public class KmeansMapper  extends MapReduceBase implements Mapper<LongWritable,
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			System.err.println("Caught exception while getting cached files: " + StringUtils.stringifyException(e));
+			System.err.println("Caught exception while getting cached files: "
+					+ StringUtils.stringifyException(e));
 		}
 	}
-	
+
 	public void map(LongWritable id, Text line,
 			OutputCollector<IntWritable, Text> out, Reporter reporter)
 			throws IOException {
@@ -54,16 +58,29 @@ public class KmeansMapper  extends MapReduceBase implements Mapper<LongWritable,
 		/**
 		 * Your code goes in here.
 		 */
-		
+		Document document = new Document(line.toString());
+
+		int closestCluster = Integer.MAX_VALUE;
+		double minDistance = Double.POSITIVE_INFINITY;
+		for(Cluster cluster : clusters) {
+			double distance = MathUtil.computeDistance(cluster.tfidf, document.tfidf);
+			if(minDistance > distance) {
+				minDistance = distance;
+				closestCluster = cluster.id;
+			}
+		}
+		out.collect(new IntWritable(closestCluster), line);
 	}
-	
+
 	/**
 	 * Load the current cluster centers from path.
+	 * 
 	 * @param path
 	 */
 	private void loadCluster(Path path) {
 		try {
-			BufferedReader reader = new BufferedReader(new FileReader(path.toString()));
+			BufferedReader reader = new BufferedReader(new FileReader(
+					path.toString()));
 			String line = null;
 			while ((line = reader.readLine()) != null) {
 				Cluster c = new Cluster();
@@ -72,7 +89,9 @@ public class KmeansMapper  extends MapReduceBase implements Mapper<LongWritable,
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-			System.err.println("Caught exception while parsing the cached file '" + path + "' : " + StringUtils.stringifyException(e));
+			System.err
+					.println("Caught exception while parsing the cached file '"
+							+ path + "' : " + StringUtils.stringifyException(e));
 		}
 	}
 }
