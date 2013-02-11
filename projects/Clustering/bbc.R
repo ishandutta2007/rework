@@ -1,6 +1,3 @@
-library(multicore)
-library(doMC)
-library(foreach)
 library(testthat)
 library(Matrix)
 
@@ -14,9 +11,6 @@ NUM_TERMDOC_COUNTS = 4983
 NUM_CLASSES = 5
 setwd('/Users/deflaux/rework/projects/Clustering')
 set.seed(42)
-registerDoMC()
-getDoParWorkers()
-mcoptions <- list(preschedule=FALSE, set.seed=TRUE)
 
 # Load Data
 termCount <- read.table('./data/bbc.mtx', skip=2, col.names=c('termid','docid','count'))
@@ -94,7 +88,7 @@ hardcodedCentroids <- function(k, data) {
     centers
 }
 
-# 2.2.2 (c)
+# 2.2.2 (b)
 labels = as.factor(docClasses$classid+1) # 0-4 -> 1-5
 result = llyodsKmeans(k=NUM_CLASSES,
                       data=tfidfMatrix,
@@ -102,8 +96,23 @@ result = llyodsKmeans(k=NUM_CLASSES,
                       samplingFunction=hardcodedCentroids,
                       delta=DELTA)
 losses = as.data.frame(cbind(loss=unlist(result$loss)[1:5], iteration=seq(1,5)))
-p <- qplot(loss, iteration, data=losses)
+p <- qplot(iteration, loss, data=losses)
 p + geom_smooth()
-ggsave(file='bbckmeans.pdf')
+ggsave(file='bbcKmeansLosses.jpg')
 
+# 2.2.2 (c)
+result = mixtureOfGaussians(k=NUM_CLASSES,
+                            data=tfidfMatrix,
+                            labels=labels,
+                            samplingFunction=hardcodedCentroids,
+                            lambda=0.2,
+                            delta=DELTA)
+losses = as.data.frame(cbind(loss=unlist(result$loss)[1:5], iteration=seq(1,5)))
+p <- qplot(iteration, loss, data=losses)
+p + geom_smooth()
+ggsave(file='bbcMoGLosses.jpg')
 
+likelihoods = as.data.frame(cbind(likelihood=unlist(result$likelihoods)[1:5], iteration=seq(1,5)))
+p <- qplot(iteration, likelihood, data=likelihoods)
+p + geom_smooth()
+ggsave(file='bbcMoGLikelihood.jpg')

@@ -44,12 +44,12 @@ lapply(results, function(result) {
     expect_that(ncol(centroids), equals(3))
     data <- as.data.frame(cbind(origData, cluster=as.factor(result$clusters)))
     expect_that(ncol(data), equals(4))
-    plotFilename=paste(result$k,'kmeans.pdf',sep='_')
+    plotFilename=paste(result$k,'kmeans.jpg',sep='_')
     plotClusters(data, centroids)
     ggsave(file=plotFilename)
     })
 
-# 2.2.2 (c)
+# 2.2.1 (c)
 results = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=3, 
                                                                                   data=origData[,c('x1','x2')], 
                                                                                   labels=as.factor(origData[,'class']), 
@@ -61,9 +61,9 @@ sd(unlist(allCosts))
 allCentroids = lapply(results, function(result) {as.data.frame(result$centroids)})
 allCentroids = as.data.frame(do.call(rbind,allCentroids))
 plotAllCentroids(origData, allCentroids)
-ggsave(file='3by20kmeans.pdf')
+ggsave(file='3by20kmeans.jpg')
 
-# 2.2.2 (d)
+# 2.2.1 (d)
 results = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=3, 
                                                                                   data=origData[,c('x1','x2')], 
                                                                                   delta=DELTA, 
@@ -75,9 +75,9 @@ sd(unlist(allCosts))
 allCentroids = lapply(results, function(result) {as.data.frame(result$centroids)})
 allCentroids = as.data.frame(do.call(rbind,allCentroids))
 plotAllCentroids(origData, allCentroids)
-ggsave(file='3by20kmeansPlusPlus.pdf')
+ggsave(file='3by20kmeansPlusPlus.jpg')
 
-# 2.2.2 (g)
+# 2.2.1 (g)
 results = foreach(k=c(2, 3, 5), .options.multicore=mcoptions) %dopar% mixtureOfGaussians(k=k,
                                                                                          data=origData[,c('x1','x2')],
                                                                                          delta=DELTA,
@@ -88,7 +88,7 @@ lapply(results, function(result) {
     likelihoods = as.data.frame(cbind(likelihood=unlist(result$likelihoods), iteration=seq(1,result$numIterations)))
     p <- qplot(iteration, likelihood, data=likelihoods)
     p + geom_smooth()
-    ggsave(file='mogLikelihood.pdf')
+    ggsave(file='mogLikelihood.jpg')
     
     losses = as.data.frame(cbind(loss=unlist(result$loss), iteration=seq(1,result$numIterations)))
     p <- qplot(iteration, loss, data=losses)
@@ -99,7 +99,7 @@ lapply(results, function(result) {
     expect_that(ncol(centroids), equals(3))
     data <- as.data.frame(cbind(origData, cluster=as.factor(result$clusters)))
     expect_that(ncol(data), equals(4))
-    plotFilename=paste(result$k,'mog.pdf',sep='_')
+    plotFilename=paste(result$k,'mog.jpg',sep='_')
     plotClusters(data, centroids)
     ggsave(file=plotFilename)
 })

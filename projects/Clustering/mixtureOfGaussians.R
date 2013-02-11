@@ -1,7 +1,7 @@
 require(testthat)
 require(mvtnorm)
 
-mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=randomSample, lambda=0.2) {
+mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=randomSample, lambda=NA) {
     # Choose our k centroids from our N data points
     centroids = samplingFunction(k=k, data=data)
     clusterMu = as.matrix(centroids)
@@ -17,7 +17,7 @@ mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=rando
     losses = list()
     likelihoods = list()
     
-    for(i in seq(1,2000)) {
+    for(i in seq(1,20)) {
 #    while(TRUE) {
         iteration = iteration+1
         expect_that(sum(clusterPi), equals(1))
@@ -53,9 +53,13 @@ mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=rando
             numerator = squaredDistance * responsibilities[,cluster]
             expect_that(dim(numerator), equals(dim(X)))
             sigmaSquared = colSums(numerator)/sum(responsibilities[,cluster])
-            # Perform regularization
-            expect_that(length(sigmaSquared), equals(ncol(X)))            
-            clusterSigma[[cluster]] = (1-lambda)*diag(sigmaSquared) + lambda*diag(ncol(X))
+            expect_that(length(sigmaSquared), equals(ncol(X)))  
+            if(is.na(lambda)) {
+                clusterSigma[[cluster]] = diag(sigmaSquared)
+            } else {
+                # Perform regularization
+                clusterSigma[[cluster]] = (1-lambda)*diag(sigmaSquared) + lambda*diag(ncol(X))
+            }
             expect_that(c(ncol(X),ncol(X)), equals(dim(clusterSigma[[cluster]])))
         }
                 
