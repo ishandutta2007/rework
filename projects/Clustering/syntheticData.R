@@ -86,7 +86,7 @@ lapply(results, function(result) {
     print(paste('k:', result$k, 'number of iterations:', result$numIterations))
     
     likelihoods = as.data.frame(cbind(likelihood=unlist(result$likelihoods), iteration=seq(1,result$numIterations)))
-    p <- qplot(likelihood, iteration, data=likelihoods)
+    p <- qplot(iteration, likelihood, data=likelihoods)
     p + geom_smooth()
     ggsave(file='mogLikelihood.pdf')
     

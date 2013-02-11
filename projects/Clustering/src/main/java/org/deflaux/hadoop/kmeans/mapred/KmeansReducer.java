@@ -31,6 +31,7 @@ public class KmeansReducer extends MapReduceBase implements Reducer<IntWritable,
 			OutputCollector<Text, Text> out, Reporter reporter) throws IOException {
 		
 		Cluster c = new Cluster();
+		c.id = key.get();
 		double dist = 0.0;
 		int count = 0;
 	

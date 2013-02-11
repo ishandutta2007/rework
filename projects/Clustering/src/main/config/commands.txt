@@ -21,8 +21,10 @@ elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh "hadoop fs -cp s3n://nicole.defla
 elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh "hadoop fs -cp s3n://nicole.deflaux/emr/kmeans/cluster0.txt /kmeans/initial_center/cluster0.txt"
 
 
-elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh
+elastic-mapreduce --jobflow $JOB_FLOW_ID --json src/main/config/kmeans.json
 
-    
+# To re-run the job on the same cluster
+elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh "hadoop fs -rmr /kmeans/output"
+elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh "hadoop fs -ls /kmeans/output"
 elastic-mapreduce --jobflow $JOB_FLOW_ID --json src/main/config/kmeans.json
 
