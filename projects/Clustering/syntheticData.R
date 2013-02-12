@@ -5,6 +5,7 @@ library(testthat)
 library(ggplot2)
 library(mvtnorm)
 
+setwd('/Users/deflaux/rework/projects/Clustering')
 source('centroidSamplingFunctions.R')
 source('kmeans.R')
 source('mixtureOfGaussians.R')
@@ -22,7 +23,6 @@ plotAllCentroids <- function(data, allCentroids) {
     p
 }
 
-setwd('/Users/deflaux/rework/projects/Clustering')
 set.seed(42)
 registerDoMC()
 getDoParWorkers()
@@ -50,29 +50,31 @@ lapply(results, function(result) {
     })
 
 # 2.2.1 (c)
-results = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=3, 
+resultsC = foreach(i=seq(1,20), .options.multicore=mcoptions) %do% llyodsKmeans(k=3, 
                                                                                   data=origData[,c('x1','x2')], 
                                                                                   labels=as.factor(origData[,'class']), 
                                                                                   delta=DELTA)
-allCosts = lapply(results, function(result) {result$finalCosts})
+allCosts = lapply(resultsC, function(result) {result$finalCosts})
 min(unlist(allCosts))
 mean(unlist(allCosts))
 sd(unlist(allCosts))
-allCentroids = lapply(results, function(result) {as.data.frame(result$centroids)})
+sum(unlist(lapply(resultsC, function(result){result$numIterations})))
+allCentroids = lapply(resultsC, function(result) {as.data.frame(result$centroids)})
 allCentroids = as.data.frame(do.call(rbind,allCentroids))
 plotAllCentroids(origData, allCentroids)
 ggsave(file='3by20kmeans.jpg')
 
 # 2.2.1 (d)
-results = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=3, 
+resultsD = foreach(i=seq(1,20), .options.multicore=mcoptions) %do% llyodsKmeans(k=3, 
                                                                                   data=origData[,c('x1','x2')], 
                                                                                   delta=DELTA, 
                                                                                   samplingFunction=kmeansPlusPlusSample)
-allCosts = lapply(results, function(result) {result$finalCosts})
+allCosts = lapply(resultsD, function(result) {result$finalCosts})
 min(unlist(allCosts))
 mean(unlist(allCosts))
 sd(unlist(allCosts))
-allCentroids = lapply(results, function(result) {as.data.frame(result$centroids)})
+sum(unlist(lapply(resultsD, function(result){result$numIterations})))
+allCentroids = lapply(resultsD, function(result) {as.data.frame(result$centroids)})
 allCentroids = as.data.frame(do.call(rbind,allCentroids))
 plotAllCentroids(origData, allCentroids)
 ggsave(file='3by20kmeansPlusPlus.jpg')
@@ -115,3 +117,4 @@ data=origData[,c('x1','x2')]
 delta=DELTA
 labels=as.factor(origData[,'class']) 
 samplingFunction=kmeansPlusPlusSample
+lambda=NA

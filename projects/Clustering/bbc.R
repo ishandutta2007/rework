@@ -1,16 +1,16 @@
 library(testthat)
 library(Matrix)
 
+setwd('/Users/deflaux/rework/projects/Clustering')
 source('kmeans.R')
 
 # Constants and some environment initialization
+set.seed(42)
 DELTA = 0.000001
 NUM_TERMS = 99
 NUM_DOCS = 1791
 NUM_TERMDOC_COUNTS = 4983
 NUM_CLASSES = 5
-setwd('/Users/deflaux/rework/projects/Clustering')
-set.seed(42)
 
 # Load Data
 termCount <- read.table('./data/bbc.mtx', skip=2, col.names=c('termid','docid','count'))

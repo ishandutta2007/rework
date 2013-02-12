@@ -18,6 +18,8 @@ kmeansPlusPlusSample <- function(k, data) {
             sqrt(sum((x - centroids[i-1,]) ^ 2))
         })
         probs = distances/sum(distances)
+        expect_that(length(probs),equals(nrow(data)))
+        expect_that(sum(probs), equals(1))
         centroids <- rbind(centroids, 
                            data[sample(nrow(data),1,prob=probs),])
     }
