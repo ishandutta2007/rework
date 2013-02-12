@@ -80,41 +80,28 @@ plotAllCentroids(origData, allCentroids)
 ggsave(file='3by20kmeansPlusPlus.jpg')
 
 # 2.2.1 (g)
-results = foreach(k=c(2, 3, 5), .options.multicore=mcoptions) %dopar% mixtureOfGaussians(k=k,
-                                                                                         data=origData[,c('x1','x2')],
-                                                                                         delta=DELTA,
-                                                                                         samplingFunction=kmeansPlusPlusSample)
-lapply(results, function(result) { 
-    print(paste('k:', result$k, 'number of iterations:', result$numIterations))
+result <- mixtureOfGaussians(k=3,
+                             data=origData[,c('x1','x2')],
+                             delta=DELTA,
+                             labels=as.factor(origData[,'class']), 
+                             samplingFunction=kmeansPlusPlusSample)
+print(paste('k:', result$k, 'number of iterations:', result$numIterations))
     
-    likelihoods = as.data.frame(cbind(likelihood=unlist(result$likelihoods), iteration=seq(1,result$numIterations)))
-    p <- qplot(iteration, likelihood, data=likelihoods)
-    p + geom_smooth()
-    ggsave(file='mogLikelihood.jpg')
+likelihoods = as.data.frame(cbind(likelihood=unlist(result$likelihoods), iteration=seq(1,result$numIterations)))
+p <- qplot(iteration, likelihood, data=likelihoods)
+p + geom_smooth()
+ggsave(file='mogLikelihood.jpg')
     
-    losses = as.data.frame(cbind(loss=unlist(result$loss), iteration=seq(1,result$numIterations)))
-    p <- qplot(iteration, loss, data=losses)
-    p + geom_smooth()
+losses = as.data.frame(cbind(loss=unlist(result$loss), iteration=seq(1,result$numIterations)))
+p <- qplot(iteration, loss, data=losses)
+p + geom_smooth()
     
-    centroids <- as.data.frame(result$centroids)
-    centroids$cluster <- as.factor(seq(1,result$k))
-    expect_that(ncol(centroids), equals(3))
-    data <- as.data.frame(cbind(origData, cluster=as.factor(result$clusters)))
-    expect_that(ncol(data), equals(4))
-    plotFilename=paste(result$k,'mog.jpg',sep='_')
-    plotClusters(data, centroids)
-    ggsave(file=plotFilename)
-})
+centroids <- as.data.frame(result$centroids)
+centroids$cluster <- as.factor(seq(1,result$k))
+expect_that(ncol(centroids), equals(3))
+data <- as.data.frame(cbind(origData, cluster=as.factor(result$clusters)))
+expect_that(ncol(data), equals(4))
+plotFilename=paste(result$k,'mog.jpg',sep='_')
+plotClusters(data, centroids)
+ggsave(file=plotFilename)
 
-result = mixtureOfGaussians(k=3,
-                   data=origData[,c('x1','x2')],
-                   delta=DELTA,
-                         labels=as.factor(origData[,'class']), 
-                         samplingFunction=kmeansPlusPlusSample)
-
-k=3
-data=origData[,c('x1','x2')]
-delta=DELTA
-labels=as.factor(origData[,'class']) 
-samplingFunction=kmeansPlusPlusSample
-lambda=NA
