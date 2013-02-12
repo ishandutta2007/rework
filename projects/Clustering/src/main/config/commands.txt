@@ -1,4 +1,4 @@
-elastic-mapreduce --create --num-instances=1 --enable-debugging --log-uri s3n://nicole.deflaux/debugLogs --name kmeans --alive
+elastic-mapreduce --create --num-instances=1 --name kmeans --alive
 
     
 export JOB_FLOW_ID=
@@ -22,6 +22,8 @@ elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh "hadoop fs -cp s3n://nicole.defla
 
 
 elastic-mapreduce --jobflow $JOB_FLOW_ID --json src/main/config/kmeans.json
+
+elastic-mapreduce --jobflow $JOB_FLOW_ID --get /mnt/var/log/hadoop/steps/1/stdout
 
 # To re-run the job on the same cluster
 elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh "hadoop fs -rmr /kmeans/output"

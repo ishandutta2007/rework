@@ -81,7 +81,7 @@ public class KmeansMRDriver {
 		Path inputpath = new Path("hdfs:///kmeans/tfidf.txt");
 		
 		driver.loadDictionary(dictionarypath);
-		for (int i = 1; i < 5; i++) {
+		for (int i = 1; i <= 5; i++) {
 			Path outputpath = new Path("hdfs:///kmeans/output/center_iter_"+i);
 			Path cache = i==1 ? new Path("hdfs:///kmeans/initial_center/") : 
 								new Path("hdfs:///kmeans/output/center_iter_"+(i-1));
