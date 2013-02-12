@@ -2,15 +2,9 @@ require(testthat)
 require(mvtnorm)
 
 pOfX <- function(x, mu, sigma) {
-    pmvnorm(mean=mu, 
-            sigma=sigma, 
-            lower=rep(-Inf, 2), 
-            upper=x)
-}
-
-pOfX2 <- function(x, mu, sigma) {
-    stddev = sqrt(c(1,1) %*% clusterSigma[[1]])
-    prod(pnorm(x, mean=mu, sd=stddev))
+    dmvnorm(x,
+            mean=mu, 
+            sigma=sigma)
 }
 
 mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=randomSample, lambda=NA) {
@@ -29,7 +23,7 @@ mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=rando
     losses = list()
     likelihoods = list()
     
-    for(i in seq(1,20)) {
+    for(i in seq(1,35)) {
 #    while(TRUE) {
         iteration = iteration+1
         expect_that(sum(clusterPi), equals(1))
@@ -55,27 +49,17 @@ mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=rando
         clusterPi = colSums(responsibilities)/nrow(X)
         expect_that(sum(clusterPi), equals(1))
         
-        clusterMu = t(responsibilities) %*% X
+        # check this
+        clusterMu = (t(responsibilities) %*% X)/colSums(responsibilities)
         expect_that(c(k,ncol(X)), equals(dim(clusterMu)))
                 
         for(cluster in seq(1,k)) { # TODO vectorize this the rest of the way
-            distance = X - clusterMu[cluster,]
-            expect_that(dim(distance), equals(dim(X)))
-            squaredDistance = distance * distance
-            expect_that(dim(squaredDistance), equals(dim(X)))
-            numerator = squaredDistance * responsibilities[,cluster]
-            expect_that(dim(numerator), equals(dim(X)))
-            sigmaSquared = colSums(numerator)/sum(responsibilities[,cluster])
-            expect_that(length(sigmaSquared), equals(ncol(X)))  
-            sigma = sqrt(sigmaSquared)
-            # if using correlation of zero, cov = diag(ncol(X))
-            # TODO this isn't quite right because cor should only be performed on the rows in the cluster
-            covariance = (diag(sigma)  %*% cor(X)) %*% diag(sigma)
+            sigma = (1/sum(responsibilities[,cluster]) * (t(X) %*% (responsibilities[,cluster] * X))) - (clusterMu[cluster,] %*% t(clusterMu[cluster,]))
             if(is.na(lambda)) {
-                clusterSigma[[cluster]] = covariance
+                clusterSigma[[cluster]] = sigma
             } else {
                 # Perform regularization
-                clusterSigma[[cluster]] = (1-lambda)*covariance + lambda*diag(ncol(X))
+                clusterSigma[[cluster]] = (1-lambda)*sigma + lambda*diag(ncol(X))
             }
             expect_that(c(ncol(X),ncol(X)), equals(dim(clusterSigma[[cluster]])))
         }
@@ -91,10 +75,17 @@ mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=rando
         
         # Compute likelihood
         clusterLikelihoods <- sapply(seq(1:k), 
-                        function(cluster) { sum(clusterPi[cluster] *
-                            apply(X, 
-                                  1,
-                                  function(x) { pOfX(x=x, mu=clusterMu[cluster,], sigma=clusterSigma[[cluster]]) }))})
+                        function(cluster) { 
+                            prior = sum(responsibilities[,cluster] * log(clusterPi[cluster]))
+                            foo =   sum(responsibilities[,cluster] *                
+                                            apply(X,
+                                                  1,
+                                                  function(x) { 
+                                                      log(pOfX(x=x, mu=clusterMu[cluster,], sigma=clusterSigma[[cluster]]))
+                                                  })
+                                        )
+                            prior + foo
+                            })
         currentLikelihood = sum(clusterLikelihoods)
         if(!is.na(prevLikelihood)) {
             if(delta > (prevLikelihood - currentLikelihood)) {
@@ -104,6 +95,8 @@ mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=rando
         prevLikelihood = currentLikelihood
         likelihoods[iteration] = currentLikelihood
         print(paste('NumClusters:', k, 'Iteration:', iteration, 'Likelihood:', currentLikelihood))
+        print(clusterMu)
+        print(clusterPi)
     }
     
     centriods <- clusterMu
