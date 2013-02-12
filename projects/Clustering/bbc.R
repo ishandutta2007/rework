@@ -3,6 +3,7 @@ library(Matrix)
 
 setwd('/Users/deflaux/rework/projects/Clustering')
 source('kmeans.R')
+source('mixtureOfGaussians.R')
 
 # Constants and some environment initialization
 set.seed(42)
@@ -61,6 +62,8 @@ expect_that(tfidf$docid, equals(termCount$docid))
 expect_that(dim(tfidf), equals(dim(termCount)))
 expect_that(tfidf[tfidf$docid==42, 'tfidf'], equals(c(1.7262485, 2.1578106, 0.4315621, 0.4315621)))
 
+labels = as.factor(docClasses$classid+1) # 0-4 -> 1-5
+
 # Let's write our sparse matrix out to a file, and then read it back in via MatrixMarket format since that is what it is
 # Rows correspond to documents, columns to terms
 # TODO how to skip writing this out to a file?
@@ -85,11 +88,10 @@ for(class in seq(0,NUM_CLASSES-1)) {
 }
 
 hardcodedCentroids <- function(k, data) {
-    centers
+    as.matrix(centers)
 }
 
 # 2.2.2 (b)
-labels = as.factor(docClasses$classid+1) # 0-4 -> 1-5
 result = llyodsKmeans(k=NUM_CLASSES,
                       data=tfidfMatrix,
                       labels=labels,

@@ -33,6 +33,7 @@ str(origData)
 expect_that(ncol(origData), equals(3))
 DELTA = 0.000001
 
+#---------------------------------------------------------
 # 2.2.1 (b)
 results = foreach(k=c(2, 3, 5, 10, 15, 20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=k, 
                                                                                                data=origData[,c('x1','x2')], 
@@ -49,6 +50,7 @@ lapply(results, function(result) {
     ggsave(file=plotFilename)
     })
 
+#---------------------------------------------------------
 # 2.2.1 (c)
 resultsC = foreach(i=seq(1,20), .options.multicore=mcoptions) %do% llyodsKmeans(k=3, 
                                                                                   data=origData[,c('x1','x2')], 
@@ -64,6 +66,7 @@ allCentroids = as.data.frame(do.call(rbind,allCentroids))
 plotAllCentroids(origData, allCentroids)
 ggsave(file='3by20kmeans.jpg')
 
+#---------------------------------------------------------
 # 2.2.1 (d)
 resultsD = foreach(i=seq(1,20), .options.multicore=mcoptions) %do% llyodsKmeans(k=3, 
                                                                                   data=origData[,c('x1','x2')], 
@@ -79,6 +82,7 @@ allCentroids = as.data.frame(do.call(rbind,allCentroids))
 plotAllCentroids(origData, allCentroids)
 ggsave(file='3by20kmeansPlusPlus.jpg')
 
+#---------------------------------------------------------
 # 2.2.1 (g)
 result <- mixtureOfGaussians(k=3,
                              data=origData[,c('x1','x2')],

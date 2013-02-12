@@ -34,13 +34,13 @@ mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=rando
     
     # Initialize mu
     clusterMu = as.matrix(centroids)
-    expect_that(clusterMu[k,2], equals(as.numeric(centroids[k,2])))
+    expect_that(as.numeric(clusterMu[k,2]), equals(as.numeric(centroids[k,2])))
     
     # Initialize pi
-    clusterPi = rep(1/3, k)
+    clusterPi = rep(1/k, k)
     
     # Initialize sigma (covariance matrix)
-    clusterSigma = lapply(seq(1,k), function(x) { diag(2) })
+    clusterSigma = lapply(seq(1,k), function(x) { diag(ncol(data)) })
     
     X = as.matrix(data)
     expect_that(as.numeric(X[5,2]), equals(data[5,2]))
