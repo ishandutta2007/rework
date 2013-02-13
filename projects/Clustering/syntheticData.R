@@ -52,9 +52,8 @@ lapply(results, function(result) {
 
 #---------------------------------------------------------
 # 2.2.1 (c)
-resultsC = foreach(i=seq(1,20), .options.multicore=mcoptions) %do% llyodsKmeans(k=3, 
+resultsC = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=3, 
                                                                                   data=origData[,c('x1','x2')], 
-                                                                                  labels=as.factor(origData[,'class']), 
                                                                                   delta=DELTA)
 allCosts = lapply(resultsC, function(result) {result$finalCosts})
 min(unlist(allCosts))
@@ -68,7 +67,7 @@ ggsave(file='3by20kmeans.jpg')
 
 #---------------------------------------------------------
 # 2.2.1 (d)
-resultsD = foreach(i=seq(1,20), .options.multicore=mcoptions) %do% llyodsKmeans(k=3, 
+resultsD = foreach(i=seq(1,20), .options.multicore=mcoptions) %dopar% llyodsKmeans(k=3, 
                                                                                   data=origData[,c('x1','x2')], 
                                                                                   delta=DELTA, 
                                                                                   samplingFunction=kmeansPlusPlusSample)
@@ -87,7 +86,6 @@ ggsave(file='3by20kmeansPlusPlus.jpg')
 result <- mixtureOfGaussians(k=3,
                              data=origData[,c('x1','x2')],
                              delta=DELTA,
-                             labels=as.factor(origData[,'class']), 
                              samplingFunction=kmeansPlusPlusSample)
 print(paste('k:', result$k, 'number of iterations:', result$numIterations))
     
@@ -95,10 +93,6 @@ likelihoods = as.data.frame(cbind(likelihood=unlist(result$likelihoods), iterati
 p <- qplot(iteration, likelihood, data=likelihoods)
 p + geom_smooth()
 ggsave(file='mogLikelihood.jpg')
-    
-losses = as.data.frame(cbind(loss=unlist(result$loss), iteration=seq(1,result$numIterations)))
-p <- qplot(iteration, loss, data=losses)
-p + geom_smooth()
     
 centroids <- as.data.frame(result$centroids)
 centroids$cluster <- as.factor(seq(1,result$k))

@@ -3,8 +3,9 @@ require(testthat)
 randomSample <- function(k, data) {
     # Randomly choose our k centroids from our N data points
     centroids = data[sample(nrow(data),k),]
-    expect_that(nrow(centroids), equals(k))
-    print(paste("Random sample:", centroids))
+    expect_that(dim(centroids), equals(c(k,ncol(data))))
+    print("Random sample:")
+    print(centroids)
     centroids
 }
 
@@ -23,7 +24,8 @@ kmeansPlusPlusSample <- function(k, data) {
         centroids <- rbind(centroids, 
                            data[sample(nrow(data),1,prob=probs),])
     }
-    expect_that(nrow(centroids), equals(k))
-    print(paste("KMeans++ sample:", centroids))
+    expect_that(dim(centroids), equals(c(k,ncol(data))))
+    print("KMeans++ sample:")
+    print(centroids)
     centroids
 }
