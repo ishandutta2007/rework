@@ -90,6 +90,8 @@ public class KmeansMRDriver {
 			driver.printClusters(clusters);
 			ArrayList<String> distances = driver.loadDistance(outputpath);
 			driver.printDistance(distances);
+			ArrayList<String> counts = driver.loadCount(outputpath);
+			driver.printCount(counts);
 		}
 	}
 
@@ -107,6 +109,23 @@ public class KmeansMRDriver {
 			totaldistance += Double.parseDouble(splits[1]);
 		}
 		builder.append("Total distance: " + totaldistance);
+		System.out.println(builder);
+	}
+	
+	/**
+	 * Print out the total count within each cluster.
+	 * @param counts
+	 */
+	private void printCount(ArrayList<String> counts) {
+		System.out.println("=================== Counts within the clusters ================= ");
+		StringBuilder builder = new StringBuilder();
+		int totalcount = 0;
+		for (String s : counts) {
+			String[] splits = s.split("\\|");
+			builder.append("Cluster " + splits[0] + ": " + splits[1] + "\n");
+			totalcount += Integer.parseInt(splits[1]);
+		}
+		builder.append("Total count: " + totalcount);
 		System.out.println(builder);
 	}
 	
@@ -205,5 +224,30 @@ public class KmeansMRDriver {
 			e.printStackTrace();
 		}
 		return distances;
+	}
+
+	/**
+	 * Load the count file from hdfs path.
+	 * @param path
+	 * @throws IOException
+	 */
+	private ArrayList<String> loadCount(Path path) {
+		ArrayList<String> counts = new ArrayList<String>(K);
+		try {
+			FileSystem fs = FileSystem.get(new JobConf());
+			FileStatus[] status = fs.listStatus(path);
+			for (FileStatus s : status) {
+				if (s.getPath().getName().startsWith("count")) {					
+					BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(s.getPath())));
+					String line = null;
+					while ((line = reader.readLine()) != null) {
+						counts.add(line);
+					}
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return counts;
 	}
 }

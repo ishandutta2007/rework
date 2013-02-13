@@ -14,15 +14,15 @@ s3curl.pl --id personal --put data/dictionary.txt https://s3.amazonaws.com/nicol
 
     
 
-elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh "hadoop fs -mkdir /kmeans"
-elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh "hadoop fs -mkdir /kmeans/initial_center"
-elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh "hadoop fs -cp s3n://nicole.deflaux/emr/kmeans/tfidf.txt /kmeans/tfidf.txt"
-elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh "hadoop fs -cp s3n://nicole.deflaux/emr/kmeans/dictionary.txt /kmeans/dictionary.txt"
-elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh "hadoop fs -cp s3n://nicole.deflaux/emr/kmeans/cluster0.txt /kmeans/initial_center/cluster0.txt"
+elastic-mapreduce --jobflow $JOB_FLOW_ID --ssh
+
+hadoop fs -mkdir /kmeans ; hadoop fs -mkdir /kmeans/initial_center ; hadoop fs -cp s3n://nicole.deflaux/emr/kmeans/tfidf.txt /kmeans/tfidf.txt ; hadoop fs -cp s3n://nicole.deflaux/emr/kmeans/dictionary.txt /kmeans/dictionary.txt ; hadoop fs -cp s3n://nicole.deflaux/emr/kmeans/cluster0.txt /kmeans/initial_center/cluster0.txt
 
 
 elastic-mapreduce --jobflow $JOB_FLOW_ID --json src/main/config/kmeans.json
 
+elastic-mapreduce --jobflow $JOB_FLOW_ID --list
+    
 elastic-mapreduce --jobflow $JOB_FLOW_ID --get /mnt/var/log/hadoop/steps/1/stdout
 
 # To re-run the job on the same cluster
