@@ -2,6 +2,7 @@ package org.deflaux.analysis;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.log4j.Level;
@@ -32,7 +33,7 @@ public class LogisticRegressionWithHashing {
 		dotProduct += weights.wAge * instance.age;
 		dotProduct += weights.wGender * instance.gender;
 		for (int featureid : instance.hashedTextFeature.keySet()) {
-			dotProduct += weights.wHashedFeature[featureid];
+			dotProduct += weights.wHashedFeature[featureid] * instance.hashedTextFeature.get(featureid);
 		}
 		return dotProduct;
 	}
@@ -55,7 +56,7 @@ public class LogisticRegressionWithHashing {
 			Integer accessTime = weights.accessTime.get(featureid);
 			if (null != accessTime) {
 				Double featureWeight = weights.wHashedFeature[featureid];
-				featureWeight -= Math.pow((1 - step * lambda), now - accessTime
+				featureWeight = Math.pow((1 - step * lambda), now - accessTime
 						- 1)
 						* featureWeight;
 				weights.wHashedFeature[featureid] = featureWeight;
@@ -80,8 +81,8 @@ public class LogisticRegressionWithHashing {
 		// Fill in your code here
 		WeightsWithHashedFeatures weights = new WeightsWithHashedFeatures(dim);
 		int count = 0;
-		double lossAccumulator = 0.0;
-		AvgLoss.add(lossAccumulator);
+		int lossAccumulator = 0;
+		AvgLoss.add(0.0);
 		logger.info("Training on data in " + dataset.path + " with lambda "
 				+ lambda + " and step size " + step);
 
@@ -90,7 +91,8 @@ public class LogisticRegressionWithHashing {
 					personalized);
 			count++;
 			if (count % LOSS_AVG_INTERVAL == 0) {
-				double avgLoss = lossAccumulator / LOSS_AVG_INTERVAL;
+
+				double avgLoss = (double) lossAccumulator / LOSS_AVG_INTERVAL;
 				AvgLoss.add(avgLoss);
 				logger.debug("Trained (lambda:"
 						+ lambda
@@ -102,52 +104,55 @@ public class LogisticRegressionWithHashing {
 						+ count
 						+ " cases so far with avg loss for this 100 case interval: "
 						+ avgLoss);
-				lossAccumulator = 0.0;
+				lossAccumulator = 0;
 			}
 
-			double prediction = computePrediction(weights, instance);
+			if (0 != lambda) {
+				performDelayedRegularization(
+						instance.hashedTextFeature.keySet(), weights, count,
+						step, lambda);
+			}
 
-			// Only update our weights if the prediction did not match the
-			// outcome
-			if (prediction != instance.clicked) {
+			double exp = Math
+					.exp(computeWeightFeatureProduct(weights, instance));
+			exp = Double.isInfinite(exp) ? (Double.MAX_VALUE - 1) : exp;
 
-				if (0 != lambda) {
-					performDelayedRegularization(
-							instance.hashedTextFeature.keySet(), weights,
-							count, step, lambda);
-				}
+			// Compute the gradient
+			double gradient = (instance.clicked == 1) ? (-1 / (1 + exp))
+					: (exp / (1 + exp));
 
-				double error = instance.clicked - prediction;
+			// Predict the label, record the loss
+			int click_hat = (exp / (1 + exp)) > 0.5 ? 1 : 0;
+			if (click_hat != instance.clicked) {
+				lossAccumulator += 1;
+			}
 
-				lossAccumulator += Math.pow((error), 2);
-
-				weights.w0 = weights.w0 + step * error; // no reg and assumed x0
-														// = 1
-				weights.wDepth = weights.wDepth
-						+ step
-						* ((-1 * lambda * weights.wDepth) + instance.depth
-								* (error));
-				weights.wPosition = weights.wPosition
-						+ step
-						* ((-1 * lambda * weights.wPosition) + instance.position
-								* (error));
-				weights.wAge = weights.wAge
-						+ step
-						* ((-1 * lambda * weights.wAge) + instance.age
-								* (error));
-				weights.wGender = weights.wGender
-						+ step
-						* ((-1 * lambda * weights.wGender) + instance.gender
-								* (error));
-				for (int featureid : instance.hashedTextFeature.keySet()) {
-					// Can be null if this is this data instance is the first
-					// time we've seen this feature
-					double featureWeight = weights.wHashedFeature[featureid];
-					weights.wHashedFeature[featureid] = featureWeight + step
-							* error;
-				}
+			weights.w0 += -step * gradient; // no reg and assumed x0 = 1
+			weights.wDepth += -step
+					* (lambda * weights.wDepth + instance.depth * gradient);
+			weights.wPosition += -step
+					* (lambda * weights.wPosition + instance.position
+							* gradient);
+			weights.wAge += -step
+					* (lambda * weights.wAge + instance.age * gradient);
+			weights.wGender += -step
+					* (lambda * weights.wGender + instance.gender * gradient);
+			for (int featureid : instance.hashedTextFeature.keySet()) {
+				// Can be null if this is this data instance is the first
+				// time we've seen this feature
+				double featureWeight = weights.wHashedFeature[featureid];
+				weights.wHashedFeature[featureid] = featureWeight + -step
+						* (gradient * instance.hashedTextFeature.get(featureid) + lambda * featureWeight);
 			}
 		}
+
+		// Final sweep of delayed regularization
+		Set<Integer> allFeatures = new HashSet<Integer>();
+		for (int i = 0; i < weights.wHashedFeature.length; i++) {
+			allFeatures.add(i);
+		}
+		performDelayedRegularization(allFeatures, weights, count, step, lambda);
+
 		return weights;
 	}
 
@@ -166,16 +171,10 @@ public class LogisticRegressionWithHashing {
 		while (dataset.hasNext()) {
 			HashedDataInstance instance = dataset.nextHashedInstance(
 					weights.featuredim, personalized);
-			predictions.add(computePrediction(weights, instance));
+            double exp = Math.exp(computeWeightFeatureProduct(weights, instance));
+			predictions.add(exp / (1 + exp));
 		}
 		return predictions;
-	}
-
-	private static double computePrediction(WeightsWithHashedFeatures weights,
-			HashedDataInstance instance) {
-		double partialResult = Math.exp(computeWeightFeatureProduct(weights,
-				instance));
-		return partialResult / (1 + partialResult);
 	}
 
 	public static void main(String args[]) throws IOException {

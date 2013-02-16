@@ -2,9 +2,12 @@ package org.deflaux.analysis;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.commons.lang3.ArrayUtils;
 
 public class LogisticRegression {
 	static final int LOSS_AVG_INTERVAL = 100;
@@ -58,7 +61,7 @@ public class LogisticRegression {
 			Integer accessTime = weights.accessTime.get(token);
 			if (null != accessTime) {
 				Double tokenWeight = weights.wTokens.get(token);
-				tokenWeight -= Math.pow((1 - step * lambda), now - accessTime
+				tokenWeight = Math.pow((1 - step * lambda), now - accessTime
 						- 1)
 						* tokenWeight;
 				weights.wTokens.put(token, tokenWeight);
@@ -112,53 +115,58 @@ public class LogisticRegression {
 				lossAccumulator = 0.0;
 			}
 
-			double prediction = computePrediction(weights, instance);
-
-			// Only update our weights if the prediction did not match the
-			// outcome
-			if (prediction != instance.clicked) {
-
-				if (0 != lambda) {
-					performDelayedRegularization(instance.tokens, weights,
-							count, step, lambda);
-				}
-
-				double error = instance.clicked - prediction;
-
-				lossAccumulator += Math.pow((error), 2);
-
-				weights.w0 = weights.w0 + step * error; // no reg and assumed x0
-														// = 1
-				weights.wDepth = weights.wDepth
-						+ step
-						* ((-1 * lambda * weights.wDepth) + instance.depth
-								* (error));
-				weights.wPosition = weights.wPosition
-						+ step
-						* ((-1 * lambda * weights.wPosition) + instance.position
-								* (error));
-				weights.wAge = weights.wAge
-						+ step
-						* ((-1 * lambda * weights.wAge) + instance.age
-								* (error));
-				weights.wGender = weights.wGender
-						+ step
-						* ((-1 * lambda * weights.wGender) + instance.gender
-								* (error));
-				for (int token : instance.tokens) {
-					// Can be null if this is this data instance is the first
-					// time we've seen this token
-					Double tokenWeight = weights.wTokens.get(token);
-					if (null == tokenWeight) {
-						tokenWeight = 0.0;
-					}
-					weights.wTokens.put(token, tokenWeight + step * error);
-				}
-				weightAccumulator.runningAverage(weights, instance.tokens,
-						count);
+			if (0 != lambda) {
+				performDelayedRegularization(instance.tokens, weights, count,
+						step, lambda);
 			}
+
+			double exp = Math
+					.exp(computeWeightFeatureProduct(weights, instance));
+			exp = Double.isInfinite(exp) ? (Double.MAX_VALUE - 1) : exp;
+
+			// Compute the gradient
+			double gradient = (instance.clicked == 1) ? (-1 / (1 + exp))
+					: (exp / (1 + exp));
+
+			// Predict the label, record the loss
+			int click_hat = (exp / (1 + exp)) > 0.5 ? 1 : 0;
+			if (click_hat != instance.clicked) {
+				lossAccumulator += 1;
+			}
+
+			// Update weights along the negative gradient
+			weights.w0 += -step * gradient; // no reg and assumed x0
+											// = 1
+			weights.wDepth += -step
+					* (lambda * weights.wDepth + instance.depth * gradient);
+			weights.wPosition += -step
+					* (lambda * weights.wPosition + instance.position
+							* gradient);
+			weights.wAge += -step
+					* (lambda * weights.wAge + instance.age * gradient);
+			weights.wGender += -step
+					* (lambda * weights.wGender + instance.gender * gradient);
+			for (int token : instance.tokens) {
+				// Can be null if this is this data instance is the first
+				// time we've seen this token
+				Double tokenWeight = weights.wTokens.get(token);
+				if (null == tokenWeight) {
+					tokenWeight = 0.0;
+				}
+				weights.wTokens.put(token, tokenWeight + -step
+						* (gradient + lambda * tokenWeight));
+			}
+			weightAccumulator.runningAverage(weights, instance.tokens, count);
 		}
+
+		// Final sweep of delayed regularization
+		Set<Integer> allFeatures = weights.wTokens.keySet();
+		performDelayedRegularization(
+				ArrayUtils.toPrimitive((Integer[]) allFeatures
+						.toArray(new Integer[0])), weights, count, step, lambda);
+
 		// Do _not_ return the running average of weights for this HW problem
+		// even though in real life, the averaged weights are better
 		return weights; // weightAccumulator;
 	}
 
@@ -175,16 +183,11 @@ public class LogisticRegression {
 
 		while (dataset.hasNext()) {
 			DataInstance instance = dataset.nextInstance();
-			predictions.add(computePrediction(weights, instance));
+			double exp = Math
+					.exp(computeWeightFeatureProduct(weights, instance));
+			predictions.add(exp / (1 + exp));
 		}
 		return predictions;
-	}
-
-	private static double computePrediction(Weights weights,
-			DataInstance instance) {
-		double partialResult = Math.exp(computeWeightFeatureProduct(weights,
-				instance));
-		return partialResult / (1 + partialResult);
 	}
 
 	public static void main(String args[]) throws IOException {

@@ -3,13 +3,13 @@
 
 import unittest, string, re, cPickle
 
-def normalize(asname):
-    asname = string.strip(asname)
-    asname = string.lower(asname)
-    asname = ''.join([translate(c) for c in asname])
-    asname = re.sub('[^a-zA-Z0-9_\s]', '', asname)
-    asname = re.sub('\s+', ' ', asname)
-    return(asname)
+def normalize(name):
+    name = string.strip(name)
+    name = string.lower(name)
+    name = ''.join([translate(c) for c in name])
+    name = re.sub('[^a-zA-Z0-9_\s]', ' ', name)
+    name = re.sub('\s+', ' ', name)
+    return(name)
 
 def translate(char):
     return {
@@ -216,29 +216,42 @@ def translate(char):
         }.get(char, char)
 
 
-def keyify(asname):
-    asname = normalize(asname)
-    words = asname.split()
+def keyify(name):
+    normalizedName = normalize(name)
+    words = normalizedName.split()
     if(1 == len(words) and re.match('^\d+$', words[0])):
-        # if the asname is just a number, do not sort it, return it as-is
-        return words
+        # if the name is just a number, do not sort it, return it as-is
+        return (['as'+words[0]], ['as'+words[0]])
+
+    ### ASNAME
+    # specifically parse for AS names
+    asNames = [ word for word in words if re.match('^as\d+$', word)]
+    # remove duplicate words
+    asNames = [ asNames for asNames in set(asNames)]
+    if(1 < len(asNames)):
+        print('too many asNames %s for %s' % (str(asNames), name))
+
+    ### KEY
     # sort the letters in the words
     sortedWords = [ ''.join(sorted(word)) for word in words]
     # remove duplicate words
     sortedWords = [w for w in set(sortedWords)]
     # sort the unique words
     sortedWords.sort()
-    return sortedWords
+    
+    return (sortedWords, asNames)
     
 class Test(unittest.TestCase):
 
     def test_keyify(self):
-        self.assertEqual(['abr', 'foo'], keyify('foo bar'))
-        self.assertEqual(['abfoor'], keyify('foobar'))
-        self.assertEqual(['abfoor'], keyify('foobar foobar'))
-        self.assertEqual(['abfoor'], keyify('foobar FOO.BAR'))
-        self.assertEqual(['60069'], keyify('60069 '))
-        self.assertEqual(['60690'], keyify('60690 '))
+        self.assertEqual((['abr', 'foo'], []), keyify('foo bar'))
+        self.assertEqual((['abr', 'foo'], []), keyify('foo!bar'))
+        self.assertEqual((['abfoor'], []), keyify('foobar'))
+        self.assertEqual((['abfoor'], []), keyify('foobar foobar'))
+        self.assertEqual((['abfoor', 'abr', 'foo'], []), keyify('foobar FOO.BAR'))
+        self.assertEqual((['as60069'], ['as60069']), keyify('60069 '))
+        self.assertEqual((['as60690'], ['as60690']), keyify('60690 '))
+        self.assertEqual((['01159as', 'eeiorrtz'], ['as11509']), keyify('TIERZERO-AS11509 - Tierzero'))
     
     def test_translate(self):
         self.assertEqual('a', translate('a'))
@@ -250,39 +263,66 @@ class Test(unittest.TestCase):
         self.assertEqual(''.join(should), 'should')
         
     def test_normalize(self):
-        self.assertEqual('stbasn 32 onsismp thacher bartlett',
+        self.assertEqual('stb asn 32 onsismp thacher bartlett',
                          normalize(u'STB-ASN - 32 onSismp Thachér  &  Bartlett '))
 
     def test_nameCleaning(self):
-        cleanNames = {}
+        nameMapping = {}
+        asMapping = {}
         numEntries = 0
-        for i in range(1, 16) :
+        for i in range(1, 2) :
             infile = open('/Users/deflaux/rework/competitions/facebook2/data/train' + str(i) + '.txt', 'r')
             for line in infile:
                 values = line.split('|')
                 if(3 != len(values)):
                     raise ValueError("file is not formatted correctly")
-                self.insertMapping(cleanNames, values[0])
-                self.insertMapping(cleanNames, values[1])
+                self.insertMapping(nameMapping, asMapping,  values[0])
+                self.insertMapping(nameMapping, asMapping, values[1])
                 numEntries += 2
-                
+
+        self.mergeMappings(nameMapping, asMapping)
+         
         outfile = open('/Users/deflaux/rework/competitions/facebook2/data/mapping.bin', 'wb')
-        cPickle.dump(cleanNames, outfile)
+        cPickle.dump(nameMapping, outfile)
         outfile.close()
 
         outfile = open('/Users/deflaux/rework/competitions/facebook2/data/mapping.txt', 'w')
-        for key in cleanNames:
-            outfile.write('%s|%d|%s\n' % (key, len(cleanNames[key]), str([w for w in set(cleanNames[key])])))
+        for key in nameMapping:
+            outfile.write('%s|%d|%s\n' % (key, len(nameMapping[key]), str([w for w in set(nameMapping[key])])))
         outfile.close()
 
-        print('num entries %d, num keys %d' % (numEntries, len(cleanNames)))
+        print('num entries %d, num keys %d' % (numEntries, len(nameMapping)))
                 
-    def insertMapping(self, mapping, item):
-        key = string.join(keyify(item))
-        if(key in mapping):
-            mapping[key].append(item)
+    def mergeMappings(self, nameMapping, asMapping):
+        for asName in asMapping:
+            for key in [k for k in set(asMapping[asName])]:
+                if(asName == key):
+                    continue
+                if(3 >= len(asName)):
+                    continue # as1 as2 and as3 seem to be bad
+                print('Merging %s and %s' % (asName, key))
+                if asName in nameMapping:
+                    nameMapping[asName].extend(nameMapping[key])
+                else:
+                    nameMapping[asName] = nameMapping[key]
+                del(nameMapping[key])
+                    
+    def insertMapping(self, nameMapping, asMapping, item):
+        (keyParts, asNames) = keyify(item) 
+        key = string.join(keyParts)
+        if(key in nameMapping):
+            nameMapping[key].append(item)
         else:
-            mapping[key] = [item]
+            nameMapping[key] = [item]
+
+        for asName in asNames:
+            if(asName in asMapping):
+                asMapping[asName].append(key)
+            else:
+                asMapping[asName] = [key]
+            break # only insert one
+#         if(1 < len(asNames)):
+#             print('too many asNames %s for %s' % (str(asNames), key))
                                 
 if __name__ == '__main__':
     unittest.main()

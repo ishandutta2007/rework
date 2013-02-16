@@ -5,7 +5,6 @@ import java.util.Map;
 
 import org.deflaux.util.HashUtil;
 
-
 public class HashedDataInstance {
 	// Label
 	int clicked; // 0 or 1
@@ -60,10 +59,9 @@ public class HashedDataInstance {
 			 * Extra credit Fill in your code here to for create a hashedFeature
 			 * with personalization.
 			 */
+			updateFeature(userid + "intercept", 1);
 			for (String token : tokens) {
-				if (DataInstance.MISSING_USER_ID != userid) {
-					updateFeature(userid + token, 1);
-				}
+				updateFeature(userid + token, 1);
 			}
 		}
 	}
