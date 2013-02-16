@@ -1,19 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 
-import string, re
-
-import cPickle
-import math, sys, sets, tempfile, unittest
-from collections import namedtuple
-from operator import mul    # or mul=lambda x,y:x*y
-
-nCk = lambda n,k: int(round(
-    reduce(mul, (float(n-i)/(i+1) for i in range(k)), 1)
-))
-
-City = namedtuple('City', ['x', 'y'])
-Cost = namedtuple('Cost', ['finalCity', 'cost'])
+import unittest, string, re, cPickle
 
 def normalize(asname):
     asname = string.strip(asname)
@@ -231,7 +219,14 @@ def translate(char):
 def keyify(asname):
     asname = normalize(asname)
     words = asname.split()
+    if(1 == len(words) and re.match('^\d+$', words[0])):
+        # if the asname is just a number, do not sort it, return it as-is
+        return words
+    # sort the letters in the words
     sortedWords = [ ''.join(sorted(word)) for word in words]
+    # remove duplicate words
+    sortedWords = [w for w in set(sortedWords)]
+    # sort the unique words
     sortedWords.sort()
     return sortedWords
     
@@ -240,17 +235,12 @@ class Test(unittest.TestCase):
     def test_keyify(self):
         self.assertEqual(['abr', 'foo'], keyify('foo bar'))
         self.assertEqual(['abfoor'], keyify('foobar'))
+        self.assertEqual(['abfoor'], keyify('foobar foobar'))
+        self.assertEqual(['abfoor'], keyify('foobar FOO.BAR'))
+        self.assertEqual(['60069'], keyify('60069 '))
+        self.assertEqual(['60690'], keyify('60690 '))
     
     def test_translate(self):
-        s = u"a\xac\u1234\u20ac\U00008000"
-        #      ^^^^ two-digit hex escape
-        #          ^^^^^^ four-digit Unicode escape
-        #                      ^^^^^^^^^^ eight-digit Unicode escape
-        for c in s:  print ord(c)
-
-        u = u'abcdé'
-        print ord(u[-1])
-        
         self.assertEqual('a', translate('a'))
         self.assertEqual('5', translate('5'))
         self.assertEqual('e', translate(u'é'))
@@ -263,54 +253,36 @@ class Test(unittest.TestCase):
         self.assertEqual('stbasn 32 onsismp thacher bartlett',
                          normalize(u'STB-ASN - 32 onSismp Thachér  &  Bartlett '))
 
-    def footest_cousera(self):
-        cities = self.fileInputTestHelper('/home/ec2-user/tsp.txt')
+    def test_nameCleaning(self):
+        cleanNames = {}
+        numEntries = 0
+        for i in range(1, 16) :
+            infile = open('/Users/deflaux/rework/competitions/facebook2/data/train' + str(i) + '.txt', 'r')
+            for line in infile:
+                values = line.split('|')
+                if(3 != len(values)):
+                    raise ValueError("file is not formatted correctly")
+                self.insertMapping(cleanNames, values[0])
+                self.insertMapping(cleanNames, values[1])
+                numEntries += 2
+                
+        outfile = open('/Users/deflaux/rework/competitions/facebook2/data/mapping.bin', 'wb')
+        cPickle.dump(cleanNames, outfile)
+        outfile.close()
 
-        numCities = len(cities)
-        dist = [0.0]*numCities
-        for i in range(0, numCities):
-            dist[i] = [0.0]*numCities
+        outfile = open('/Users/deflaux/rework/competitions/facebook2/data/mapping.txt', 'w')
+        for key in cleanNames:
+            outfile.write('%s|%d|%s\n' % (key, len(cleanNames[key]), str([w for w in set(cleanNames[key])])))
+        outfile.close()
 
-        for i in range(0, numCities):
-            for j in range(i+1, numCities):
-                distance = math.sqrt(
-                    (cities[i].x-cities[j].x)**2
-                    +
-                    (cities[i].y-cities[j].y)**2
-                    )
-                dist[i][j] = distance
-                dist[j][i] = distance
-
-        tourCost = shortestTour(numCities=5, distances=dist)
-        self.assertEqual(8387, math.floor(tourCost))
-
-        tourCost = shortestTour(numCities=6, distances=dist)
-        self.assertEqual(8607, math.floor(tourCost))
-
-        tourCost = shortestTour(numCities=numCities, distances=dist)
-        print("For Coursera: %f" % (math.floor(tourCost)))
-
-    def fileInputTestHelper(self, filepath):
-        infile = open(filepath, 'r')
-        line = infile.readline()
-        values = line.split()
-        if(1 != len(values)):
-            raise ValueError("file is not formatted correctly")
-        numCities = int(values[0])
-        cities = []
-        for line in infile:
-            values = line.split()
-            if(2 != len(values)):
-                raise ValueError("file is not formatted correctly")
-            x = float(values[0])
-            y = float(values[1])
-            city = City(x=x, y=y)
-            cities.append(city)
-        if(numCities != len(cities)):
-            raise ValueError("incorrect number of cities")
-        print("Loaded %d cities" % (numCities))
-        return(cities)
-
+        print('num entries %d, num keys %d' % (numEntries, len(cleanNames)))
+                
+    def insertMapping(self, mapping, item):
+        key = string.join(keyify(item))
+        if(key in mapping):
+            mapping[key].append(item)
+        else:
+            mapping[key] = [item]
                                 
 if __name__ == '__main__':
     unittest.main()
