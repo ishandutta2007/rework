@@ -28,11 +28,11 @@ import org.junit.Test;
 public class LogisticRegressionTest {
 
 	static Logger logger = Logger.getLogger("LogisticRegressionTest");
-	static final double DELTA = 1e-15;
+	static final double DELTA = 1e-6;
 	static final String DATA_PATH = "/Users/deflaux/rework/projects/ClickPrediction/data/";
 
 	static boolean debug = false; // true;
-	static boolean printAssertions = false; // true;
+	static boolean printAssertions = false;
 	static int debugSize = 100;
 	static DataSet training;
 	static DataSet testing;
@@ -159,31 +159,31 @@ public class LogisticRegressionTest {
 			} else if (0.002 == lambda) {
 				assertEqualsHelper(
 						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.002 ",
-						0.17305476141147214, rmse, DELTA);
+						0.17290981202222586, rmse, DELTA);
 			} else if (0.004 == lambda) {
 				assertEqualsHelper(
 						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.004 ",
-						0.17308221992056902, rmse, DELTA);
+						0.1728893971504985, rmse, DELTA);
 			} else if (0.006 == lambda) {
 				assertEqualsHelper(
 						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.006 ",
-						0.17312376937144372, rmse, DELTA);
+						0.1728922957978147, rmse, DELTA);
 			} else if (0.008 == lambda) {
 				assertEqualsHelper(
 						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.008 ",
-						0.17316907146122948, rmse, DELTA);
+						0.17290231539979514, rmse, DELTA);
 			} else if (0.010 == lambda) {
 				assertEqualsHelper(
 						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.010 ",
-						0.1732147133812869, rmse, DELTA);
+						0.172914790054633, rmse, DELTA);
 			} else if (0.012 == lambda) {
 				assertEqualsHelper(
 						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.012 ",
-						0.17325938238861147, rmse, DELTA);
+						0.172927807660661, rmse, DELTA);
 			} else if (0.014 == lambda) {
 				assertEqualsHelper(
 						"1.4.3 RMSE of predicted CTR for step size 0.05 and lambda 0.014 ",
-						0.17330253247633165, rmse, DELTA);
+						0.1729406645149049, rmse, DELTA);
 			} else {
 				fail("this lambda is not one requested by the homework problem");
 			}
@@ -212,17 +212,17 @@ public class LogisticRegressionTest {
 			case 97:
 				assertEqualsHelper(
 						"1.4.4 RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 97 ",
-						0.17283788911636036, rmse, DELTA);
+						0.17271390134631076, rmse, DELTA);
 				break;
 			case 12289:
 				assertEqualsHelper(
 						"1.4.4 RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 12289 ",
-						0.17283291750600113, rmse, DELTA);
+						0.1719763771030309, rmse, DELTA);
 				break;
 			case 1572869:
 				assertEqualsHelper(
 						"1.4.4 RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 1572869 ",
-						0.17283146600005928, rmse, DELTA);
+						0.17196169304323553, rmse, DELTA);
 				break;
 			default:
 				fail("this lambda is not one requested by the homework problem");
@@ -250,7 +250,7 @@ public class LogisticRegressionTest {
 
 			assertEqualsHelper(
 					"Extra Credit RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 12289 and PERSONALIZATION ",
-					0.1728366811415177, rmse, DELTA);
+					0.17206812993232642, rmse, DELTA);
 		}
 		Set<Integer> userIntersection = null;
 		{ // nest this block so that we free unnecessary objects 
@@ -282,7 +282,7 @@ public class LogisticRegressionTest {
 				+ "test_label.txt", predictions, includingList);
 		assertEqualsHelper(
 				"Extra Credit RMSE of predicted CTR for step size 0.01, lambda 0.001, feature dimensions 12289 and PERSONALIZATION over user intersection ",
-				0.14187369257443835, subsetUsersRMSE, DELTA);
+				0.14113646433554236, subsetUsersRMSE, DELTA);
 
 	}
 
