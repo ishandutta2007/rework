@@ -67,7 +67,7 @@ mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=rando
         clusterMu <- maximizeMu(k, X, responsibilities)
         expect_that(c(k,ncol(X)), equals(dim(clusterMu)))
                 
-        for(cluster in seq(1,k)) { # TODO vectorize this the rest of the way
+        for(cluster in seq(1,k)) { # TODO vectorize this the rest of the way and factor it out to a function
             sigma = (1/sum(responsibilities[,cluster]) * (t(X) %*% (responsibilities[,cluster] * X))) - (clusterMu[cluster,] %*% t(clusterMu[cluster,]))
             if(is.na(lambda)) {
                 clusterSigma[[cluster]] = sigma
@@ -91,14 +91,14 @@ mixtureOfGaussians <- function(k, data, delta, labels=NA, samplingFunction=rando
         clusterLikelihoods <- sapply(seq(1:k), 
                         function(cluster) { 
                             prior = sum(responsibilities[,cluster] * log(clusterPi[cluster]))
-                            foo =   sum(responsibilities[,cluster] *                
+                            posterior =   sum(responsibilities[,cluster] *                
                                             apply(X,
                                                   1,
                                                   function(x) { 
                                                       log(dmvnorm(x=x, mean=clusterMu[cluster,], sigma=clusterSigma[[cluster]]))
                                                   })
                                         )
-                            prior + foo
+                            prior + posterior
                             })
         currentLikelihood = sum(clusterLikelihoods)
         likelihoods[iteration] = currentLikelihood
