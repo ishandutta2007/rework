@@ -16,7 +16,8 @@ class CleanNames(unittest.TestCase):
 
         self.assertEqual((['01224abeilmost'], ['as22140']), self.keyify('T-MOBILE-AS22140'))
         self.assertEqual((['03339aenst'], ['as30933']), self.keyify('AS30933.net')) 
-        self.assertEqual((['03339aenst'], ['as30933']), self.keyify('AS30933.net L.L.C.')) 
+        self.assertEqual((['03339aenst'], ['as30933']), self.keyify('AS30933.net L.L.C.'))
+        self.assertEqual((['aeeegmrrsv'], []), self.keyify('MEGASERVER-AS MegaServer MegaServer Ltd.'))
     
     def test_translate(self):
         self.assertEqual('a', self.translate('a'))
@@ -65,7 +66,7 @@ class CleanNames(unittest.TestCase):
             outfile.write('%s|%d|%s\n' % (key, len(keyToName[key]), str([w for w in set(keyToName[key])])))
         outfile.close()
 
-        self.assertEqual(len(keyToName), 21936)
+        self.assertEqual(len(keyToName), 21991)
 
     def test_fullNameCleaning(self):
         (keyToName, asnameToKey) = self.cleanNames(15)
@@ -81,7 +82,7 @@ class CleanNames(unittest.TestCase):
             outfile.write('%s|%d|%s\n' % (key, len(keyToName[key]), str([w for w in set(keyToName[key])])))
         outfile.close()
 
-        self.assertEqual(len(keyToName), 23298)
+        self.assertEqual(len(keyToName), 47842)
 
     def cleanNames(self, numGraphs, unpickle=True):
         self.dataDir = '/Users/deflaux/rework/competitions/facebook2/data'
@@ -203,6 +204,13 @@ class CleanNames(unittest.TestCase):
         possible.  Since we know that letters are potentially scrambled in
         the name, we unscramble them by sorting the letters in the words
         that make up the name and then sorting all those words'''
+
+        # more ideas
+        # 1) lop off '-AS '
+        # 2) go down to one word keys iff the one word has a high tf-idf score
+        # 3) similarity measures that take into account tf-idf
+        name = re.sub('-AS\s', ' ', name)
+        
         normalizedName = self.normalize(name)
         words = normalizedName.split()
         if(1 == len(words) and re.match('^\d+$', words[0])):
@@ -220,7 +228,7 @@ class CleanNames(unittest.TestCase):
             asnames.sort()
         
         ### KEY
-        stopWords = ['llc', 'inc', 'ltd', 'isp', 'fop', 'co', 'sa', 'com', 'llp', 'plc', 'sa', 'net']
+        stopWords = ['llc', 'inc', 'ltd', 'isp', 'fop', 'co', 'sa', 'com', 'llp', 'plc', 'sa', 'net', 'limited', 'incorporated']
         stopWords = set([ ''.join(sorted(stopWord)) for stopWord in stopWords])
         # sort the letters in the words
         sortedWords = [ ''.join(sorted(word)) for word in words]
