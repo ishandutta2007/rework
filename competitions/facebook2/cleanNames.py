@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: latin-1 -*-
 
-import unittest, string, re, cPickle
+import unittest, string, re, cPickle, os, sys
 
 class CleanNames(unittest.TestCase):
-
     def test_keyify(self):
         self.assertEqual((['abr', 'foo'], []), self.keyify('foo bar'))
         self.assertEqual((['abfoor'], []), self.keyify('foo!bar'))
@@ -17,6 +16,7 @@ class CleanNames(unittest.TestCase):
 
         self.assertEqual((['01224abeilmost'], ['as22140']), self.keyify('T-MOBILE-AS22140'))
         self.assertEqual((['03339aenst'], ['as30933']), self.keyify('AS30933.net')) 
+        self.assertEqual((['03339aenst'], ['as30933']), self.keyify('AS30933.net L.L.C.')) 
     
     def test_translate(self):
         self.assertEqual('a', self.translate('a'))
@@ -31,54 +31,153 @@ class CleanNames(unittest.TestCase):
         self.assertEqual('stbasn 32 onsismp thacher bartlett',
                          self.normalize(u'STB-ASN - 32 onSismp Thachér  &  Bartlett '))
 
-    def test_nameCleaning(self):
-        (numEntries, numKeys) = self.cleanNames(1)
-        self.assertEqual(numEntries, 93276)
-        self.assertEqual(numKeys, 26362)
+    def test_mergeMappings(self):
+        m = {}
+        m['four one three two xxx yyy zzz'] = [4]
+        m['four three two xxx yyy zzz'] = [3]
+        m['four one three xxx yyy zzz'] = [3]
+        m['four one two xxx yyy zzz'] = [3]
+        m['one three two xxx yyy zzz'] = [3]
+        m['one two xxx yyy zzz'] = [2]
+        m['one three xxx yyy zzz'] = [2]
+        m['four one xxx yyy zzz'] = [2]
+        m['three two xxx yyy zzz'] = [2]
+        m['four two xxx yyy zzz'] = [2]
+        m['four three xxx yyy zzz'] = [2]
+        m['one xxx yyy zzz'] = [1]
+        m['four xxx yyy zzz'] = [1]
+        self.consolidateSubKeys(m)
+        self.nukeIndirectMappings(m)
+        print(m)
+        self.assertEquals(3, len(m))
         
-    def cleanNames(self, numGraphs):
-        keyToName = {}
-        asnameToKey = {}
-        numEntries = 0
-        for i in range(1, 1+numGraphs):
-            infile = open('/Users/deflaux/rework/competitions/facebook2/data/train' + str(i) + '.txt', 'r')
-            for line in infile:
-                values = line.split('|')
-                if(3 != len(values)):
-                    raise ValueError("file is not formatted correctly")
-                self.insertMapping(keyToName, asnameToKey,  values[0])
-                self.insertMapping(keyToName, asnameToKey, values[1])
-                numEntries += 2
-
+    def test_nameCleaning(self):
+        (keyToName, asnameToKey) = self.cleanNames(1)
+        
+        self.consolidateSubKeys(keyToName)
+        
         self.mergeMappings(keyToName, asnameToKey)
-         
-        outfile = open('/Users/deflaux/rework/competitions/facebook2/data/mapping.bin', 'wb')
-        cPickle.dump(keyToName, outfile)
-        outfile.close()
 
-        outfile = open('/Users/deflaux/rework/competitions/facebook2/data/mapping.txt', 'w')
+        self.nukeIndirectMappings(keyToName)
+         
+        outfile = open(self.dataDir + '/mapping_1.txt', 'w')
         for key in keyToName:
             outfile.write('%s|%d|%s\n' % (key, len(keyToName[key]), str([w for w in set(keyToName[key])])))
         outfile.close()
 
+        self.assertEqual(len(keyToName), 21936)
+
+    def test_fullNameCleaning(self):
+        (keyToName, asnameToKey) = self.cleanNames(15)
+        
+        self.consolidateSubKeys(keyToName)
+        
+        self.mergeMappings(keyToName, asnameToKey)
+
+        self.nukeIndirectMappings(keyToName)
+         
+        outfile = open(self.dataDir + '/mapping_15.txt', 'w')
+        for key in keyToName:
+            outfile.write('%s|%d|%s\n' % (key, len(keyToName[key]), str([w for w in set(keyToName[key])])))
+        outfile.close()
+
+        self.assertEqual(len(keyToName), 23298)
+
+    def cleanNames(self, numGraphs, unpickle=True):
+        self.dataDir = '/Users/deflaux/rework/competitions/facebook2/data'
+        suffix = '_' + str(numGraphs) + '.bin'
+        self.keyToNameFile = self.dataDir + '/keytoname' + suffix
+        self.asnameToKeyFile = self.dataDir + '/asnametokey' + suffix
+
+        numEntries = 0
+        if(unpickle and os.path.isfile(self.keyToNameFile) and os.path.isfile(self.asnameToKeyFile)):
+            infile = open(self.keyToNameFile, 'r')
+            keyToName = cPickle.load(infile)
+            infile.close()
+
+            infile = open(self.asnameToKeyFile, 'r')
+            asnameToKey = cPickle.load(infile)
+            infile.close()
+        else:
+            keyToName = {}
+            asnameToKey = {}
+            for i in range(1, 1+numGraphs):
+                infile = open(self.dataDir + '/train' + str(i) + '.txt', 'r')
+                for line in infile:
+                    values = line.split('|')
+                    if(3 != len(values)):
+                        raise ValueError('file is not formatted correctly')
+                    self.insertMapping(keyToName, asnameToKey,  values[0])
+                    self.insertMapping(keyToName, asnameToKey, values[1])
+                    numEntries += 2
+
+            outfile = open(self.keyToNameFile, 'wb')
+            cPickle.dump(keyToName, outfile)
+            outfile.close()
+
+            outfile = open(self.asnameToKeyFile, 'wb')
+            cPickle.dump(asnameToKey, outfile)
+            outfile.close()
+
         print('num entries %d, num keys %d' % (numEntries, len(keyToName)))
-        return(numEntries, len(keyToName))
+        return(keyToName, asnameToKey)
+
+    def nukeIndirectMappings(self, keyToName):
+        keys = keyToName.keys()
+        for key in keys:
+            if(not isinstance(keyToName[key], list)):
+                del(keyToName[key])
+                
+    def consolidateSubKeys(self, keyToName):
+        for key in keyToName:
+            keyParts = set(key.split())
+            if(2 >= len(keyParts)):
+                continue
+            for part in keyParts:
+                keyPartsSubset = keyParts.copy()
+                keyPartsSubset.remove(part)
+                parts = [p for p in keyPartsSubset]
+                parts.sort()
+                smallerKey = ' '.join(parts)
+                if(smallerKey in keyToName):
+                    self._merge(key, smallerKey, keyToName)
+                    break
                 
     def mergeMappings(self, keyToName, asnameToKey):
         for asname in asnameToKey:
             for key in [k for k in set(asnameToKey[asname])]:
                 if(asname == key):
                     continue
-                print('Merging %s and %s' % (asname, key))
-                try:
-                    if asname in keyToName:
-                        keyToName[asname].extend(keyToName[key])
-                    else:
-                        keyToName[asname] = keyToName[key]
-                    del(keyToName[key])
-                    print('\t%s' % (str(set(keyToName[asname]))))
-                except KeyError as error:
-                    print('KeyError' + str(error))
+                self._merge(key, asname, keyToName)
+
+    def _merge(self, fromKey, toKey, keyToName, nuke=False):
+        '''This method treats the hashtable like a union-find data structure'''
+        #print('Merging %s into %s' % (fromKey, toKey))
+        if toKey in keyToName:
+            while(not isinstance(keyToName[toKey], list)):
+                #print('TO: following link from %s to %s' % (toKey, keyToName[toKey]))
+                toKey = keyToName[toKey]
+        else:
+            keyToName[toKey] = []
+
+        fromValue = None
+        while(None == fromValue):
+            value = keyToName[fromKey]
+            if(value == toKey):
+                return() # already merged
+            keyToName[fromKey] = toKey
+            if(isinstance(value, list)):
+                fromValue = value
+            else: # follow the pointer
+                #print('FROM: following link from %s to %s' % (fromKey, value))
+                fromKey = value
+
+#         print('tokey %s fromkey %s tovalue %s fromvalue %s' % (toKey,
+#                                                                fromKey,
+#                                                                str(keyToName[toKey]),
+#                                                                str(fromValue)))
+        keyToName[toKey].extend(fromValue)
+#        print('\t%s' % (str(set(keyToName[toKey]))))
                     
     def insertMapping(self, keyToName, asnameToKey, item):
         (keyParts, asnames) = self.keyify(item) 
@@ -121,10 +220,12 @@ class CleanNames(unittest.TestCase):
             asnames.sort()
         
         ### KEY
+        stopWords = ['llc', 'inc', 'ltd', 'isp', 'fop', 'co', 'sa', 'com', 'llp', 'plc', 'sa', 'net']
+        stopWords = set([ ''.join(sorted(stopWord)) for stopWord in stopWords])
         # sort the letters in the words
         sortedWords = [ ''.join(sorted(word)) for word in words]
         # remove duplicate words
-        sortedWords = [w for w in set(sortedWords)]
+        sortedWords = [w for w in set(sortedWords) if w not in stopWords]
         # sort the unique words
         sortedWords.sort()
     
