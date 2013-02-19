@@ -66,7 +66,7 @@ class CleanNames(unittest.TestCase):
             outfile.write('%s|%d|%s\n' % (key, len(keyToName[key]), str([w for w in set(keyToName[key])])))
         outfile.close()
 
-        self.assertEqual(len(keyToName), 21991)
+        self.assertEqual(len(keyToName), 21607)
 
     def test_fullNameCleaning(self):
         (keyToName, asnameToKey) = self.cleanNames(15)
@@ -82,7 +82,7 @@ class CleanNames(unittest.TestCase):
             outfile.write('%s|%d|%s\n' % (key, len(keyToName[key]), str([w for w in set(keyToName[key])])))
         outfile.close()
 
-        self.assertEqual(len(keyToName), 47842)
+        self.assertEqual(len(keyToName), 44971)
 
     def cleanNames(self, numGraphs, unpickle=True):
         self.dataDir = '/Users/deflaux/rework/competitions/facebook2/data'
@@ -130,16 +130,31 @@ class CleanNames(unittest.TestCase):
                 del(keyToName[key])
                 
     def consolidateSubKeys(self, keyToName):
+        # Compute term frequencies, no need to do tf-idf because we already reduced it to unique terms per "document"
+        termFreq = {}
+        for key in keyToName:
+            for part in key.split():
+                if(part in termFreq):
+                    termFreq[part] = termFreq[part]+1
+                else:
+                    termFreq[part] = 1
+            
+        # Now for each key, remove one word and see if it is still a key, if so merge them
         for key in keyToName:
             keyParts = set(key.split())
-            if(2 >= len(keyParts)):
+            if(1 == len(keyParts)): 
                 continue
-            for part in keyParts:
+            for partToRemove in keyParts:
                 keyPartsSubset = keyParts.copy()
-                keyPartsSubset.remove(part)
-                parts = [p for p in keyPartsSubset]
-                parts.sort()
-                smallerKey = ' '.join(parts)
+                keyPartsSubset.remove(partToRemove)
+                partsRemaining = [p for p in keyPartsSubset]
+                partsRemaining.sort()
+                smallerKey = ' '.join(partsRemaining)
+                # Special handling for short keys
+                if(1 == len(partsRemaining)):
+                    if(termFreq[partToRemove] < termFreq[smallerKey]):
+                        # if we did not retain the item with lower freq in our smallerKey, skip this loop
+                        continue
                 if(smallerKey in keyToName):
                     self._merge(key, smallerKey, keyToName)
                     break
