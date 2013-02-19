@@ -62,11 +62,15 @@ class CleanNames(unittest.TestCase):
         self.nukeIndirectMappings(keyToName)
          
         outfile = open(self.dataDir + '/mapping_1.txt', 'w')
+        numSingleUseKeys = 0
         for key in keyToName:
             outfile.write('%s|%d|%s\n' % (key, len(keyToName[key]), str([w for w in set(keyToName[key])])))
+            if(1 == len(keyToName[key])):
+                   numSingleUseKeys = numSingleUseKeys +1
         outfile.close()
 
-        self.assertEqual(len(keyToName), 21607)
+        self.assertEqual(len(keyToName), 21523)
+        self.assertEqual(numSingleUseKeys, 8277)
 
     def test_fullNameCleaning(self):
         (keyToName, asnameToKey) = self.cleanNames(15)
@@ -78,11 +82,15 @@ class CleanNames(unittest.TestCase):
         self.nukeIndirectMappings(keyToName)
          
         outfile = open(self.dataDir + '/mapping_15.txt', 'w')
+        numSingleUseKeys = 0
         for key in keyToName:
             outfile.write('%s|%d|%s\n' % (key, len(keyToName[key]), str([w for w in set(keyToName[key])])))
+            if(1 == len(keyToName[key])):
+                   numSingleUseKeys = numSingleUseKeys +1
         outfile.close()
 
-        self.assertEqual(len(keyToName), 44971)
+        self.assertEqual(len(keyToName), 44015)
+        self.assertEqual(numSingleUseKeys, 9832)
 
     def cleanNames(self, numGraphs, unpickle=True):
         self.dataDir = '/Users/deflaux/rework/competitions/facebook2/data'
@@ -221,9 +229,8 @@ class CleanNames(unittest.TestCase):
         that make up the name and then sorting all those words'''
 
         # more ideas
-        # 1) lop off '-AS '
-        # 2) go down to one word keys iff the one word has a high tf-idf score
-        # 3) similarity measures that take into account tf-idf
+        # 1) move stop word logic to here, use term freq threshold to determine what is a stop word???
+        # 2) similarity measures that take into account tf-idf
         name = re.sub('-AS\s', ' ', name)
         
         normalizedName = self.normalize(name)
@@ -243,7 +250,8 @@ class CleanNames(unittest.TestCase):
             asnames.sort()
         
         ### KEY
-        stopWords = ['llc', 'inc', 'ltd', 'isp', 'fop', 'co', 'sa', 'com', 'llp', 'plc', 'sa', 'net', 'limited', 'incorporated']
+            # TODO compute term frequency to determine the stop words, as60 was badly merged
+        stopWords = ['llc', 'inc', 'ltd', 'isp', 'fop', 'co', 'sa', 'com', 'llp', 'plc', 'sa', 'net', 'limited', 'incorporated', 'services', 'network', 'information', 'technology']
         stopWords = set([ ''.join(sorted(stopWord)) for stopWord in stopWords])
         # sort the letters in the words
         sortedWords = [ ''.join(sorted(word)) for word in words]
@@ -259,7 +267,8 @@ class CleanNames(unittest.TestCase):
         name = string.strip(name)
         name = string.lower(name)
         name = ''.join([self.translate(c) for c in name])
-        name = re.sub('[^a-zA-Z0-9_\s]', '', name)
+        name = re.sub('[&]', ' ', name) # turn these into spaces
+        name = re.sub('[^a-zA-Z0-9_\s]', '', name) # collapse these
         name = re.sub('\s+', ' ', name)
         return(name)
 
