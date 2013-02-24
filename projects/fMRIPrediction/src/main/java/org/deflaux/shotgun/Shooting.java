@@ -14,7 +14,7 @@ public class Shooting {
 	static Logger logger = Logger.getLogger("Shooting");
 	static final int NUM_CORES = Runtime.getRuntime().availableProcessors();
 	static final double DELTA = 1e-5;
-	static final boolean DEBUG = true;
+	static final boolean DEBUG = false;
 
 	/* Dimension of X */
 	int n, p;
@@ -52,7 +52,11 @@ public class Shooting {
 	 */
 	public Shooting(float[][] XTrans, float[] Y, double lambda) {
 
-		// TODO scale and center data
+		// TODO scale and center data?
+		// x_ij = (x_ij - mu_j) / sigma_J
+		// OR
+		// x_ij = (x_ij - mu_j) / [max(x_j)-min(x_j)]
+		// TODO warm start?
 
 		this.XTrans = XTrans;
 		this.Y = Y;
@@ -110,24 +114,19 @@ public class Shooting {
 			float prevWj = (p > j) ? wplus[index] : wminus[index];
 			double newWj = prevWj + Math.max(-1 * prevWj, -1 * minWj);
 
-			// Enforce the non-negativity constraint and update xw
+			// Enforce the non-negativity constraint
 			if (0 > newWj) {
 				wplus[index] = 0;
 				wminus[index] = (float) (-1.0 * newWj);
-				// xw = MatUtil.minus(xw_minus_j,
-				// MatUtil.scale(XTrans[index], wminus[index]));
-			} else if (0 <= newWj) {
+			} else {
 				wplus[index] = (float) newWj;
 				wminus[index] = 0;
-				// xw = MatUtil.plus(xw_minus_j,
-				// MatUtil.scale(XTrans[index], wplus[index]));
-			} else {
-				throw new Error("foo!");
 			}
 
-			xw = computeXWPlusJ(j, index, newWj);
+			// Update xw
+			xw = computeXWMinusJPlusJ(j, index, xw_minus_j, newWj);
 
-			// sanity checks
+			// Sanity checks
 			if (DEBUG) {
 				logger.info(i + ": j=" + j + " prevWj=" + prevWj + " minWj="
 						+ minWj + " newWj=" + newWj);
@@ -142,58 +141,23 @@ public class Shooting {
 				float xwSanityCheck[] = MatUtil.multiply(XTrans, wSanityCheck);
 				assertEquals(xwSanityCheck.length, n);
 				for (int k = 0; k < n; k++) {
-					assertEquals(xwSanityCheck[k], xw[k], DELTA);
+					assertEquals(xwSanityCheck[k], xw[k], DELTA*100);
 				}
 			}
 		}
 	}
 
 	float[] computeXWMinusJ(int j, int index) {
-		float[] xw_minus_j = (p > j) ? MatUtil.minus(xw,
-				MatUtil.scale(XTrans[index], wplus[index])) : MatUtil.plus(xw,
-				MatUtil.scale(XTrans[index], wminus[index]));
-
-		// sanity checks
-		if (DEBUG) {
-			float wSanityCheck[] = MatUtil.minus(wplus, wminus);
-			wSanityCheck[index] = 0;
-			assertEquals(wSanityCheck.length, p);
-			float xwSanityCheck[] = MatUtil.multiply(XTrans, wSanityCheck);
-			assertEquals(xwSanityCheck.length, n);
-			for (int k = 0; k < n; k++) {
-				assertEquals(xwSanityCheck[k], xw_minus_j[k], DELTA);
-			}
-		}
-
+		float[] xw_minus_j = MatUtil.minus(xw,
+				MatUtil.scale(XTrans[index], wplus[index]-wminus[index]));
+		
 		return xw_minus_j;
 	}
 
-	float[] computeXWPlusJ(int j, int index, double wj) {
-		float[] xw_plus_j = MatUtil.plus(xw,
+	float[] computeXWMinusJPlusJ(int j, int index, float[] xw_minus_j, double wj) {
+		float[] xw_minus_j_plus_j = MatUtil.plus(xw_minus_j,
 				MatUtil.scale(XTrans[index], (float) wj));
-
-		// sanity checks
-		if (DEBUG) {
-			float wSanityCheck[] = MatUtil.minus(wplus, wminus);
-			assertEquals(wSanityCheck.length, p);
-			float xwSanityCheck[] = MatUtil.multiply(XTrans, wSanityCheck);
-			assertEquals(xwSanityCheck.length, n);
-			return xwSanityCheck;
-			// for(int k = 0; k < n; k++) {
-			// assertEquals(xwSanityCheck[k], xw_plus_j[k], DELTA);
-			// }
-		}
-
-		return xw_plus_j;
-	}
-
-	static float[] computeXWMinusJ(int p, int j, float[][] XTrans, float[] xw,
-			float[] wminus, float[] wplus) {
-		int index = (p > j) ? j : j - p;
-
-		return (p > j) ? MatUtil.minus(xw,
-				MatUtil.scale(XTrans[index], wplus[index])) : MatUtil.plus(xw,
-				MatUtil.scale(XTrans[index], wminus[index]));
+		return xw_minus_j_plus_j;
 	}
 
 	/**
