@@ -188,7 +188,7 @@ public class MatUtil {
 	
 	/**
 	 * @param v
-	 * @return the l2 norm of the vector v.
+	 * @return the l0 norm of the vector v.
 	 */
 	public static float l0(float[] v) {
 		int nnz = 0;
