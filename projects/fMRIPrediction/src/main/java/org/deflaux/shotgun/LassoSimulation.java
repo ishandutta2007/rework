@@ -3,6 +3,7 @@ package org.deflaux.shotgun;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
+import org.apache.log4j.BasicConfigurator;
 import org.deflaux.util.MatUtil;
 
 
@@ -55,6 +56,7 @@ public class LassoSimulation {
 	}
 	
 	public static void main(String[] args) throws FileNotFoundException {
+		BasicConfigurator.configure();
 		run();
 	}
 }
