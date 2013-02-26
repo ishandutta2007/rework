@@ -33,8 +33,8 @@ University of Washington Non-Matriculated Student, ID 1210660 \\
 \section{Project Idea}
 ``The Task: you will be given a path which, at one point in the training time
 period, was an optimal path from node A to B. The question is then to make a
-probabilistic prediction, for each of the 5 test graphs'' (which are
-unobserved), ``whether the given path is STILL an optimal path.  This is a
+probabilistic prediction, for each of the 5 test graphs'' which are
+unobserved, ``whether the given path is STILL an optimal path.  This is a
 much more difficult task than link prediction alone. The global structure of
 the graph may affect many optimal routes, paths can have varying lengths
 (and thus varying a priori probabilities of being optimal), and there may be
@@ -50,7 +50,7 @@ multiple optimal routes for a given source and destination.''[1]
 
 The domain of the data in this problem are the connections between
 autonomous systems[2] in the Internet.  More specifically, the nodes in the
-graph correspond to gateway routers for independent networks and the directed
+graph correspond to gateway routers for independent networks, and the directed
 edges between them encode the network peering relationships with edge weight indicating cost of
 transit over those links.
 
@@ -62,14 +62,14 @@ training graph is \texttt{tail router AS Name | head router AS
   Name | cost for use of the link} where the cost is either 0 for ``free'' or 1
 indicating that a fee is to be paid.  The number of unique node names in the
 training dataset is 372,037 but part of the competition is to figure out
-which of those "messy" names are duplicates.  
+which of those "messy" names are duplicates.  A training edge may look like:
 
-\texttt{GOOGLE-CORPNET Google Ireland Limited | FACEBOOK-CORP - Facebook Inc | 1}
+\texttt{{\small GOOGLE-CORPNET Google Ireland Limited | FACEBOOK-CORP - Facebook Inc | 1}}
 
 The test dataset consists of 10,000 single or multi-edge paths for the (unobserved)
 graphs at the next five time intervals.  A test path may look like:
 
-\texttt{REDWIRE - VoloNet Technologies, Inc | NCN-AS FOP Sergey Sergeevich | DKB | JMC-AS - JPMorgan Chase \& Co. | PIERCE-COUNTY - Pierce County}
+\texttt{{\small REDWIRE - VoloNet Technologies, Inc | NCN-AS FOP Sergey Sergeevich | DKB | JMC-AS - JPMorgan Chase \& Co. | PIERCE-COUNTY - Pierce County}}
 
 \subsection{Learning}
 
@@ -92,7 +92,6 @@ and will reuse features.
 \item temporality: edges will change costs with time
 \item incomplete data: edges may be absent from the data but still exist
 \item messy data: node names are mangled in the data and de-duping is needed
-\item online learning: edge data will be treated as streaming data about the state of the network
 \end{itemize}
 
 \section{Software and Algorithms}
@@ -108,7 +107,7 @@ corresponded to a shorter word name.  This is the only batch process in the proj
 \textbf{Modeling Connections} A feature is created for each $(tail,head)$ pair and then hashed[3] into a
 constrained dimensional space since we do not know the true dimensionality
 of our input space.  For the classification model, the feature's value is always 1
-since we have no negative samples.  For the regression model the feature's value value is 0
+since we have no negative samples.  For the regression model the feature's value is 0
 for a free link or 1 for a paid link.
 
 \textbf{Modeling Connectedness} A feature is created for the degree of each node
@@ -122,34 +121,36 @@ for a free link or 1 for a paid link.
 
 \subsection{Learning}
 
-Stochastic gradient descent will be used.  In additionl to penalization via
+Stochastic gradient descent will be used.  In addition to penalization via
 regularization, weights will be boosted using the time interval $t$ so that more
 recent data is emphasized.\footnote{I would greatly appreciate any
   suggestions as to how to better facilitate the aging of old data in this model.}
 
 \begin{displaymath}
-w_i^{(t+1)} = w_i^{(t)} + \eta \{- \lambda w_i^{(t)} + x_i^{(t)} [ y^t -  p(Y=1|x^{(t)},w^{(t)})] + epoch*\tau \}
+w_i^{(t+1)} = w_i^{(t)} + \eta \{- \lambda w_i^{(t)} + x_i^{(t)} [ y^t -  p(Y=1|x^{(t)},w^{(t)})] + epoch(t)*\tau \}
 \end{displaymath}
-where $epoch \in \{ 1,...,15 \}$ for each of our 15 training graphs.  In a more realistic situation, the epoch would be derived from the time at
+where $epoch(t) \in \{ 1,...,15 \}$ for each of our 15 training graphs.  In a more realistic situation, the epoch would be derived from the time at
 which the edge information was received by the learner.
 
 \subsection{Prediction Pseudocode}
 
-for each edge in the path, use the existence model to determine its probability of existence, multiply all the probabilities together
+\textsf{\small for each edge in the path, use the existence model to determine its probability of existence, multiply all the probabilities together}
 
-for each edge in the path, use the cost model to determine its probable cost, sum all the costs together note that this value will not actually be used yet
+\textsf{\small for each edge in the path, use the cost model to determine its probable cost, sum all the costs together}
 
-generate additional possible paths between tail and head given recent training graphs (can keep graph generation simple at first and remove links in the test path to try shorter paths and/or replace intermediate nodes in the path with nodes of high degree) 
+\textsf{\small generate additional possible paths between tail and head (can keep graph generation simple at first and remove links in the test path to try shorter paths and/or replace intermediate nodes in the path with nodes of high degree)}
 
-compute the existence probability and cost of each graph and use decision theory to come up with the final prediction
+\textsf{\small compute the existence probability and cost of each candiate path graph}
+
+\textsf{\small use decision theory to compare the test path with the candidate paths to determine the final prediction}
 
 \section{Preliminary Results}
 
 \subsection{AS Name Cleaning}
 
-Preprocessing was performed to compute a mapping of messy names to opaque
+Preprocessing was performed to compute a mapping of ``messy'' names to opaque
 keys.  The software was able to reduce the number of unique node names from
-372,037 to 44015. For example the following key maps to 35 different unique node names
+372,037 to 44,015. For example the following key maps to 35 different unique node names
 found in the data:
 
 {\small \texttt{abccefkooopr abcefkoo|35|['FACEBOOK-CORP Inc - Facebook
@@ -162,7 +163,8 @@ found in the data:
 Kaggle leaderboard rankings are determined as follows: ``Your predictions
 will be evaluated by the Area Under the ROC Curve (AUC) metric.  While the
 ground-truth is binary, real-valued submissions are allowed. ``[1]  Included
-is a screenshot of the ranking of a random chance prediction.
+is a screenshot of the ranking of a random chance prediction which will
+serve at the baseline for this project.
 
   \begin{center}
     \includegraphics[scale=.4]{randomPredictions.png}
@@ -175,7 +177,7 @@ is a screenshot of the ranking of a random chance prediction.
 
 [2] \url{http://www.cisco.com/web/about/ac123/ac147/archived_issues/ipj_9-1/autonomous_system_numbers.html}
 
-[3]  Weinberger, Kilian, et al. {\it Feature hashing for large scale multitask learning." Proceedings of the 26th Annual International Conference on Machine Learning.} ACM, 2009.
+[3] Weinberger, Kilian, et al. {\it Feature hashing for large scale multitask learning." Proceedings of the 26th Annual International Conference on Machine Learning.} ACM, 2009.
 
 [4] Nemirovski, Arkadi, et al. {\it Robust stochastic approximation approach to stochastic programming.} SIAM Journal on Optimization 19.4 (2009): 1574-1609.
 }
