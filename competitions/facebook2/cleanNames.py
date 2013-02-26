@@ -6,6 +6,7 @@ import unittest, string, re, cPickle, os, sys
 class CleanNames(unittest.TestCase):
     def test_keyify(self):
         self.assertEqual((['abr', 'foo'], []), self.keyify('foo bar'))
+        self.assertEqual((['abr', 'foo'], []), self.keyify('foo&bar'))
         self.assertEqual((['abfoor'], []), self.keyify('foo!bar'))
         self.assertEqual((['abfoor'], []), self.keyify('foobar'))
         self.assertEqual((['abfoor'], []), self.keyify('foobar foobar'))
@@ -47,21 +48,29 @@ class CleanNames(unittest.TestCase):
         m['four three xxx yyy zzz'] = [2]
         m['one xxx yyy zzz'] = [1]
         m['four xxx yyy zzz'] = [1]
-        self.consolidateSubKeys(m)
+        self.consolidateSubKeys(m, {})
         self.nukeIndirectMappings(m)
         print(m)
         self.assertEquals(3, len(m))
         
+
     def test_nameCleaning(self):
-        (keyToName, asnameToKey) = self.cleanNames(1)
+        numGraphs = 1
         
-        self.consolidateSubKeys(keyToName)
+        (keyToName, asnameToKey) = self.cleanNames(numGraphs)
+
+        (termFreq, stopWords) = self.filterStopWords(keyToName)
+
+        expectedStopWords = ['llc', 'inc', 'ltd', 'isp', 'fop', 'co', 'sa', 'com', 'llp', 'plc', 'sa', 'net', 'limited', 'incorporated', 'services', 'network', 'information', 'technology']
+        # TODO tests 
+        
+        self.consolidateSubKeys(keyToName, termFreq)
         
         self.mergeMappings(keyToName, asnameToKey)
 
         self.nukeIndirectMappings(keyToName)
          
-        outfile = open(self.dataDir + '/mapping_1.txt', 'w')
+        outfile = open(self.dataDir + '/mapping_' + str(numGraphs) + '.txt', 'w')
         numSingleUseKeys = 0
         for key in keyToName:
             outfile.write('%s|%d|%s\n' % (key, len(keyToName[key]), str([w for w in set(keyToName[key])])))
@@ -69,28 +78,29 @@ class CleanNames(unittest.TestCase):
                    numSingleUseKeys = numSingleUseKeys +1
         outfile.close()
 
-        self.assertEqual(len(keyToName), 21523)
-        self.assertEqual(numSingleUseKeys, 8277)
+        if(numGraphs == 1):
+            self.assertEqual(len(keyToName), 21523)
+            self.assertEqual(numSingleUseKeys, 8277)
+        else:
+            self.assertEqual(len(keyToName), 44015)
+            self.assertEqual(numSingleUseKeys, 9832)
 
-    def test_fullNameCleaning(self):
-        (keyToName, asnameToKey) = self.cleanNames(15)
-        
-        self.consolidateSubKeys(keyToName)
-        
-        self.mergeMappings(keyToName, asnameToKey)
-
-        self.nukeIndirectMappings(keyToName)
-         
-        outfile = open(self.dataDir + '/mapping_15.txt', 'w')
-        numSingleUseKeys = 0
+    def filterStopWords(self, keyToName):
+        # Compute term frequencies, no need to do tf-idf because we already reduced it to unique terms per "document"
+        termFreq = {}
         for key in keyToName:
-            outfile.write('%s|%d|%s\n' % (key, len(keyToName[key]), str([w for w in set(keyToName[key])])))
-            if(1 == len(keyToName[key])):
-                   numSingleUseKeys = numSingleUseKeys +1
-        outfile.close()
+            for part in key.split():
+                if(part in termFreq):
+                    termFreq[part] = termFreq[part]+1
+                else:
+                    termFreq[part] = 1
 
-        self.assertEqual(len(keyToName), 44015)
-        self.assertEqual(numSingleUseKeys, 9832)
+        # TODO
+        # dictionary to tuple
+        # sort on freq
+        # use threshold for stopwords
+        stopWords = set([])
+        return(termFreq, stopWords)
 
     def cleanNames(self, numGraphs, unpickle=True):
         self.dataDir = '/Users/deflaux/rework/competitions/facebook2/data'
@@ -137,17 +147,9 @@ class CleanNames(unittest.TestCase):
             if(not isinstance(keyToName[key], list)):
                 del(keyToName[key])
                 
-    def consolidateSubKeys(self, keyToName):
-        # Compute term frequencies, no need to do tf-idf because we already reduced it to unique terms per "document"
-        termFreq = {}
-        for key in keyToName:
-            for part in key.split():
-                if(part in termFreq):
-                    termFreq[part] = termFreq[part]+1
-                else:
-                    termFreq[part] = 1
-            
-        # Now for each key, remove one word and see if it is still a key, if so merge them
+    def consolidateSubKeys(self, keyToName, termFreq):            
+        # For each key, remove one word and see if it is still a key,
+        # if so merge them
         for key in keyToName:
             keyParts = set(key.split())
             if(1 == len(keyParts)): 
