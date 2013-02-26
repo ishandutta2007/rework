@@ -81,9 +81,8 @@ edges of graph 1 streamed prior to those of graph 2, etc...
 
 Note that to meet the goals of this competition, two models are needed: (1)
 a classification model for edge existence and (2) a regression model for
-edge cost\footnote{I may opt to create the classification model for the
-  purposes of this project and create the regression model after the quarter
-is over.}.  Both will be learned incrementally as the edge data streams in
+edge cost\footnote{I may opt to create just the classification model for the
+  purposes of this project.}.  Both will be learned incrementally as the edge data streams in
 and will reuse features.
 
 \textbf{Challenges}
@@ -124,7 +123,10 @@ for a free link or 1 for a paid link.
 Stochastic gradient descent will be used.  In addition to penalization via
 regularization, weights will be boosted using the time interval $t$ so that more
 recent data is emphasized.\footnote{I would greatly appreciate any
-  suggestions as to how to better facilitate the aging of old data in this model.}
+  suggestions as to how to better model recency of edges and also robustness
+  of edges over time.  (e.g., a recent edge may have come and go repeatedly so it
+  should be considered ``flaky''; a specific example may be routers in India
+  where the power situation is sporadic.)}
 
 \begin{displaymath}
 w_i^{(t+1)} = w_i^{(t)} + \eta \{- \lambda w_i^{(t)} + x_i^{(t)} [ y^t -  p(Y=1|x^{(t)},w^{(t)})] + epoch(t)*\tau \}
