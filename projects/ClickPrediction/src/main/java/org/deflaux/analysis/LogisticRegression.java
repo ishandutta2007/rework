@@ -2,12 +2,11 @@ package org.deflaux.analysis;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.commons.lang3.ArrayUtils;
 
 public class LogisticRegression {
 	static final int LOSS_AVG_INTERVAL = 100;
