@@ -101,19 +101,17 @@ and will reuse features.
 Software was written to normalize and deduplicate the ``messy'' node names
 found in the input data.  Techniques such as tf-idf were used to determine
 which term(s) to remove from a multi-word node name to see if it
-corresponded to a shorter word name.
-
-This is the only batch process in the project; everything else is streaming.
+corresponded to a shorter word name.  This is the only batch process in the project; everything else is streaming.
 
 \subsection{Features}
 
-\begin{description}
-\item [Modeling Connections] A feature is created for each $(tail,head)$ pair and then hashed[3] into a
+\textbf{Modeling Connections} A feature is created for each $(tail,head)$ pair and then hashed[3] into a
 constrained dimensional space since we do not know the true dimensionality
 of our input space.  For the classification model, the feature's value is always 1
 since we have no negative samples.  For the regression model the feature's value value is 0
 for a free link or 1 for a paid link.
-\item [Modeling Connectedness] A feature is created for the degree of each node
+
+\textbf{Modeling Connectedness} A feature is created for the degree of each node
   involved in the edge.  There are some nodes in
   the data which are very high degree and likely to be robust in terms of
   existence.  The value for this feature will be approximated rather than
@@ -121,7 +119,6 @@ for a free link or 1 for a paid link.
   bloom filter for each node observed encoding the set of nodes to which
   this node is connected.  The degree will be approximated by the
   number of bits set to true in the bloom filter.  
-\end{description}
 
 \subsection{Learning}
 
@@ -133,39 +130,43 @@ recent data is emphasized.\footnote{I would greatly appreciate any
 \begin{displaymath}
 w_i^{(t+1)} = w_i^{(t)} + \eta \{- \lambda w_i^{(t)} + x_i^{(t)} [ y^t -  p(Y=1|x^{(t)},w^{(t)})] + epoch*\tau \}
 \end{displaymath}
-where $epoch \in \{ 1,...,15 \}$ for each of our 15 training graphs
-
-In a more realistic situation, the epoch would be derived from the time at
+where $epoch \in \{ 1,...,15 \}$ for each of our 15 training graphs.  In a more realistic situation, the epoch would be derived from the time at
 which the edge information was received by the learner.
 
-\subsection{Prediction}
+\subsection{Prediction Pseudocode}
 
-Algorithm
-\texttt{for each edge in the path, use the existence model to determine its probability of existence, multiply all the probabilities together \\
-\\
-for each edge in the path, use the cost model to determine its probable cost, sum all the costs together note that this value will not actually be used yet \\
-\\
-generate additional possible paths between tail and head given recent training graphs (can keep graph generation simple at first and remove links in the test path to try shorter paths and/or replace intermediate nodes in the path with nodes of high degree) \\
-\\
+for each edge in the path, use the existence model to determine its probability of existence, multiply all the probabilities together
+
+for each edge in the path, use the cost model to determine its probable cost, sum all the costs together note that this value will not actually be used yet
+
+generate additional possible paths between tail and head given recent training graphs (can keep graph generation simple at first and remove links in the test path to try shorter paths and/or replace intermediate nodes in the path with nodes of high degree) 
+
 compute the existence probability and cost of each graph and use decision theory to come up with the final prediction
-}
 
 \section{Preliminary Results}
 
 \subsection{AS Name Cleaning}
 
 Preprocessing was performed to compute a mapping of messy names to opaque
-keys.  For example the following key maps to 35 different unique node names
+keys.  The software was able to reduce the number of unique node names from
+372,037 to 44015. For example the following key maps to 35 different unique node names
 found in the data:
 
-{\small texttt{abccefkooopr abcefkoo|35|['FACEBOOK-CORP Inc - Facebook Inc', 'Facebook FACEBOOK-CORP - Facebook Inc', 'O-BEFKORACOPC - Facebook Inc', 'FACEBOOK-CORP - Facebook FACEBOOK-CORP Inc', 'Inc FACEBOOK-CORP - Facebook Inc', 'FACEBOOK-CORP - FACEBOOK-CORP Facebook Inc', 'FACEBOOK-CORP - Facebook Inc', 'BPEAOC-CRFKOO - Facebook Inc', 'FACEBOOK-CORP - ceaoFkob Inc', 'FACEBOOK-CORP - - Facebook Inc', '- FACEBOOK-CORP - Facebook Inc', 'ECOBCARK-OOFP - Facebook Inc', 'FACEBOOK-CORP - Facebook', 'FACEBOOK-CORP - boackFeo Inc', 'FACEBOOK-CORP Facebook - Facebook Inc', 'FACEBOOK-CORP - Facebook Facebook Inc', 'FACEBOOK-CORP - Facebook ncI', 'FACEBOOK-CORP - Facebook Inc Inc', 'FACEBOOK-CORP FACEBOOK-CORP - Facebook Inc']
-}}
-
-The software was able to reduce the number of unique node names from 372,037 to 44015.
+{\small \texttt{abccefkooopr abcefkoo|35|['FACEBOOK-CORP Inc - Facebook
+    Inc', 'Facebook FACEBOOK-CORP - Facebook Inc', 'O-BEFKORACOPC - Facebook
+    Inc', \\
+... \\'FACEBOOK-CORP - Facebook Inc Inc', 'FACEBOOK-CORP FACEBOOK-CORP - Facebook Inc']}}
 
 \subsection{Random Chance Prediction}
 
-``Your predictions will be evaluated by the Area Under the ROC Curve (AUC) metric.  While the ground-truth is binary, real-valued submissions are allowed. ``
+Kaggle leaderboard rankings are determined as follows: ``Your predictions
+will be evaluated by the Area Under the ROC Curve (AUC) metric.  While the
+ground-truth is binary, real-valued submissions are allowed. ``[1]  Included
+is a screenshot of the ranking of a random chance prediction.
+
+  \begin{center}
+    \includegraphics[scale=.4]{randomPredictions.png}
+  \end{center}
 
 \subsubsection*{References}
 
