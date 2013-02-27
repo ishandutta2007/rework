@@ -12,7 +12,7 @@ public class Shooting {
 
 	static Logger logger = Logger.getLogger("Shooting");
 	static final int NUM_CORES = Runtime.getRuntime().availableProcessors();
-	static final double DELTA = 1e-4;
+	static final double DELTA = 1e-5;
 	static final boolean DEBUG = false;
 
 	/* Dimension of X */
