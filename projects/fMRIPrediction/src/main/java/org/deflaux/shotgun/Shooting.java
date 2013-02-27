@@ -4,7 +4,6 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import static org.junit.Assert.*;
 import org.apache.log4j.Logger;
 
 import org.deflaux.util.MatUtil;
@@ -13,7 +12,7 @@ public class Shooting {
 
 	static Logger logger = Logger.getLogger("Shooting");
 	static final int NUM_CORES = Runtime.getRuntime().availableProcessors();
-	static final double DELTA = 1e-5;
+	static final double DELTA = 1e-4;
 	static final boolean DEBUG = false;
 
 	/* Dimension of X */
@@ -74,18 +73,6 @@ public class Shooting {
 		oldw = new float[p];
 	}
 
-	public double soft(double aj, double cj, double lambda) {
-		double value;
-		if (cj > lambda) {
-			value = (cj - lambda) / aj;
-		} else if (cj < lambda) {
-			value = (cj + lambda) / aj;
-		} else {
-			value = 0;
-		}
-		return value;
-	}
-
 	/**
 	 * Perform coordinate descent at K random chosen coordinates;
 	 * 
@@ -100,64 +87,37 @@ public class Shooting {
 			/**
 			 * Your code goes here.
 			 */
-			int index = (p > j) ? j : j - p;
+			int indexJ = (p > j) ? j : j - p;
 
-			float[] xw_minus_j = computeXWMinusJ(j, index);
+			float gj = 0;
+			for (int indexI = 0; indexI < n; indexI++) {
+				if (0 != XTrans[indexJ][indexI]) {
+					float xij = (p > j) ? XTrans[indexJ][indexI] : -XTrans[indexJ][indexI];
+					float zi = xw[indexI];
+					float yi = Y[indexI];
+					gj += (zi - yi) * xij;
+				}
+			}
+			gj = (float) ((gj / n) + lambda);
 
-			double aj = 2 * MatUtil.dot(XTrans[index], XTrans[index]);
-
-			double cj = 2 * MatUtil.dot(XTrans[index],
-					MatUtil.minus(Y, xw_minus_j));
-
-			double minWj = soft(aj, cj, lambda);
-
-			float prevWj = (p > j) ? wplus[index] : wminus[index];
-			double newWj = prevWj + Math.max(-1 * prevWj, -1 * minWj);
-
-			// Enforce the non-negativity constraint
-			if (0 > newWj) {
-				wplus[index] = 0;
-				wminus[index] = (float) (-1.0 * newWj);
+			float prevWj = (p > j) ? wplus[indexJ] : wminus[indexJ];
+			float eta = Math.max(-prevWj, -gj);
+			float newWj = prevWj + eta;
+			
+			if (p > j) {
+				wplus[indexJ] = newWj;
 			} else {
-				wplus[index] = (float) newWj;
-				wminus[index] = 0;
+				wminus[indexJ] = newWj;
 			}
 
-			// Update xw
-			xw = computeXWMinusJPlusJ(j, index, xw_minus_j, newWj);
-
-			// Sanity checks
-			if (DEBUG) {
-				logger.info(i + ": j=" + j + " prevWj=" + prevWj + " minWj="
-						+ minWj + " newWj=" + newWj);
-				logger.info(i + ": wplus=" + implode(wplus));
-				logger.info(i + ": wminus=" + implode(wminus));
-				for (int k = 0; k < p; k++) {
-					assertTrue(wplus[k] >= 0);
-					assertTrue(wminus[k] >= 0);
-				}
-				float wSanityCheck[] = MatUtil.minus(wplus, wminus);
-				assertEquals(wSanityCheck.length, p);
-				float xwSanityCheck[] = MatUtil.multiply(XTrans, wSanityCheck);
-				assertEquals(xwSanityCheck.length, n);
-				for (int k = 0; k < n; k++) {
-					assertEquals(xwSanityCheck[k], xw[k], DELTA*100);
+			for (int indexI = 0; indexI < n; indexI++) {
+				if (0 != XTrans[indexJ][indexI]) {
+					float xij = (p > j) ? XTrans[indexJ][indexI] : -1
+							* XTrans[indexJ][indexI];
+					xw[indexI] += eta * xij;
 				}
 			}
 		}
-	}
-
-	float[] computeXWMinusJ(int j, int index) {
-		float[] xw_minus_j = MatUtil.minus(xw,
-				MatUtil.scale(XTrans[index], wplus[index]-wminus[index]));
-		
-		return xw_minus_j;
-	}
-
-	float[] computeXWMinusJPlusJ(int j, int index, float[] xw_minus_j, double wj) {
-		float[] xw_minus_j_plus_j = MatUtil.plus(xw_minus_j,
-				MatUtil.scale(XTrans[index], (float) wj));
-		return xw_minus_j_plus_j;
 	}
 
 	/**
@@ -172,19 +132,23 @@ public class Shooting {
 			 */
 			// Check whether the result has converged.
 			w = MatUtil.minus(wplus, wminus);
+
 			float[] wdelta = MatUtil.minus(w, oldw);
 			float delta = MatUtil.l2(wdelta);
 			if (delta < DELTA) {
 				break;
 			}
 			oldw = w.clone();
-			iter++;
-
 			// sanity checks
+			if (0 == iter % 100) {
+				System.out.println("iter: " + iter + "NNZ: " + MatUtil.l0(w));
+			}
 			if (DEBUG) {
 				logger.info(iter + ":: delta=" + delta);
 				logger.info(iter + ":: w=" + implode(w));
 			}
+
+			iter++;
 		}
 		return w;
 	}
@@ -192,7 +156,7 @@ public class Shooting {
 	/**
 	 * Run Shotgun parallel SCD until convergence or exceeding maxiter.
 	 * 
-	 * Jay's answer to my question regarding thread safe updates to members of
+	 * Jay's answer to my question regarding thread-safe updates to members of
 	 * this class:
 	 * 
 	 * "There is potential race condition. In ideal case, we want to have atomic
