@@ -114,14 +114,16 @@ public class FMRIWordPrediction {
 			
 			// Pick the best lambda using the held out test set.
 			float min = Float.MAX_VALUE;
-			for (float[] what : results) {
+			for (int j = 0; j < results.size() ; j++) {
+				float[] what = results.get(j);
 				float testerror = MatUtil.l2(MatUtil.minus(MatUtil.multiply(Xtest_trans, what), Ytest_trans[i]));
 				testerror = (float) (Math.pow(testerror, 2)/ntest);
 				
 				float trainerror = MatUtil.l2(MatUtil.minus(MatUtil.multiply(Xtrain_trans, what), Ytrain_trans[i]));
 				trainerror = (float) (Math.pow(trainerror, 2)/ntrain);
-				// System.out.println("Training error: " + trainerror);
-				// System.out.println("Testing error: " + testerror);				
+				System.out.println("For lambda: " + lambdas[j]);
+				System.out.println("\tTraining error: " + trainerror);
+				System.out.println("\tTesting error: " + testerror);				
 				if (testerror < min) {
 					min = testerror;
 					betas[i] = what;
@@ -162,9 +164,9 @@ public class FMRIWordPrediction {
 	public static void main(String[] args) throws FileNotFoundException {
 		FMRIWordPrediction experiment = new FMRIWordPrediction(); 
 		
-		// double[] lambdas = new double[]{0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1};
-		// experiment.shotgunSingleFeature(0, lambdas);
+		double[] lambdas = new double[]{0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1};
+		//experiment.shotgunSingleFeature(0, lambdas);
 		
-		// experiment.shotgunAll();
+		experiment.shotgunAll();
 	}
 }

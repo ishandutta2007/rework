@@ -87,12 +87,19 @@ public class Shooting {
 			/**
 			 * Your code goes here.
 			 */
+
+			// I implemented algorithm 2 from Shalev-Shwartz, Shai, and Ambuj
+			// Tewari. "Stochastic Methods for l1Regularized Loss Minimization."
+			// (2009).
+			// http://eprints.pascal-network.org/archive/00005418/01/ShalevTewari09.pdf
+
 			int indexJ = (p > j) ? j : j - p;
 
 			float gj = 0;
 			for (int indexI = 0; indexI < n; indexI++) {
 				if (0 != XTrans[indexJ][indexI]) {
-					float xij = (p > j) ? XTrans[indexJ][indexI] : -XTrans[indexJ][indexI];
+					float xij = (p > j) ? XTrans[indexJ][indexI]
+							: -XTrans[indexJ][indexI];
 					float zi = xw[indexI];
 					float yi = Y[indexI];
 					gj += (zi - yi) * xij;
@@ -103,7 +110,7 @@ public class Shooting {
 			float prevWj = (p > j) ? wplus[indexJ] : wminus[indexJ];
 			float eta = Math.max(-prevWj, -gj);
 			float newWj = prevWj + eta;
-			
+
 			if (p > j) {
 				wplus[indexJ] = newWj;
 			} else {
