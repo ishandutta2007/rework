@@ -3,7 +3,10 @@
 
 import unittest, string, re, cPickle, os, sys
 
+DATA_DIR = '/Users/deflaux/rework/competitions/facebook2/data'
+
 class CleanNames(unittest.TestCase):
+
     def test_keyify(self):
         self.assertEqual((['abr', 'foo'], []), self.keyify('foo bar'))
         self.assertEqual((['abr', 'foo'], []), self.keyify('foo&bar'))
@@ -55,7 +58,7 @@ class CleanNames(unittest.TestCase):
         
 
     def test_nameCleaning(self):
-        numGraphs = 1
+        numGraphs = 15
         
         (keyToName, asnameToKey) = self.cleanNames(numGraphs)
 
@@ -68,9 +71,11 @@ class CleanNames(unittest.TestCase):
         
         self.mergeMappings(keyToName, asnameToKey)
 
+        self.writeKeyifiedData(keyToName, numGraphs)
+
         self.nukeIndirectMappings(keyToName)
          
-        outfile = open(self.dataDir + '/mapping_' + str(numGraphs) + '.txt', 'w')
+        outfile = open(DATA_DIR + '/mapping_' + str(numGraphs) + '.txt', 'w')
         numSingleUseKeys = 0
         for key in keyToName:
             outfile.write('%s|%d|%s\n' % (key, len(keyToName[key]), str([w for w in set(keyToName[key])])))
@@ -85,28 +90,12 @@ class CleanNames(unittest.TestCase):
             self.assertEqual(len(keyToName), 44015)
             self.assertEqual(numSingleUseKeys, 9832)
 
-    def filterStopWords(self, keyToName):
-        # Compute term frequencies, no need to do tf-idf because we already reduced it to unique terms per "document"
-        termFreq = {}
-        for key in keyToName:
-            for part in key.split():
-                if(part in termFreq):
-                    termFreq[part] = termFreq[part]+1
-                else:
-                    termFreq[part] = 1
-
-        # TODO
-        # dictionary to tuple
-        # sort on freq
-        # use threshold for stopwords
-        stopWords = set([])
-        return(termFreq, stopWords)
-
     def cleanNames(self, numGraphs, unpickle=True):
-        self.dataDir = '/Users/deflaux/rework/competitions/facebook2/data'
+        '''Load data from file and compute normalized keys for all entries'''
+        
         suffix = '_' + str(numGraphs) + '.bin'
-        self.keyToNameFile = self.dataDir + '/keytoname' + suffix
-        self.asnameToKeyFile = self.dataDir + '/asnametokey' + suffix
+        self.keyToNameFile = DATA_DIR + '/keytoname' + suffix
+        self.asnameToKeyFile = DATA_DIR + '/asnametokey' + suffix
 
         numEntries = 0
         if(unpickle and os.path.isfile(self.keyToNameFile) and os.path.isfile(self.asnameToKeyFile)):
@@ -121,7 +110,7 @@ class CleanNames(unittest.TestCase):
             keyToName = {}
             asnameToKey = {}
             for i in range(1, 1+numGraphs):
-                infile = open(self.dataDir + '/train' + str(i) + '.txt', 'r')
+                infile = open(DATA_DIR + '/train' + str(i) + '.txt', 'r')
                 for line in infile:
                     values = line.split('|')
                     if(3 != len(values)):
@@ -141,70 +130,6 @@ class CleanNames(unittest.TestCase):
         print('num entries %d, num keys %d' % (numEntries, len(keyToName)))
         return(keyToName, asnameToKey)
 
-    def nukeIndirectMappings(self, keyToName):
-        keys = keyToName.keys()
-        for key in keys:
-            if(not isinstance(keyToName[key], list)):
-                del(keyToName[key])
-                
-    def consolidateSubKeys(self, keyToName, termFreq):            
-        # For each key, remove one word and see if it is still a key,
-        # if so merge them
-        for key in keyToName:
-            keyParts = set(key.split())
-            if(1 == len(keyParts)): 
-                continue
-            for partToRemove in keyParts:
-                keyPartsSubset = keyParts.copy()
-                keyPartsSubset.remove(partToRemove)
-                partsRemaining = [p for p in keyPartsSubset]
-                partsRemaining.sort()
-                smallerKey = ' '.join(partsRemaining)
-                # Special handling for short keys
-                if(1 == len(partsRemaining)):
-                    if(termFreq[partToRemove] < termFreq[smallerKey]):
-                        # if we did not retain the item with lower freq in our smallerKey, skip this loop
-                        continue
-                if(smallerKey in keyToName):
-                    self._merge(key, smallerKey, keyToName)
-                    break
-                
-    def mergeMappings(self, keyToName, asnameToKey):
-        for asname in asnameToKey:
-            for key in [k for k in set(asnameToKey[asname])]:
-                if(asname == key):
-                    continue
-                self._merge(key, asname, keyToName)
-
-    def _merge(self, fromKey, toKey, keyToName, nuke=False):
-        '''This method treats the hashtable like a union-find data structure'''
-        #print('Merging %s into %s' % (fromKey, toKey))
-        if toKey in keyToName:
-            while(not isinstance(keyToName[toKey], list)):
-                #print('TO: following link from %s to %s' % (toKey, keyToName[toKey]))
-                toKey = keyToName[toKey]
-        else:
-            keyToName[toKey] = []
-
-        fromValue = None
-        while(None == fromValue):
-            value = keyToName[fromKey]
-            if(value == toKey):
-                return() # already merged
-            keyToName[fromKey] = toKey
-            if(isinstance(value, list)):
-                fromValue = value
-            else: # follow the pointer
-                #print('FROM: following link from %s to %s' % (fromKey, value))
-                fromKey = value
-
-#         print('tokey %s fromkey %s tovalue %s fromvalue %s' % (toKey,
-#                                                                fromKey,
-#                                                                str(keyToName[toKey]),
-#                                                                str(fromValue)))
-        keyToName[toKey].extend(fromValue)
-#        print('\t%s' % (str(set(keyToName[toKey]))))
-                    
     def insertMapping(self, keyToName, asnameToKey, item):
         (keyParts, asnames) = self.keyify(item) 
         key = string.join(keyParts)
@@ -224,6 +149,117 @@ class CleanNames(unittest.TestCase):
 #         if(1 < len(asnames)):
 #             print('too many asnames %s for %s' % (str(asnames), key))
                                 
+    def writeKeyifiedData(self, keyToName, numGraphs):
+        for i in range(1, 1+numGraphs):
+            infile = open(DATA_DIR + '/train' + str(i) + '.txt', 'r')
+            outfile = open(DATA_DIR + '/normTrain' + str(i) + '.txt', 'w')
+            for line in infile:
+                values = line.split('|')
+                if(3 != len(values)):
+                    raise ValueError('file is not formatted correctly')
+                (keyParts, asnames) = self.keyify(values[0]) 
+                tailKey = string.join(keyParts)
+                (keyParts, asnames) = self.keyify(values[1]) 
+                headKey = string.join(keyParts)
+                tail = self.find(tailKey, keyToName)
+                head = self.find(headKey, keyToName)
+                cost = int(values[2])
+                outfile.write("%s|%s|%d\n" % (tail, head, cost))
+                
+            outfile.close()
+            infile.close()
+        
+    def filterStopWords(self, keyToName):
+        ''' Compute term frequencies, no need to do tf-idf because we
+        already reduced it to unique terms per "document".  TODO use most
+        frequent words as stop words'''
+        termFreq = {}
+        for key in keyToName:
+            for part in key.split():
+                if(part in termFreq):
+                    termFreq[part] = termFreq[part]+1
+                else:
+                    termFreq[part] = 1
+
+        # TODO
+        # dictionary to tuple
+        # sort on freq
+        # use threshold for stopwords
+        stopWords = set([])
+        return(termFreq, stopWords)
+
+    def consolidateSubKeys(self, keyToName, termFreq):            
+        '''For each key, remove one word and see if it is still a key,
+        if so merge them'''
+        for key in keyToName:
+            keyParts = set(key.split())
+            if(1 == len(keyParts)): 
+                continue
+            for partToRemove in keyParts:
+                keyPartsSubset = keyParts.copy()
+                keyPartsSubset.remove(partToRemove)
+                partsRemaining = [p for p in keyPartsSubset]
+                partsRemaining.sort()
+                smallerKey = ' '.join(partsRemaining)
+                # Special handling for short keys
+                if(1 == len(partsRemaining)):
+                    if(termFreq[partToRemove] < termFreq[smallerKey]):
+                        # if we did not retain the item with lower freq
+                        # in our smallerKey, skip this loop
+                        continue
+                if(smallerKey in keyToName):
+                    self._merge(key, smallerKey, keyToName)
+                    break
+                
+    def mergeMappings(self, keyToName, asnameToKey):
+        for asname in asnameToKey:
+            for key in [k for k in set(asnameToKey[asname])]:
+                if(asname == key):
+                    continue
+                self._merge(key, asname, keyToName)
+
+    def find(self, key, keyToName):
+        '''This method treats the hashtable like a union-find data structure'''
+        if key in keyToName:
+            while(not isinstance(keyToName[key], list)):
+#                 print('Find: following link from %s to %s' % (key, keyToName[key]))
+                key = keyToName[key]
+        return(key)
+
+    def _merge(self, fromKey, toKey, keyToName):
+        '''This method treats the hashtable like a union-find data structure'''
+#         print('Merging %s into %s' % (fromKey, toKey))
+        toKey = self.find(toKey, keyToName)
+        if toKey not in keyToName:
+            keyToName[toKey] = []
+
+        fromValue = None
+        while(None == fromValue):
+            value = keyToName[fromKey]
+            if(value == toKey):
+                return() # already merged
+            keyToName[fromKey] = toKey
+            if(isinstance(value, list)):
+                fromValue = value
+            else: # follow the pointer
+#                 print('FROM: following link from %s to %s' % (fromKey, value))
+                fromKey = value
+
+#         print('tokey %s fromkey %s tovalue %s fromvalue %s' % (toKey,
+#                                                                fromKey,
+#                                                                str(keyToName[toKey]),
+#                                                                str(fromValue)))
+        keyToName[toKey].extend(fromValue)
+#         print('\t%s' % (str(set(keyToName[toKey]))))
+                    
+    def nukeIndirectMappings(self, keyToName):
+        '''Remove all name pointers from our mapping.  Do this when we
+        want to see how small our mapping has become.'''
+        keys = keyToName.keys()
+        for key in keys:
+            if(not isinstance(keyToName[key], list)):
+                del(keyToName[key])
+                
     def keyify(self, name):
         '''Convert the name into both a hash key and an asname, if
         possible.  Since we know that letters are potentially scrambled in
