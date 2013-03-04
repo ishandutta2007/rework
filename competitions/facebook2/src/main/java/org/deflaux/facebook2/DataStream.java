@@ -28,15 +28,10 @@ public class DataStream {
 	List<String> rawData;
 
 	/**
-	 * Creates a dataset from the given path.
+	 * Creates a data stream from matching files in the given path.
 	 * 
-	 * @param path
-	 *            Path to the data file living on the disk.
-	 * @param isTraining
-	 *            True if the input is training data.
-	 * @param size
-	 *            The size of the dataset, can be SMALLER than the size of the
-	 *            input.
+	 * @param pathPattern
+	 *            Pattern of the file path to the data on disk.
 	 * @throws FileNotFoundException
 	 */
 	public DataStream(String pathPattern, boolean validate) {

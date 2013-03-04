@@ -60,7 +60,6 @@ public class DataInstance {
 	 * @param val
 	 */
 	private void updateFeature(String key, int val) {
-		// Fill in your code here
 		int hashKey = HashUtil.hashToRange(key, featuredim);
 		int sign = HashUtil.hashToSign(key);
 		Integer featureValue = hashedTextFeature.get(hashKey);

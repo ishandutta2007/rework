@@ -1,8 +1,8 @@
 package org.deflaux.facebook2;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.log4j.Level;
@@ -23,13 +23,14 @@ public class LogisticRegression {
 	 * @param instance
 	 * @return
 	 */
-	private static double computeWeightFeatureProduct(
-			Weights weights, DataInstance instance) {
+	private static double computeWeightFeatureProduct(Weights weights,
+			DataInstance instance) {
 		double dotProduct = 0.0;
 		dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
 		dotProduct += weights.wCost * instance.cost;
 		for (int featureid : instance.hashedTextFeature.keySet()) {
-			dotProduct += weights.wHashedFeature[featureid] * instance.hashedTextFeature.get(featureid);
+			dotProduct += weights.wHashedFeature[featureid]
+					* instance.hashedTextFeature.get(featureid);
 		}
 		return dotProduct;
 	}
@@ -45,8 +46,7 @@ public class LogisticRegression {
 	 * @param lambda
 	 */
 	private static void performDelayedRegularization(Set<Integer> featureids,
-			Weights weights, int now, double step,
-			double lambda) {
+			Weights weights, int now, double step, double lambda) {
 		for (int featureid : featureids) {
 			Integer accessTime = weights.accessTime.get(featureid);
 			if (null != accessTime) {
@@ -70,16 +70,19 @@ public class LogisticRegression {
 	 * @param step
 	 * @return the weights for the model.
 	 */
-	public static Weights train(DataStream dataset, int dim,
-			double lambda, double step) {
+	public static Weights train(DataStream dataset, int dim, double lambda,
+			double step) {
 		// Fill in your code here
 		Weights weights = new Weights(dim);
 		int count = 0;
-		logger.info("Training on data in " + dataset.pathPattern + " with lambda "
-				+ lambda + " and step size " + step);
+		logger.info("Training on data in " + dataset.pathPattern
+				+ " with lambda " + lambda + " and step size " + step);
 
 		while (dataset.hasNext()) {
 			DataInstance instance = dataset.nextInstance(dim);
+			if(!instance.isValid()) {
+				continue;
+			}
 			count++;
 
 			if (0 != lambda) {
@@ -97,9 +100,6 @@ public class LogisticRegression {
 			double gradient = (instance.exists == 1) ? (-1 / (1 + exp))
 					: (exp / (1 + exp));
 
-			// Predict the label, record the loss
-			int click_hat = (exp / (1 + exp)) > 0.5 ? 1 : 0;
-
 			weights.w0 += -step * gradient; // no reg and assumed x0 = 1
 			weights.wCost += -step
 					* (lambda * weights.wCost + instance.cost * gradient);
@@ -107,8 +107,10 @@ public class LogisticRegression {
 				// Can be null if this is this data instance is the first
 				// time we've seen this feature
 				double featureWeight = weights.wHashedFeature[featureid];
-				weights.wHashedFeature[featureid] = featureWeight + -step
-						* (gradient * instance.hashedTextFeature.get(featureid) + lambda * featureWeight);
+				weights.wHashedFeature[featureid] = featureWeight
+						+ -step
+						* (gradient * instance.hashedTextFeature.get(featureid) + lambda
+								* featureWeight);
 			}
 		}
 
@@ -129,23 +131,31 @@ public class LogisticRegression {
 	 * @param dataset
 	 * @return An array storing the CTR for each datapoint in the test data.
 	 */
-	public static ArrayList<Double> predict(Weights weights,
-			DataStream dataset, boolean personalized) {
-		// Fill in your code here
+	public static ArrayList<Double> predict(Weights weights, List<String> path) {
 		ArrayList<Double> predictions = new ArrayList<Double>();
 
-		while (dataset.hasNext()) {
-			DataInstance instance = dataset.nextInstance(
-					weights.featuredim);
-            double exp = Math.exp(computeWeightFeatureProduct(weights, instance));
+		for (int tailIdx = 0; tailIdx < path.size(); tailIdx++) {
+			String head = null;
+			if (tailIdx == path.size() - 1) {
+				// We're at the end of this list
+				if (1 < path.size()) {
+					// Its not a single node path
+					break;
+				}
+				head = path.get(tailIdx);
+			}
+			else {
+				head = path.get(tailIdx+1);
+			}
+			String tail = path.get(tailIdx);
+
+			// TODO set epoch correctly
+			// TODO add all vertices to data instance?
+			DataInstance instance = new DataInstance(tail+"|"+head+"|0", 16, weights.featuredim, false);
+			double exp = Math
+					.exp(computeWeightFeatureProduct(weights, instance));
 			predictions.add(exp / (1 + exp));
 		}
 		return predictions;
-	}
-
-	public static void main(String args[]) throws IOException {
-		// Fill in your code here
-		System.out.println("See unit tests for answers to homework questions");
-
 	}
 }

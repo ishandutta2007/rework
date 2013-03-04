@@ -72,6 +72,7 @@ class CleanNames(unittest.TestCase):
         self.mergeMappings(keyToName, asnameToKey)
 
         self.writeKeyifiedData(keyToName, numGraphs)
+        self.writeKeyifiedPaths(keyToName)
 
         self.nukeIndirectMappings(keyToName)
          
@@ -164,14 +165,34 @@ class CleanNames(unittest.TestCase):
                 tail = self.find(tailKey, keyToName)
                 head = self.find(headKey, keyToName)
                 cost = int(values[2])
-                outfile.write("%s|%s|%d\n" % (tail, head, cost))
+                outfile.write('%s|%s|%d\n' % (tail, head, cost))
                 
             outfile.close()
             infile.close()
         
+    def writeKeyifiedPaths(self, keyToName):
+        infile = open(DATA_DIR + '/testPaths.txt', 'r')
+        outfile = open(DATA_DIR + '/normTestPaths.txt', 'w')
+        for line in infile:
+            values = line.split('|')
+            if(1 > len(values)):
+                raise ValueError('file is not formatted correctly')
+            normalizedPath = ''
+            for value in values:
+                (keyParts, asnames) = self.keyify(value) 
+                node = string.join(keyParts)
+                if('' == normalizedPath):
+                    normalizedPath += node
+                else:
+                    normalizedPath += '|' + node
+            outfile.write(normalizedPath + '\n')
+                
+        outfile.close()
+        infile.close()
+        
     def filterStopWords(self, keyToName):
         ''' Compute term frequencies, no need to do tf-idf because we
-        already reduced it to unique terms per "document".  TODO use most
+        already reduced it to unique terms per 'document'.  TODO use most
         frequent words as stop words'''
         termFreq = {}
         for key in keyToName:
