@@ -24,7 +24,7 @@ import org.junit.Test;
 public class AnalysisTest {
 	static final double DELTA = 1e-6;
 	static final Logger logger = Logger.getLogger("BasicAnalysisTest");
-	static final boolean printAssertions = false;
+	static final boolean printAssertions = true;
 
 	static DataStream training;
 	static PredictionPaths testing;
@@ -52,7 +52,7 @@ public class AnalysisTest {
 		int numInvalid = 0;
 
 		while (training.hasNext()) {
-			DataInstance instance = training.nextInstance(dim);
+			DataInstance instance = training.nextInstance(null, dim);
 			if (null == first) {
 				first = instance;
 			}
@@ -65,7 +65,7 @@ public class AnalysisTest {
 
 		resetData();
 		training.hasNext();
-		DataInstance nextFirst = training.nextInstance(dim);
+		DataInstance nextFirst = training.nextInstance(null, dim);
 		assertFalse(first.head.equals(nextFirst.head));
 		assertFalse(first.tail.equals(nextFirst.tail));
 	}
@@ -73,18 +73,28 @@ public class AnalysisTest {
 	@Test
 	public void testLogisticRegression() throws IOException {
 		DecimalFormat formatter = new DecimalFormat("###.######");
-		int dim = 32; // (int) Math.pow(2,16);
-		double lambda = 0.01;
+		int dim = (int) Math.pow(2,16); 
+		double lambda = 0;
 		double step = 0.01;
+		Stopwatch watch = new Stopwatch();
 		Weights weights = LogisticRegression.train(training, dim, lambda, step);
-		logger.info(weights);
+		logger.info("Time: " + watch.elapsedTime());
+		//logger.info(weights);
 
-		List<String> superPath = new ArrayList<String>();
-		superPath.add("aabcdginorst aabceknoprsstw ehnorstu");
-		superPath.add("aachikknosvy ceeeghirsv eegrsy");
+		List<String> superNodesPath = new ArrayList<String>();
+		superNodesPath.add("aabcdginorst aabceknoprsstw ehnorstu");
+		superNodesPath.add("aachikknosvy ceeeghirsv eegrsy");
 		ArrayList<Double> superPrediction = LogisticRegression.predict(weights,
-				superPath);
+				superNodesPath);
 		assertEqualsHelper("link between two super nodes", 0.9998556414961637, superPrediction.get(0), DELTA);
+
+		List<String> missingPath = new ArrayList<String>();
+		missingPath.add("missing");
+		missingPath.add("does not exist");
+		ArrayList<Double> missingPathPrediction = LogisticRegression.predict(weights,
+				missingPath);
+		assertEqualsHelper("link between two non-existent nodes", 0.0, missingPathPrediction.get(0), DELTA);
+
 		
 		Writer foo = new BufferedWriter(new FileWriter(
 				"/Users/deflaux/rework/competitions/facebook2/data/foo.txt"));

@@ -23,12 +23,12 @@ public class LogisticRegression {
 	 * @param instance
 	 * @return
 	 */
-	private static double computeWeightFeatureProduct(Weights weights,
+	private static double computeWeightFeatureProduct(Weights weights, Set<Integer> featureids,
 			DataInstance instance) {
 		double dotProduct = 0.0;
-		dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
-		dotProduct += weights.wCost * instance.cost;
-		for (int featureid : instance.hashedTextFeature.keySet()) {
+//		dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
+//		dotProduct += weights.wCost * instance.cost;
+		for (int featureid : featureids) {
 			dotProduct += weights.wHashedFeature[featureid]
 					* instance.hashedTextFeature.get(featureid);
 		}
@@ -65,34 +65,36 @@ public class LogisticRegression {
 	 * Train the logistic regression model using the training data and the
 	 * hyperparameters. Return the weights, and record the cumulative loss.
 	 * 
-	 * @param dataset
+	 * @param dataStream
 	 * @param lambda
 	 * @param step
 	 * @return the weights for the model.
 	 */
-	public static Weights train(DataStream dataset, int dim, double lambda,
+	public static Weights train(DataStream dataStream, int dim, double lambda,
 			double step) {
 		// Fill in your code here
 		Weights weights = new Weights(dim);
 		int count = 0;
-		logger.info("Training on data in " + dataset.pathPattern
+		logger.info("Training on data in " + dataStream.pathPattern
 				+ " with lambda " + lambda + " and step size " + step);
 
-		while (dataset.hasNext()) {
-			DataInstance instance = dataset.nextInstance(dim);
+		DataInstance instance = null;
+		while (dataStream.hasNext()) {
+			instance = dataStream.nextInstance(instance, dim);
 			if(!instance.isValid()) {
 				continue;
 			}
 			count++;
-
+			Set<Integer> featureids = instance.hashedTextFeature.keySet();
+			
 			if (0 != lambda) {
 				performDelayedRegularization(
-						instance.hashedTextFeature.keySet(), weights, count,
+						featureids, weights, count,
 						step, lambda);
 			}
 
 			double exp = Math
-					.exp(computeWeightFeatureProduct(weights, instance));
+					.exp(computeWeightFeatureProduct(weights, featureids, instance));
 			exp = Double.isInfinite(exp) ? (Double.MAX_VALUE - 1) : exp;
 
 			// Compute the gradient
@@ -100,9 +102,9 @@ public class LogisticRegression {
 			double gradient = (instance.exists == 1) ? (-1 / (1 + exp))
 					: (exp / (1 + exp));
 
-			weights.w0 += -step * gradient; // no reg and assumed x0 = 1
-			weights.wCost += -step
-					* (lambda * weights.wCost + instance.cost * gradient);
+//			weights.w0 += -step * gradient; // no reg and assumed x0 = 1
+//			weights.wCost += -step
+//					* (lambda * weights.wCost + instance.cost * gradient);
 			for (int featureid : instance.hashedTextFeature.keySet()) {
 				// Can be null if this is this data instance is the first
 				// time we've seen this feature
@@ -125,10 +127,10 @@ public class LogisticRegression {
 	}
 
 	/**
-	 * Using the weights to predict CTR in for the test dataset.
+	 * Using the weights to predict CTR in for the test dataStream.
 	 * 
 	 * @param weights
-	 * @param dataset
+	 * @param dataStream
 	 * @return An array storing the CTR for each datapoint in the test data.
 	 */
 	public static ArrayList<Double> predict(Weights weights, List<String> path) {
@@ -153,7 +155,7 @@ public class LogisticRegression {
 			// TODO add all vertices to data instance?
 			DataInstance instance = new DataInstance(tail+"|"+head+"|0", 16, weights.featuredim, false);
 			double exp = Math
-					.exp(computeWeightFeatureProduct(weights, instance));
+					.exp(computeWeightFeatureProduct(weights, instance.hashedTextFeature.keySet(), instance));
 			predictions.add(exp / (1 + exp));
 		}
 		return predictions;

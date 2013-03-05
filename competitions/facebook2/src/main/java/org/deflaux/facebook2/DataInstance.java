@@ -27,8 +27,23 @@ public class DataInstance {
 	int epoch;
 	Map<Integer, Integer> hashedTextFeature; // map hashed feature key to its
 												// value;
+	
+	public DataInstance(int dim) {
+		hashedTextFeature = new HashMap<Integer, Integer>(dim);
+	}
 
 	public DataInstance(String line, int epoch, int dim, boolean validate) {
+			hashedTextFeature = new HashMap<Integer, Integer>(dim);
+			reset(line, epoch, dim, validate);
+	}
+	
+	public static DataInstance reuse(DataInstance instance, String line, int epoch, int dim, boolean validate) {
+		instance.hashedTextFeature.clear();
+		instance.reset(line, epoch, dim, validate);
+		return instance;
+	}
+	
+	void reset(String line, int epoch, int dim, boolean validate) {
 		String[] fields = line.split("\\|");
 		tail = fields[0];
 		head = fields[1];
@@ -42,7 +57,6 @@ public class DataInstance {
 
 		featuredim = dim;
 
-		hashedTextFeature = new HashMap<Integer, Integer>(featuredim);
 		updateFeature(tail + "|" + head, cost);
 
 		if (validate) {
@@ -59,7 +73,7 @@ public class DataInstance {
 	 * @param key
 	 * @param val
 	 */
-	private void updateFeature(String key, int val) {
+	void updateFeature(String key, int val) {
 		int hashKey = HashUtil.hashToRange(key, featuredim);
 		int sign = HashUtil.hashToSign(key);
 		Integer featureValue = hashedTextFeature.get(hashKey);

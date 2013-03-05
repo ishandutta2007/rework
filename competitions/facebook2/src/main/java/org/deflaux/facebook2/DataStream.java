@@ -73,8 +73,15 @@ public class DataStream {
 	/**
 	 * @return the next data instance.
 	 */
-	public DataInstance nextInstance(int featuredim) {
-		DataInstance dataInstance = new DataInstance(rawData.get(rawDataIndex), epoch, featuredim, validate);
+	public DataInstance nextInstance(DataInstance instanceToReuse, int featuredim) {
+		DataInstance dataInstance;
+		
+		if(null == instanceToReuse) {
+			dataInstance = new DataInstance(rawData.get(rawDataIndex), epoch, featuredim, validate);
+		}
+		else {
+			dataInstance = DataInstance.reuse(instanceToReuse, rawData.get(rawDataIndex), epoch, featuredim, validate);
+		}
 		rawDataIndex++;
 		counter++;
 		return dataInstance;
