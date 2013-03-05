@@ -75,9 +75,10 @@ public class AnalysisTest {
 		DecimalFormat formatter = new DecimalFormat("###.######");
 		int dim = (int) Math.pow(2,16); 
 		double lambda = 0;
-		double step = 0.01;
+		double step = 0.1;
+		ArrayList<Double> avgLosses = new ArrayList<Double>();
 		Stopwatch watch = new Stopwatch();
-		Weights weights = LogisticRegression.train(training, dim, lambda, step);
+		Weights weights = LogisticRegression.train(training, dim, lambda, step, avgLosses);
 		logger.info("Time: " + watch.elapsedTime());
 		//logger.info(weights);
 
