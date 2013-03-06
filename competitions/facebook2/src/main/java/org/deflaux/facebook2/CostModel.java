@@ -8,17 +8,17 @@ import org.apache.log4j.Logger;
  * Note: not thread safe
  * 
  * @author deflaux
- *
+ * 
  */
-public class ExistenceModel extends FacebookModel {
-	static Logger logger = Logger.getLogger("ExistenceModel");
+public class CostModel extends FacebookModel {
+	static Logger logger = Logger.getLogger("CostModel");
 
-	public ExistenceModel(double step, double lambda, int numDimensions) {
+	public CostModel(double step, double lambda, int numDimensions) {
 		super(step, lambda, numDimensions);
 	}
 
 	int getInstanceOutcome(DataInstance instance) {
-		return instance.exists;
+		return instance.cost;
 	}
 
 	/**
@@ -31,8 +31,7 @@ public class ExistenceModel extends FacebookModel {
 	double computeWeightFeatureProduct(Set<Integer> featureids,
 			DataInstance instance) {
 		double dotProduct = 0.0;
-		// dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
-		// dotProduct += weights.wCost * instance.cost;
+		dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
 		for (int featureid : featureids) {
 			dotProduct += weights.wHashedFeature[featureid]
 					* instance.hashedTextFeature.get(featureid);
@@ -40,11 +39,8 @@ public class ExistenceModel extends FacebookModel {
 		return dotProduct;
 	}
 
-	
 	void updateWeights(DataInstance instance, double gradient) {
-		// weights.w0 += -step * gradient; // no reg and assumed x0 = 1
-		// weights.wCost += -step
-		// * (lambda * weights.wCost + instance.cost * gradient);
+		weights.w0 += -step * gradient; // no reg and assumed x0 = 1
 		for (int featureid : instance.hashedTextFeature.keySet()) {
 			// Can be null if this is this data instance is the first
 			// time we've seen this feature

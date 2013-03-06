@@ -74,26 +74,38 @@ public class AnalysisTest {
 	public void testLogisticRegression() throws IOException {
 		DecimalFormat formatter = new DecimalFormat("###.######");
 		int dim = (int) Math.pow(2,16); 
-		double lambda = 0;
-		double step = 0.1;
-		ArrayList<Double> avgLosses = new ArrayList<Double>();
+		ExistenceModel existenceModel = new ExistenceModel(0.1, 0, dim);
+		CostModel costModel = new CostModel(0.1, 0.01, dim);
 		Stopwatch watch = new Stopwatch();
-		Weights weights = LogisticRegression.train(training, dim, lambda, step, avgLosses);
+		List<FacebookModel> models = new ArrayList<FacebookModel>();
+		models.add(existenceModel);
+		models.add(costModel);
+		
+		DataInstance instance = null;
+		while (training.hasNext()) {
+			instance = training.nextInstance(instance, dim);
+			if (!instance.isValid()) {
+				continue;
+			}
+			for(FacebookModel model : models) {
+				model.train(instance);
+			}
+		}
 		logger.info("Time: " + watch.elapsedTime());
-		//logger.info(weights);
+		for(FacebookModel model : models) {
+			logger.info(model);
+		}
 
 		List<String> superNodesPath = new ArrayList<String>();
 		superNodesPath.add("aabcdginorst aabceknoprsstw ehnorstu");
 		superNodesPath.add("aachikknosvy ceeeghirsv eegrsy");
-		ArrayList<Double> superPrediction = LogisticRegression.predict(weights,
-				superNodesPath);
+		ArrayList<Double> superPrediction = existenceModel.predict(superNodesPath);
 		assertEqualsHelper("link between two super nodes", 0.9998556414961637, superPrediction.get(0), DELTA);
 
 		List<String> missingPath = new ArrayList<String>();
 		missingPath.add("missing");
 		missingPath.add("does not exist");
-		ArrayList<Double> missingPathPrediction = LogisticRegression.predict(weights,
-				missingPath);
+		ArrayList<Double> missingPathPrediction = existenceModel.predict(missingPath);
 		assertEqualsHelper("link between two non-existent nodes", 0.0, missingPathPrediction.get(0), DELTA);
 
 		
@@ -101,8 +113,7 @@ public class AnalysisTest {
 				"/Users/deflaux/rework/competitions/facebook2/data/foo.txt"));
 
 		while (testing.hasNext()) {
-			ArrayList<Double> linkPredictions = LogisticRegression.predict(
-					weights, testing.nextInstance());
+			ArrayList<Double> linkPredictions = existenceModel.predict(testing.nextInstance());
 			// Multiply them all together
 			Double pathPrediction = null;
 			for (double linkPrediction : linkPredictions) {

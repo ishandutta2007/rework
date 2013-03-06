@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
  * Note: not thread safe
  * 
  * @author deflaux
- *
+ * 
  */
 abstract public class FacebookModel {
 	static Logger logger = Logger.getLogger("FacebookModel");
@@ -36,7 +36,7 @@ abstract public class FacebookModel {
 		trainingCount = epochCount = lossAccumulator = currentEpoch = 0;
 		finalSweepPerformed = false;
 	}
-	
+
 	abstract int getInstanceOutcome(DataInstance instance);
 
 	/**
@@ -74,16 +74,18 @@ abstract public class FacebookModel {
 
 	}
 
-	void recordEpochAverageLoss(int epoch) {
-		epochCount = trainingCount - epochCount;
-		double avgLoss = (epochCount == 0) ? 1.0 : (double) lossAccumulator
-				/ epochCount;
+	void recordEpochAverageLoss(int newEpoch) {
+		int currentEpochCount = trainingCount - epochCount;
+		epochCount += currentEpochCount;
+		double avgLoss = (currentEpochCount == 0) ? 1.0
+				: (double) lossAccumulator / currentEpochCount;
 		avgLossPerEpoch.add(currentEpoch, avgLoss);
-		logger.info("Trained (lambda:" + lambda + ", step:" + step
-				+ ", numDimensions:" + numDimensions + ") with " + epochCount
-				+ " cases with avg loss for epoch " + currentEpoch + ": "
-				+ avgLoss);
-		currentEpoch = epoch;
+		logger.info(this.getClass().getName() + " trained (lambda:" + lambda
+				+ ", step:" + step + ", numDimensions:" + numDimensions
+				+ ") with " + currentEpochCount + " cases with "
+				+ lossAccumulator + " losses for an average loss for epoch "
+				+ currentEpoch + ": " + avgLoss);
+		currentEpoch = newEpoch;
 		lossAccumulator = 0;
 	}
 
@@ -119,14 +121,18 @@ abstract public class FacebookModel {
 			lossAccumulator += 1;
 		}
 
+		// sanity check
+		if (15 == currentEpoch) {
+			logger.info(this.getClass().getName() + "pred: " + click_hat
+					+ " outcome: " + outcome);
+		}
+
 		// Compute the gradient
-		// TODO all examples are positive
-		double gradient = (outcome == 1) ? (-1 / (1 + exp))
-				: (exp / (1 + exp));
-		
+		double gradient = (outcome == 1) ? (-1 / (1 + exp)) : (exp / (1 + exp));
+
 		updateWeights(instance, gradient);
 	}
-	
+
 	abstract void updateWeights(DataInstance instance, double gradient);
 
 	void performFinalSweep() {
@@ -149,12 +155,12 @@ abstract public class FacebookModel {
 	 * @return An array storing the CTR for each datapoint in the test data.
 	 */
 	public ArrayList<Double> predict(List<String> path) {
-		
-		if(!finalSweepPerformed) {
+
+		if (!finalSweepPerformed) {
 			performFinalSweep();
 			finalSweepPerformed = true;
 		}
-		
+
 		ArrayList<Double> predictions = new ArrayList<Double>();
 
 		for (int tailIdx = 0; tailIdx < path.size(); tailIdx++) {
@@ -180,5 +186,13 @@ abstract public class FacebookModel {
 			predictions.add(exp / (1 + exp));
 		}
 		return predictions;
+	}
+
+	@Override
+	public String toString() {
+		return this.getClass().getName() + " [step=" + step + ", lambda="
+				+ lambda + ", numDimensions=" + numDimensions
+				+ ", trainingCount=" + trainingCount + ", avgLossPerEpoch="
+				+ avgLossPerEpoch + "]";
 	}
 }

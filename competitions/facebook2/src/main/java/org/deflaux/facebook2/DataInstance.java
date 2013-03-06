@@ -13,7 +13,7 @@ public class DataInstance {
 				+ ", hashedTextFeature=" + hashedTextFeature + "]";
 	}
 
-	public static final int FREE_LINK = -1;
+	public static final int FREE_LINK = 0;
 	public static final int PAID_LINK = 1;
 
 	static Logger logger = Logger.getLogger("DataInstance");
@@ -48,9 +48,6 @@ public class DataInstance {
 		tail = fields[0];
 		head = fields[1];
 		cost = Integer.valueOf(fields[2]);
-		if (0 == cost) {
-			cost = FREE_LINK;
-		}
 
 		this.epoch = epoch;
 		this.exists = 1; // All links in training data "exist" so this is hardcoded to 1
