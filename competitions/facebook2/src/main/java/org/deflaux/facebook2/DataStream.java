@@ -52,7 +52,8 @@ public class DataStream {
 				rawData.add(sc.nextLine());
 			}
 			// Randomize the batch data
-			Collections.shuffle(rawData);
+			// TODO uncomment this!!!!!!!!!!!!!!!!!!!!!
+//			Collections.shuffle(rawData);
 		} catch (FileNotFoundException e) {
 			logger.info(e);
 			return false;

@@ -3,18 +3,13 @@ package org.deflaux.facebook2;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 public class DataInstance {
-	@Override
-	public String toString() {
-		return "DataInstance [featuredim=" + featuredim + ", tail=" + tail
-				+ ", head=" + head + ", cost=" + cost + ", epoch=" + epoch
-				+ ", hashedTextFeature=" + hashedTextFeature + "]";
-	}
-
-	public static final int FREE_LINK = 0;
-	public static final int PAID_LINK = 1;
+	
+	public static final int FREE_LINK = 1;
+	public static final int PAID_LINK = 0;
 
 	static Logger logger = Logger.getLogger("DataInstance");
 
@@ -25,15 +20,21 @@ public class DataInstance {
 	int cost;
 	int exists;
 	int epoch;
+	
+	// TODO if we continue to hash only one feature into this, we can just hold the key and value, no need for the Map
 	Map<Integer, Integer> hashedTextFeature; // map hashed feature key to its
 												// value;
 	
+	static {
+		logger.setLevel(Level.INFO);
+	}
+
 	public DataInstance(int dim) {
-		hashedTextFeature = new HashMap<Integer, Integer>(dim);
+		hashedTextFeature = new HashMap<Integer, Integer>();
 	}
 
 	public DataInstance(String line, int epoch, int dim, boolean validate) {
-			hashedTextFeature = new HashMap<Integer, Integer>(dim);
+			hashedTextFeature = new HashMap<Integer, Integer>();
 			reset(line, epoch, dim, validate);
 	}
 	
@@ -54,13 +55,17 @@ public class DataInstance {
 
 		featuredim = dim;
 
-		updateFeature(tail + "|" + head, cost);
+		updateFeature(tail + "|" + head, 1);
 
 		if (validate) {
 			if (!isValid()) {
 				logger.error("Invalid data instance: " + line);
 			}
 		}
+		
+		// Remap cost so that "free" is true in our logistic regression model
+		cost = (0 == cost) ? FREE_LINK : PAID_LINK;
+
 	}
 
 	/**
@@ -115,9 +120,16 @@ public class DataInstance {
 		}
 
 		if (!valid) {
-			logger.warn("Invalid data instance " + toString()
+			logger.debug("Invalid data instance " + toString()
 					+ validationMessages);
 		}
 		return valid;
+	}
+
+	@Override
+	public String toString() {
+		return "DataInstance [featuredim=" + featuredim + ", tail=" + tail
+				+ ", head=" + head + ", cost=" + cost + ", epoch=" + epoch
+				+ ", hashedTextFeature=" + hashedTextFeature + "]";
 	}
 }

@@ -1,11 +1,10 @@
 package org.deflaux.facebook2;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
@@ -15,7 +14,6 @@ import java.util.List;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
-
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -24,7 +22,7 @@ import org.junit.Test;
 public class AnalysisTest {
 	static final double DELTA = 1e-6;
 	static final Logger logger = Logger.getLogger("BasicAnalysisTest");
-	static final boolean printAssertions = true;
+	static final boolean printAssertions = false;
 
 	static DataStream training;
 	static PredictionPaths testing;
@@ -80,7 +78,18 @@ public class AnalysisTest {
 		List<FacebookModel> models = new ArrayList<FacebookModel>();
 		models.add(existenceModel);
 		models.add(costModel);
-		
+
+		/*
+		final double steps[] = { 0.001, 0.01, 0.05 };
+		final double lambdas[] = { 0.0, 0.002, 0.004, 0.006, 0.008, 0.010, 0.012, 0.014 };
+		for (double lambda : lambdas) {
+			for (double step : steps) {
+				models.add(new ExistenceModel(step, lambda, dim));
+				models.add(new CostModel(step, lambda, dim));
+			}
+		}
+		*/
+
 		DataInstance instance = null;
 		while (training.hasNext()) {
 			instance = training.nextInstance(instance, dim);
@@ -99,18 +108,24 @@ public class AnalysisTest {
 		List<String> superNodesPath = new ArrayList<String>();
 		superNodesPath.add("aabcdginorst aabceknoprsstw ehnorstu");
 		superNodesPath.add("aachikknosvy ceeeghirsv eegrsy");
-		ArrayList<Double> superPrediction = existenceModel.predict(superNodesPath);
-		assertEqualsHelper("link between two super nodes", 0.9998556414961637, superPrediction.get(0), DELTA);
+		ArrayList<Double> superNodesExistencePrediction = existenceModel.predict(superNodesPath);
+		assertEqualsHelper("link between two super nodes (.99)", 0.6759955252618445, superNodesExistencePrediction.get(0), DELTA);
+		ArrayList<Double> superNodesCostPrediction = costModel.predict(superNodesPath);
+		assertEqualsHelper("cost of link between two super nodes (free)", 0.5000000000000003, superNodesCostPrediction.get(0), DELTA);
 
 		List<String> missingPath = new ArrayList<String>();
 		missingPath.add("missing");
 		missingPath.add("does not exist");
 		ArrayList<Double> missingPathPrediction = existenceModel.predict(missingPath);
-		assertEqualsHelper("link between two non-existent nodes", 0.0, missingPathPrediction.get(0), DELTA);
+		assertEqualsHelper("link between two non-existent nodes (0.0)", 0.5124973964842103, missingPathPrediction.get(0), DELTA);
+		ArrayList<Double> missingPathCostPrediction = costModel.predict(missingPath);
+		assertEqualsHelper("cost of link between two non-existent nodes (not free)", 0.5, missingPathCostPrediction.get(0), DELTA);
 
+		// TODO test case for a link that is not free
 		
-		Writer foo = new BufferedWriter(new FileWriter(
-				"/Users/deflaux/rework/competitions/facebook2/data/foo.txt"));
+		
+		Writer testPathPredictions = new BufferedWriter(new FileWriter(
+				"/Users/deflaux/rework/competitions/facebook2/data/testPathPredictions.txt"));
 
 		while (testing.hasNext()) {
 			ArrayList<Double> linkPredictions = existenceModel.predict(testing.nextInstance());
@@ -123,9 +138,9 @@ public class AnalysisTest {
 					pathPrediction = pathPrediction * linkPrediction;
 				}
 			}
-			foo.write(formatter.format(pathPrediction) + "\n");
+			testPathPredictions.write(formatter.format(pathPrediction) + "\n");
 		}
-		foo.close();
+		testPathPredictions.close();
 	}
 
 	void assertEqualsHelper(String testCase, Double expected, Double actual,

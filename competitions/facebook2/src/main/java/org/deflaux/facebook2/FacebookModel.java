@@ -27,6 +27,8 @@ abstract public class FacebookModel {
 	int currentEpoch;
 	boolean finalSweepPerformed;
 
+	int idx; // TODO deleteme
+	
 	public FacebookModel(double step, double lambda, int numDimensions) {
 		this.step = step;
 		this.lambda = lambda;
@@ -35,9 +37,12 @@ abstract public class FacebookModel {
 		avgLossPerEpoch = new ArrayList<Double>();
 		trainingCount = epochCount = lossAccumulator = currentEpoch = 0;
 		finalSweepPerformed = false;
+		
+		// TODO deleteme
+		idx = HashUtil.hashToRange("missing|does not exist", numDimensions);
 	}
 
-	abstract int getInstanceOutcome(DataInstance instance);
+	abstract int getInstanceLabel(DataInstance instance);
 
 	/**
 	 * Helper function to compute inner product w^Tx.
@@ -87,6 +92,9 @@ abstract public class FacebookModel {
 				+ currentEpoch + ": " + avgLoss);
 		currentEpoch = newEpoch;
 		lossAccumulator = 0;
+
+		logger.info("Weight for missing edge: " + weights.wHashedFeature[idx]);
+
 	}
 
 	/**
@@ -105,7 +113,13 @@ abstract public class FacebookModel {
 		trainingCount++;
 
 		Set<Integer> featureids = instance.hashedTextFeature.keySet();
-		int outcome = getInstanceOutcome(instance);
+		
+		// TODO deleteme
+		if(featureids.contains(idx)) {
+			logger.info("idx: " + instance.tail +"|"+  instance.head);
+		}
+		
+		int label = getInstanceLabel(instance);
 
 		if (0 != lambda) {
 			performDelayedRegularization(featureids, trainingCount);
@@ -116,19 +130,20 @@ abstract public class FacebookModel {
 		exp = Double.isInfinite(exp) ? (Double.MAX_VALUE - 1) : exp;
 
 		// Predict the label, record the loss
-		int click_hat = (exp / (1 + exp)) > 0.5 ? 1 : 0;
-		if (click_hat != outcome) {
+		int prediction = (exp / (1 + exp)) > 0.5 ? 1 : 0;
+		if (prediction != label) {
 			lossAccumulator += 1;
 		}
 
+		// TODO deleteme
 		// sanity check
-		if (15 == currentEpoch) {
-			logger.info(this.getClass().getName() + "pred: " + click_hat
-					+ " outcome: " + outcome);
-		}
+		/*
+		 * if (15 == currentEpoch) { logger.debug(this.getClass().getName() +
+		 * "pred: " + click_hat + " label: " + label); }
+		 */
 
 		// Compute the gradient
-		double gradient = (outcome == 1) ? (-1 / (1 + exp)) : (exp / (1 + exp));
+		double gradient = (label == 1) ? (-1 / (1 + exp)) : (exp / (1 + exp));
 
 		updateWeights(instance, gradient);
 	}
@@ -145,6 +160,11 @@ abstract public class FacebookModel {
 			allFeatures.add(i);
 		}
 		performDelayedRegularization(allFeatures, trainingCount);
+		finalSweepPerformed = true;
+
+		// TODO deleteme
+		logger.info("Weight for missing edge: " + weights.wHashedFeature[idx]);
+
 	}
 
 	/**
@@ -158,7 +178,6 @@ abstract public class FacebookModel {
 
 		if (!finalSweepPerformed) {
 			performFinalSweep();
-			finalSweepPerformed = true;
 		}
 
 		ArrayList<Double> predictions = new ArrayList<Double>();
@@ -171,7 +190,10 @@ abstract public class FacebookModel {
 					// Its not a single node path
 					break;
 				}
-				head = path.get(tailIdx);
+				// Special case: for single node paths predict 1 for both
+				// existence model and cost model because self-edges always
+				// exist and they are always free
+				predictions.add(1.0);
 			} else {
 				head = path.get(tailIdx + 1);
 			}

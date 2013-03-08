@@ -17,7 +17,7 @@ public class CostModel extends FacebookModel {
 		super(step, lambda, numDimensions);
 	}
 
-	int getInstanceOutcome(DataInstance instance) {
+	int getInstanceLabel(DataInstance instance) {
 		return instance.cost;
 	}
 
@@ -31,7 +31,7 @@ public class CostModel extends FacebookModel {
 	double computeWeightFeatureProduct(Set<Integer> featureids,
 			DataInstance instance) {
 		double dotProduct = 0.0;
-		dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
+//		dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
 		for (int featureid : featureids) {
 			dotProduct += weights.wHashedFeature[featureid]
 					* instance.hashedTextFeature.get(featureid);
@@ -40,7 +40,7 @@ public class CostModel extends FacebookModel {
 	}
 
 	void updateWeights(DataInstance instance, double gradient) {
-		weights.w0 += -step * gradient; // no reg and assumed x0 = 1
+//		weights.w0 += -step * gradient; // no reg and assumed x0 = 1
 		for (int featureid : instance.hashedTextFeature.keySet()) {
 			// Can be null if this is this data instance is the first
 			// time we've seen this feature

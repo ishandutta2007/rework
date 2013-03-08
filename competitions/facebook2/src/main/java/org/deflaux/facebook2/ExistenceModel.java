@@ -17,7 +17,7 @@ public class ExistenceModel extends FacebookModel {
 		super(step, lambda, numDimensions);
 	}
 
-	int getInstanceOutcome(DataInstance instance) {
+	int getInstanceLabel(DataInstance instance) {
 		return instance.exists;
 	}
 
