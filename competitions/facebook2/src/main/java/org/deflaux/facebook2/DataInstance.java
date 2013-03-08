@@ -7,7 +7,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 public class DataInstance {
-	
+
 	public static final int FREE_LINK = 1;
 	public static final int PAID_LINK = 0;
 
@@ -20,11 +20,12 @@ public class DataInstance {
 	int cost;
 	int exists;
 	int epoch;
-	
-	// TODO if we continue to hash only one feature into this, we can just hold the key and value, no need for the Map
+
+	// TODO if we continue to hash only one feature into this, we can just hold
+	// the key and value, no need for the Map
 	Map<Integer, Integer> hashedTextFeature; // map hashed feature key to its
 												// value;
-	
+
 	static {
 		logger.setLevel(Level.INFO);
 	}
@@ -34,24 +35,26 @@ public class DataInstance {
 	}
 
 	public DataInstance(String line, int epoch, int dim, boolean validate) {
-			hashedTextFeature = new HashMap<Integer, Integer>();
-			reset(line, epoch, dim, validate);
+		hashedTextFeature = new HashMap<Integer, Integer>();
+		setValues(line, epoch, dim, validate);
 	}
-	
-	public static DataInstance reuse(DataInstance instance, String line, int epoch, int dim, boolean validate) {
+
+	public static DataInstance reuse(DataInstance instance, String line,
+			int epoch, int dim, boolean validate) {
 		instance.hashedTextFeature.clear();
-		instance.reset(line, epoch, dim, validate);
+		instance.setValues(line, epoch, dim, validate);
 		return instance;
 	}
-	
-	void reset(String line, int epoch, int dim, boolean validate) {
+
+	void setValues(String line, int epoch, int dim, boolean validate) {
 		String[] fields = line.split("\\|");
 		tail = fields[0];
 		head = fields[1];
 		cost = Integer.valueOf(fields[2]);
 
 		this.epoch = epoch;
-		this.exists = 1; // All links in training data "exist" so this is hardcoded to 1
+		this.exists = 1; // All links in training data "exist" so this is
+							// hardcoded to 1
 
 		featuredim = dim;
 
@@ -62,7 +65,7 @@ public class DataInstance {
 				logger.error("Invalid data instance: " + line);
 			}
 		}
-		
+
 		// Remap cost so that "free" is true in our logistic regression model
 		cost = (0 == cost) ? FREE_LINK : PAID_LINK;
 

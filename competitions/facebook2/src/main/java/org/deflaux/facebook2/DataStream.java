@@ -17,10 +17,11 @@ import org.apache.log4j.Logger;
  */
 public class DataStream {
 	public static final String EPOCH_PLACEHOLDER = "_EPOCH_";
-	
+
 	static Logger logger = Logger.getLogger("DataStream");
 
 	String pathPattern;
+	boolean shuffle;
 	boolean validate;
 	int epoch;
 	int counter;
@@ -36,24 +37,35 @@ public class DataStream {
 	 */
 	public DataStream(String pathPattern, boolean validate) {
 		this.pathPattern = pathPattern;
+		this.shuffle = true;
 		this.validate = validate;
 		this.epoch = 0;
 		this.counter = 0;
 		this.rawDataIndex = 0;
 		this.rawData = new ArrayList<String>();
 	}
-	
+
+	public boolean isShuffled() {
+		return shuffle;
+	}
+
+	public void setShuffle(boolean shuffle) {
+		this.shuffle = shuffle;
+	}
+
 	boolean nextEpoch() {
 		epoch++;
-		String path = pathPattern.replaceAll(EPOCH_PLACEHOLDER, Integer.toString(epoch));
+		String path = pathPattern.replaceAll(EPOCH_PLACEHOLDER,
+				Integer.toString(epoch));
 		try {
 			Scanner sc = new Scanner(new BufferedReader(new FileReader(path)));
-			while(sc.hasNextLine()) {
+			while (sc.hasNextLine()) {
 				rawData.add(sc.nextLine());
 			}
-			// Randomize the batch data
-			// TODO uncomment this!!!!!!!!!!!!!!!!!!!!!
-//			Collections.shuffle(rawData);
+			// Randomize the batch data so that we are truly simulating a stream of data
+			if (shuffle) {
+				Collections.shuffle(rawData);
+			}
 		} catch (FileNotFoundException e) {
 			logger.info(e);
 			return false;
@@ -65,7 +77,7 @@ public class DataStream {
 	 * @return True if the data stream has more data.
 	 */
 	public boolean hasNext() {
-		if(rawDataIndex >= rawData.size()) {
+		if (rawDataIndex >= rawData.size()) {
 			return nextEpoch();
 		}
 		return true;
@@ -74,14 +86,16 @@ public class DataStream {
 	/**
 	 * @return the next data instance.
 	 */
-	public DataInstance nextInstance(DataInstance instanceToReuse, int featuredim) {
+	public DataInstance nextInstance(DataInstance instanceToReuse,
+			int featuredim) {
 		DataInstance dataInstance;
-		
-		if(null == instanceToReuse) {
-			dataInstance = new DataInstance(rawData.get(rawDataIndex), epoch, featuredim, validate);
-		}
-		else {
-			dataInstance = DataInstance.reuse(instanceToReuse, rawData.get(rawDataIndex), epoch, featuredim, validate);
+
+		if (null == instanceToReuse) {
+			dataInstance = new DataInstance(rawData.get(rawDataIndex), epoch,
+					featuredim, validate);
+		} else {
+			dataInstance = DataInstance.reuse(instanceToReuse,
+					rawData.get(rawDataIndex), epoch, featuredim, validate);
 		}
 		rawDataIndex++;
 		counter++;

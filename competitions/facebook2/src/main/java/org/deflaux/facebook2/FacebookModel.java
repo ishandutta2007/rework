@@ -19,13 +19,13 @@ abstract public class FacebookModel {
 	double step;
 	double lambda;
 	int numDimensions;
-	ArrayList<Double> avgLossPerEpoch;
 	Weights weights;
 	int trainingCount;
-	int lossAccumulator;
 	int epochCount;
 	int currentEpoch;
 	boolean finalSweepPerformed;
+	ErrorMetrics errorMetrics;
+	ArrayList<ErrorMetrics> errorMetricsPerEpoch;
 
 	int idx; // TODO deleteme
 	
@@ -34,8 +34,10 @@ abstract public class FacebookModel {
 		this.lambda = lambda;
 		this.numDimensions = numDimensions;
 		weights = new Weights(numDimensions);
-		avgLossPerEpoch = new ArrayList<Double>();
-		trainingCount = epochCount = lossAccumulator = currentEpoch = 0;
+		errorMetrics = new ErrorMetrics();
+		errorMetricsPerEpoch = new ArrayList<ErrorMetrics>();
+		
+		trainingCount = epochCount = currentEpoch = 0;
 		finalSweepPerformed = false;
 		
 		// TODO deleteme
@@ -79,22 +81,15 @@ abstract public class FacebookModel {
 
 	}
 
-	void recordEpochAverageLoss(int newEpoch) {
-		int currentEpochCount = trainingCount - epochCount;
-		epochCount += currentEpochCount;
-		double avgLoss = (currentEpochCount == 0) ? 1.0
-				: (double) lossAccumulator / currentEpochCount;
-		avgLossPerEpoch.add(currentEpoch, avgLoss);
+	void recordEpochErrorMetrics(int newEpoch) {
+		errorMetricsPerEpoch.add(currentEpoch, errorMetrics);
 		logger.info(this.getClass().getName() + " trained (lambda:" + lambda
 				+ ", step:" + step + ", numDimensions:" + numDimensions
-				+ ") with " + currentEpochCount + " cases with "
-				+ lossAccumulator + " losses for an average loss for epoch "
-				+ currentEpoch + ": " + avgLoss);
+				+ ") with " + errorMetrics.getCount() + " cases with "
+				+ errorMetrics.getLoss() + " losses for an average loss for epoch "
+				+ currentEpoch + ": " + errorMetrics.getAverageLoss());
 		currentEpoch = newEpoch;
-		lossAccumulator = 0;
-
-		logger.info("Weight for missing edge: " + weights.wHashedFeature[idx]);
-
+		errorMetrics= new ErrorMetrics();
 	}
 
 	/**
@@ -108,7 +103,7 @@ abstract public class FacebookModel {
 	 */
 	public void train(DataInstance instance) {
 		if (currentEpoch != instance.epoch) {
-			recordEpochAverageLoss(instance.epoch);
+			recordEpochErrorMetrics(instance.epoch);
 		}
 		trainingCount++;
 
@@ -131,9 +126,7 @@ abstract public class FacebookModel {
 
 		// Predict the label, record the loss
 		int prediction = (exp / (1 + exp)) > 0.5 ? 1 : 0;
-		if (prediction != label) {
-			lossAccumulator += 1;
-		}
+		errorMetrics.update(prediction, label);
 
 		// TODO deleteme
 		// sanity check
@@ -152,7 +145,7 @@ abstract public class FacebookModel {
 
 	void performFinalSweep() {
 		// Average loss for final epoch
-		recordEpochAverageLoss(currentEpoch);
+		recordEpochErrorMetrics(currentEpoch);
 
 		// Final sweep of delayed regularization
 		Set<Integer> allFeatures = new HashSet<Integer>();
@@ -215,6 +208,6 @@ abstract public class FacebookModel {
 		return this.getClass().getName() + " [step=" + step + ", lambda="
 				+ lambda + ", numDimensions=" + numDimensions
 				+ ", trainingCount=" + trainingCount + ", avgLossPerEpoch="
-				+ avgLossPerEpoch + "]";
+				+ errorMetricsPerEpoch + "]";
 	}
 }
