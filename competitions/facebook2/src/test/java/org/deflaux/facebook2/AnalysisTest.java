@@ -128,18 +128,11 @@ public class AnalysisTest {
 			ArrayList<Double> costPredictions = costModel.predict(path, 16);
 			// Multiply them all together
 			Double pathPrediction = null;
-//			for (double linkPrediction : linkPredictions) {
-//				if (null == pathPrediction) {
-//					pathPrediction = linkPrediction;
-//				} else {
-//					pathPrediction = pathPrediction * linkPrediction;
-//				}
-//			}
-			for (double costPrediction : costPredictions) {
+			for(int i = 0; i < linkPredictions.size(); i++) {
 				if (null == pathPrediction) {
-					pathPrediction = costPrediction;
+					pathPrediction = linkPredictions.get(i) * costPredictions.get(i);
 				} else {
-					pathPrediction = pathPrediction * costPrediction;
+					pathPrediction = pathPrediction * (linkPredictions.get(i) * costPredictions.get(i));
 				}
 			}
 			testPathPredictions.write(formatter.format(pathPrediction) + "\n");
