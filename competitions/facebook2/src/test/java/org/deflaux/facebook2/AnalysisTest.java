@@ -60,7 +60,7 @@ public class AnalysisTest {
 		}
 		assertEqualsHelper("num instances", 722588, training.counter);
 		
-		// TODO figure out why this number changes
+		// TODO figure out why this number changes, 376 corresponds to the number of names mapped to an empty key
 		assertEqualsHelper("num invalid", 376, numInvalid);
 
 		resetData();
@@ -78,7 +78,7 @@ public class AnalysisTest {
 		DecimalFormat formatter = new DecimalFormat("###.######");
 		int dim = (int) Math.pow(2,16); 
 		ExistenceModel existenceModel = new ExistenceModel(0.1, 0, dim);
-		CostModel costModel = new CostModel(0.1, 0.01, dim);
+		CostModel costModel = new CostModel(0.1, 0, dim);
 		Stopwatch watch = new Stopwatch();
 		List<FacebookModel> models = new ArrayList<FacebookModel>();
 		models.add(existenceModel);
@@ -111,33 +111,13 @@ public class AnalysisTest {
 		for(FacebookModel model : models) {
 			logger.info(model);
 		}
-
-		assertEqualsHelper("existence average loss for epoch 15", 0.01409898059848734, existenceModel.errorMetricsPerEpoch.get(14).getAverageLoss());
-		assertEqualsHelper("cost average loss for epoch 15", 0.1493752055244985, costModel.errorMetricsPerEpoch.get(14).getAverageLoss());
-		assertEqualsHelper("existence f score for epoch 15", 0.9929004615734895, existenceModel.errorMetricsPerEpoch.get(14).getFScore());
-		assertEqualsHelper("cost f score for epoch 15", Double.NaN, costModel.errorMetricsPerEpoch.get(14).getFScore());
-
-		List<String> superNodesPath = new ArrayList<String>();
-		superNodesPath.add("aabcdginorst aabceknoprsstw ehnorstu");
-		superNodesPath.add("aachikknosvy ceeeghirsv eegrsy");
-		ArrayList<Double> superNodesExistencePrediction = existenceModel.predict(superNodesPath);
-		assertEqualsHelper("link between two super nodes (.99)", 0.6759955252618445, superNodesExistencePrediction.get(0), DELTA);
-		ArrayList<Double> superNodesCostPrediction = costModel.predict(superNodesPath);
-		assertEqualsHelper("cost of link between two super nodes (free)", 0.1503690535821786, superNodesCostPrediction.get(0), DELTA);
-
-		List<String> missingPath = new ArrayList<String>();
-		missingPath.add("missing");
-		missingPath.add("does not exist");
-		ArrayList<Double> missingPathPrediction = existenceModel.predict(missingPath);
-		assertEqualsHelper("link between two non-existent nodes (0.0)", 0.5124973964842103, missingPathPrediction.get(0), DELTA);
-		ArrayList<Double> missingPathCostPrediction = costModel.predict(missingPath);
-		assertEqualsHelper("cost of link between two non-existent nodes (not free)", 0.15036905358217856, missingPathCostPrediction.get(0), DELTA);
-
-		// TODO test case for a link that is not free
-		
 		assertEqualsHelper("num invalid", 376, numInvalid);
 
-		
+		assertEqualsHelper("existence average loss for epoch 15", 0.01409898059848734, existenceModel.errorMetricsPerEpoch.get(14).getAverageLoss());
+		assertEqualsHelper("cost average loss for epoch 15", 0.10401594870108517, costModel.errorMetricsPerEpoch.get(14).getAverageLoss());
+		assertEqualsHelper("existence f score for epoch 15", 0.9929004615734895, existenceModel.errorMetricsPerEpoch.get(14).getFScore());
+		assertEqualsHelper("cost f score for epoch 15", 0.6198452640276422, costModel.errorMetricsPerEpoch.get(14).getFScore());
+
 		Writer testPathPredictions = new BufferedWriter(new FileWriter(
 				"/Users/deflaux/rework/competitions/facebook2/data/testPathPredictions.txt"));
 
@@ -155,6 +135,32 @@ public class AnalysisTest {
 			testPathPredictions.write(formatter.format(pathPrediction) + "\n");
 		}
 		testPathPredictions.close();
+		
+		// Test case for a path between two supernodes that is free 'aabcdginorst aabceknoprsstw ehnorstu|aachikknosvy ceeeghirsv eegrsy|0'
+		List<String> superNodesPath = new ArrayList<String>();
+		superNodesPath.add("aabcdginorst aabceknoprsstw ehnorstu");
+		superNodesPath.add("aachikknosvy ceeeghirsv eegrsy");
+		List<String> missingPath = new ArrayList<String>();
+		missingPath.add("missing");
+		missingPath.add("does not exist");
+		// Test case for a link that is not free 'aabclnopt aadt ceenrst|aachikknosvy ceeeghirsv eegrsy|1'
+		List<String> notFreePath = new ArrayList<String>();
+		notFreePath.add("aabclnopt aadt ceenrst");
+		notFreePath.add("aachikknosvy ceeeghirsv eegrsy");
+
+		ArrayList<Double> superNodesExistencePrediction = existenceModel.predict(superNodesPath);
+		assertEqualsHelper("link between two super nodes (.99)", 0.6759955252618445, superNodesExistencePrediction.get(0), DELTA);
+		ArrayList<Double> missingPathPrediction = existenceModel.predict(missingPath);
+		assertEqualsHelper("link between two non-existent nodes (0.0)", 0.5124973964842103, missingPathPrediction.get(0), DELTA);
+		ArrayList<Double> notFreePathPrediction = existenceModel.predict(notFreePath);
+		assertEqualsHelper("paid link between two nodes (.99)", 0.6964685022527203, notFreePathPrediction.get(0), DELTA);
+		
+		ArrayList<Double> superNodesCostPrediction = costModel.predict(superNodesPath);
+		assertEqualsHelper("cost of link between two super nodes (free)", 0.6414194722659164, superNodesCostPrediction.get(0), DELTA);
+		ArrayList<Double> missingPathCostPrediction = costModel.predict(missingPath);
+		assertEqualsHelper("cost of link between two non-existent nodes (not free?)", 0.48750260351578967, missingPathCostPrediction.get(0), DELTA);
+		ArrayList<Double> notFreePathCostPrediction = costModel.predict(notFreePath);
+		assertEqualsHelper("cost of paid link between two nodes (not free)", 0.3035314977472798, notFreePathCostPrediction.get(0), DELTA);
 	}
 
 	void assertEqualsHelper(String testCase, Double expected, Double actual,
