@@ -121,15 +121,25 @@ public class AnalysisTest {
 		Writer testPathPredictions = new BufferedWriter(new FileWriter(
 				"/Users/deflaux/rework/competitions/facebook2/data/testPathPredictions.txt"));
 
+		// TODO predictions for epochs 16 - 20
 		while (testing.hasNext()) {
-			ArrayList<Double> linkPredictions = existenceModel.predict(testing.nextInstance());
+			List<String> path = testing.nextInstance();
+			ArrayList<Double> linkPredictions = existenceModel.predict(path, 16);
+			ArrayList<Double> costPredictions = costModel.predict(path, 16);
 			// Multiply them all together
 			Double pathPrediction = null;
-			for (double linkPrediction : linkPredictions) {
+//			for (double linkPrediction : linkPredictions) {
+//				if (null == pathPrediction) {
+//					pathPrediction = linkPrediction;
+//				} else {
+//					pathPrediction = pathPrediction * linkPrediction;
+//				}
+//			}
+			for (double costPrediction : costPredictions) {
 				if (null == pathPrediction) {
-					pathPrediction = linkPrediction;
+					pathPrediction = costPrediction;
 				} else {
-					pathPrediction = pathPrediction * linkPrediction;
+					pathPrediction = pathPrediction * costPrediction;
 				}
 			}
 			testPathPredictions.write(formatter.format(pathPrediction) + "\n");
@@ -147,20 +157,28 @@ public class AnalysisTest {
 		List<String> notFreePath = new ArrayList<String>();
 		notFreePath.add("aabclnopt aadt ceenrst");
 		notFreePath.add("aachikknosvy ceeeghirsv eegrsy");
-
-		ArrayList<Double> superNodesExistencePrediction = existenceModel.predict(superNodesPath);
-		assertEqualsHelper("link between two super nodes (.99)", 0.6759955252618445, superNodesExistencePrediction.get(0), DELTA);
-		ArrayList<Double> missingPathPrediction = existenceModel.predict(missingPath);
-		assertEqualsHelper("link between two non-existent nodes (0.0)", 0.5124973964842103, missingPathPrediction.get(0), DELTA);
-		ArrayList<Double> notFreePathPrediction = existenceModel.predict(notFreePath);
-		assertEqualsHelper("paid link between two nodes (.99)", 0.6964685022527203, notFreePathPrediction.get(0), DELTA);
+		// Test case for self edge
+		List<String> selfEdgePath = new ArrayList<String>();
+		selfEdgePath.add("aabclnopt aadt ceenrst");
 		
-		ArrayList<Double> superNodesCostPrediction = costModel.predict(superNodesPath);
+
+		ArrayList<Double> superNodesExistencePrediction = existenceModel.predict(superNodesPath, 16);
+		assertEqualsHelper("link between two super nodes (.99)", 0.6759955252618445, superNodesExistencePrediction.get(0), DELTA);
+		ArrayList<Double> missingPathPrediction = existenceModel.predict(missingPath, 16);
+		assertEqualsHelper("link between two non-existent nodes (0.0)", 0.5124973964842103, missingPathPrediction.get(0), DELTA);
+		ArrayList<Double> notFreePathPrediction = existenceModel.predict(notFreePath, 16);
+		assertEqualsHelper("paid link between two nodes (.99)", 0.6964685022527203, notFreePathPrediction.get(0), DELTA);
+		ArrayList<Double> selfEdgePathPrediction = existenceModel.predict(selfEdgePath, 16);
+		assertEqualsHelper("self edge (1.0)", 1.0, selfEdgePathPrediction.get(0), DELTA);
+		
+		ArrayList<Double> superNodesCostPrediction = costModel.predict(superNodesPath, 16);
 		assertEqualsHelper("cost of link between two super nodes (free)", 0.6414194722659164, superNodesCostPrediction.get(0), DELTA);
-		ArrayList<Double> missingPathCostPrediction = costModel.predict(missingPath);
+		ArrayList<Double> missingPathCostPrediction = costModel.predict(missingPath, 16);
 		assertEqualsHelper("cost of link between two non-existent nodes (not free?)", 0.48750260351578967, missingPathCostPrediction.get(0), DELTA);
-		ArrayList<Double> notFreePathCostPrediction = costModel.predict(notFreePath);
+		ArrayList<Double> notFreePathCostPrediction = costModel.predict(notFreePath, 16);
 		assertEqualsHelper("cost of paid link between two nodes (not free)", 0.3035314977472798, notFreePathCostPrediction.get(0), DELTA);
+		ArrayList<Double> selfEdgeCostPrediction = costModel.predict(selfEdgePath, 16);
+		assertEqualsHelper("self edge cost (1.0)", 1.0, selfEdgeCostPrediction.get(0), DELTA);
 	}
 
 	void assertEqualsHelper(String testCase, Double expected, Double actual,

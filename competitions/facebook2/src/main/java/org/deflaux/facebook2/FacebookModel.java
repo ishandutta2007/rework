@@ -28,7 +28,7 @@ abstract public class FacebookModel {
 	ArrayList<ErrorMetrics> errorMetricsPerEpoch;
 
 	int idx; // TODO deleteme
-	
+
 	public FacebookModel(double step, double lambda, int numDimensions) {
 		this.step = step;
 		this.lambda = lambda;
@@ -36,10 +36,10 @@ abstract public class FacebookModel {
 		weights = new Weights(numDimensions);
 		errorMetrics = new ErrorMetrics();
 		errorMetricsPerEpoch = new ArrayList<ErrorMetrics>();
-		
+
 		trainingCount = epochCount = currentEpoch = 0;
 		finalSweepPerformed = false;
-		
+
 		// TODO deleteme
 		idx = HashUtil.hashToRange("missing|does not exist", numDimensions);
 	}
@@ -86,10 +86,11 @@ abstract public class FacebookModel {
 		logger.info(this.getClass().getName() + " trained (lambda:" + lambda
 				+ ", step:" + step + ", numDimensions:" + numDimensions
 				+ ") with " + errorMetrics.getCount() + " cases with "
-				+ errorMetrics.getLoss() + " losses for an average loss for epoch "
-				+ currentEpoch + ": " + errorMetrics.getAverageLoss());
+				+ errorMetrics.getLoss()
+				+ " losses for an average loss for epoch " + currentEpoch
+				+ ": " + errorMetrics.getAverageLoss());
 		currentEpoch = newEpoch;
-		errorMetrics= new ErrorMetrics();
+		errorMetrics = new ErrorMetrics();
 	}
 
 	/**
@@ -108,12 +109,12 @@ abstract public class FacebookModel {
 		trainingCount++;
 
 		Set<Integer> featureids = instance.hashedTextFeature.keySet();
-		
+
 		// TODO deleteme
-		if(featureids.contains(idx)) {
-			logger.info("idx: " + instance.tail +"|"+  instance.head);
+		if (featureids.contains(idx)) {
+			logger.info("idx: " + instance.tail + "|" + instance.head);
 		}
-		
+
 		int label = getInstanceLabel(instance);
 
 		if (0 != lambda) {
@@ -167,7 +168,7 @@ abstract public class FacebookModel {
 	 * @param dataStream
 	 * @return An array storing the CTR for each datapoint in the test data.
 	 */
-	public ArrayList<Double> predict(List<String> path) {
+	public ArrayList<Double> predict(List<String> path, int epoch) {
 
 		if (!finalSweepPerformed) {
 			performFinalSweep();
@@ -178,24 +179,22 @@ abstract public class FacebookModel {
 		for (int tailIdx = 0; tailIdx < path.size(); tailIdx++) {
 			String head = null;
 			if (tailIdx == path.size() - 1) {
-				// We're at the end of this list
-				if (1 < path.size()) {
-					// Its not a single node path
-					break;
+				// We're at the end of this list, time to stop
+				if (1 == path.size()) {
+					// Special case: for single node paths predict 1 for both
+					// existence model and cost model because self-edges always
+					// exist and they are always free
+					predictions.add(1.0);
 				}
-				// Special case: for single node paths predict 1 for both
-				// existence model and cost model because self-edges always
-				// exist and they are always free
-				predictions.add(1.0);
+				break;
 			} else {
 				head = path.get(tailIdx + 1);
 			}
 			String tail = path.get(tailIdx);
 
-			// TODO set epoch correctly
-			// TODO add all vertices to data instance?
+			// TODO add all vertices to data instance hash and then make one prediction per path as opposed to one prediction per edge?
 			DataInstance instance = new DataInstance(tail + "|" + head + "|0",
-					16, weights.featuredim, false);
+					epoch, weights.featuredim, false);
 			double exp = Math.exp(computeWeightFeatureProduct(
 					instance.hashedTextFeature.keySet(), instance));
 			predictions.add(exp / (1 + exp));
