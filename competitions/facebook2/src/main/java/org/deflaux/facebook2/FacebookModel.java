@@ -193,8 +193,9 @@ abstract public class FacebookModel {
 			String tail = path.get(tailIdx);
 
 			// TODO add all vertices to data instance hash and then make one prediction per path as opposed to one prediction per edge?
-			DataInstance instance = new DataInstance(tail + "|" + head + "|0",
-					epoch, weights.featuredim, false);
+			// TODO this masks some heads/tails that are the empty string due to normalization
+			DataInstance instance = new DataInstance(tail + "|" + head + "|?",
+					epoch, numDimensions, false, false);
 			double exp = Math.exp(computeWeightFeatureProduct(
 					instance.hashedTextFeature.keySet(), instance));
 			predictions.add(exp / (1 + exp));

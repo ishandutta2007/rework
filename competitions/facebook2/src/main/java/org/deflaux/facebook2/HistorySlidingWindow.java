@@ -52,7 +52,7 @@ public class HistorySlidingWindow {
 			if (numEpochsInWindow <= (currentEpoch - epoch)) {
 				// This is outside of our window
 				throw new IllegalArgumentException(
-						"Attempting to record history for an epoch outside of the window");
+						"Attempting to record history for an epoch outside of the window: " + epoch);
 			}
 			paneIndex = (currentSlot + (currentEpoch - epoch))
 					% numEpochsInWindow;

@@ -17,6 +17,10 @@ public class HistorySlidingWindowTest {
 	public void testHappyCase() {
 		
 		history.recordHistory("one", 1);
+
+		assertFalse(history.viewHistory("neg one", -1));
+		assertFalse(history.viewHistory("zero", 0));
+		
 		history.recordHistory("two", 2);
 		history.recordHistory("twoB", 2);
 		history.recordHistory("three", 3);

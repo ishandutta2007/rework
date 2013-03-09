@@ -16,7 +16,6 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class AnalysisTest {
@@ -40,9 +39,9 @@ public class AnalysisTest {
 						+ DataStream.EPOCH_PLACEHOLDER + ".txt", false);
 		testing = new PredictionPaths(
 				"/Users/deflaux/rework/competitions/facebook2/data/normTestPaths.txt");
+		DataInstance.clearEdgeHistory();
 	}
 
-	//@Ignore
 	@Test
 	public void testShuffledDataStream() throws FileNotFoundException {
 		int dim = 2;
@@ -121,6 +120,12 @@ public class AnalysisTest {
 		Writer testPathPredictions = new BufferedWriter(new FileWriter(
 				"/Users/deflaux/rework/competitions/facebook2/data/testPathPredictions.txt"));
 
+		// Normalization bugs:
+		// TODO why is link 'NIC' normalized to the empty string?
+		// TODO one path has Ltd normalized to the empty string
+		// TODO output something else for empty
+		// once all this is fixed (1) check num invalid again (2) take question mark out of predict
+		
 		// TODO predictions for epochs 16 - 20
 		while (testing.hasNext()) {
 			List<String> path = testing.nextInstance();

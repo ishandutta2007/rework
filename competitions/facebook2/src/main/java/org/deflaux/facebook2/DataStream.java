@@ -92,10 +92,10 @@ public class DataStream {
 
 		if (null == instanceToReuse) {
 			dataInstance = new DataInstance(rawData.get(rawDataIndex), epoch,
-					featuredim, validate);
+					featuredim, true, validate);
 		} else {
 			dataInstance = DataInstance.reuse(instanceToReuse,
-					rawData.get(rawDataIndex), epoch, featuredim, validate);
+					rawData.get(rawDataIndex), epoch, featuredim, true, validate);
 		}
 		rawDataIndex++;
 		counter++;
