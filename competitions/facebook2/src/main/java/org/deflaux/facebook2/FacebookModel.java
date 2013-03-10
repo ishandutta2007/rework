@@ -196,7 +196,8 @@ abstract public class FacebookModel {
 
 			// TODO add all vertices to data instance hash and then make one prediction per path as opposed to one prediction per edge?
 			// TODO this masks some heads/tails that are the empty string due to normalization
-			DataInstance instance = new DataInstance(tail + "|" + head + "|?",
+			String edgeKey = tail + "|" + head + "|?";
+			DataInstance instance = new DataInstance(edgeKey,
 					epoch, numDimensions, false, false);
 			double exp = Math.exp(computeWeightFeatureProduct(
 					instance.hashedTextFeature.keySet(), instance));

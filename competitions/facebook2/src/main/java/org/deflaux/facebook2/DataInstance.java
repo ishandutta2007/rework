@@ -14,18 +14,18 @@ public class DataInstance {
 	public static final int FREE_EDGE_COST = 1;
 	public static final int PAID_EDGE_COST = 0;
 	public static final int UNKNOWN_EDGE_COST = Integer.MIN_VALUE;
-	
+
 	public static final int EDGE_EXISTS = 1;
 	public static final int EDGE_EXISTENCE_UNKNOWN = 0;
 
 	public static final String KEY_SEPARATOR = "|";
-	
+
 	// See bloomFilterParameters.R for code to determine parameters to
 	// BloomFilter
 	static final int NUM_BITS_EDGE_HISTORY = 720000;
 	static final int NUM_HASHES_EDGE_HISTORY = 10;
 	public static final int DEFAULT_HISTORY_SLIDING_WINDOW_SIZE = 8;
-	
+
 	static Logger logger = Logger.getLogger("DataInstance");
 	static int historyWindowSize;
 	static HistorySlidingWindow edgeExistenceHistory;
@@ -51,7 +51,7 @@ public class DataInstance {
 		historyWindowSize = DEFAULT_HISTORY_SLIDING_WINDOW_SIZE;
 		clearEdgeHistory();
 	}
-	
+
 	public static int getHistoryWindowSize() {
 		return historyWindowSize;
 	}
@@ -62,17 +62,17 @@ public class DataInstance {
 
 	public static void clearEdgeHistory() {
 		edgeExistenceHistory = new HistorySlidingWindow(historyWindowSize,
-				NUM_BITS_EDGE_HISTORY, NUM_HASHES_EDGE_HISTORY);		
+				NUM_BITS_EDGE_HISTORY, NUM_HASHES_EDGE_HISTORY);
 		edgeCostHistory = new HistorySlidingWindow(historyWindowSize,
-				NUM_BITS_EDGE_HISTORY, NUM_HASHES_EDGE_HISTORY);		
+				NUM_BITS_EDGE_HISTORY, NUM_HASHES_EDGE_HISTORY);
 	}
 
 	public DataInstance(int numDimensions) {
 		hashedTextFeature = new HashMap<Integer, Integer>();
 	}
 
-	public DataInstance(String line, int epoch, int numDimensions, boolean hasLabel,
-			boolean validate) {
+	public DataInstance(String line, int epoch, int numDimensions,
+			boolean hasLabel, boolean validate) {
 		hashedTextFeature = new HashMap<Integer, Integer>();
 		setValues(line, epoch, numDimensions, hasLabel, validate);
 	}
@@ -90,14 +90,21 @@ public class DataInstance {
 		this.epoch = epoch;
 
 		String[] fields = line.split("\\|");
-		this.tail = fields[0];
-		this.head = fields[1];
+		tail = fields[0];
+		head = fields[1];
 		if (hasLabel) {
-			this.cost = Integer.valueOf(fields[2]);
-			this.exists = EDGE_EXISTS; // All links in training data "exist" 								// hardcoded to 1
+			cost = Integer.valueOf(fields[2]);
+			// Remap cost so that "free" is true in our logistic regression
+			// model
+			if (0 == cost) {
+				cost = FREE_EDGE_COST;
+			} else if (1 == cost) {
+				cost = PAID_EDGE_COST;
+			}
+			exists = EDGE_EXISTS; // All links in training data "exist"
 		} else {
-			this.cost = UNKNOWN_EDGE_COST;
-			this.exists = EDGE_EXISTENCE_UNKNOWN;
+			cost = UNKNOWN_EDGE_COST;
+			exists = EDGE_EXISTENCE_UNKNOWN;
 		}
 		if (validate) {
 			if (!isValid()) {
@@ -105,43 +112,45 @@ public class DataInstance {
 			}
 		}
 
-		// Remap cost so that "free" is true in our logistic regression model
-		cost = (0 == cost) ? FREE_EDGE_COST: PAID_EDGE_COST;
-
-
 		edgeKey = tail + KEY_SEPARATOR + head;
-		if (EDGE_EXISTS == this.exists) {
+		if (EDGE_EXISTS == exists) {
 			edgeExistenceHistory.recordHistory(edgeKey, this.epoch);
 		}
-		if (FREE_EDGE_COST == this.cost) {
+		if (FREE_EDGE_COST == cost) {
 			edgeCostHistory.recordHistory(edgeKey, this.epoch);
 		}
 		updateHashedTextFeature(edgeKey, 1);
 	}
 
 	public int[] getExistenceEdgeHistory() {
+		return getEdgeHistory(edgeExistenceHistory, EDGE_EXISTS);
+	}
+
+	public int[] getEdgeCostHistory() {
+		return getEdgeHistory(edgeCostHistory, FREE_EDGE_COST);
+	}
+
+	/**
+	 * Helper function to walk history datastructures
+	 * 
+	 * @param edgeHistoryWindow
+	 * @param value
+	 * @return
+	 */
+	int[] getEdgeHistory(HistorySlidingWindow edgeHistoryWindow, int value) {
 		// Values default to zero
 		int edgeHistory[] = new int[historyWindowSize];
-		for (int i = 0; i < historyWindowSize; i++) {
+		// Do not use value for current epoch or else we are using the label AS
+		// a feature ;-)
+		for (int i = 1; i < historyWindowSize; i++) {
 			int historyEpoch = epoch - i;
-			if (edgeExistenceHistory.viewHistory(edgeKey, historyEpoch)) {
-				edgeHistory[i] = EDGE_EXISTS;
+			if (edgeHistoryWindow.viewHistory(edgeKey, historyEpoch)) {
+				edgeHistory[i] = value;
 			}
 		}
 		return edgeHistory;
 	}
 
-	public int[] getEdgeCostHistory() {
-		// Values default to zero
-		int edgeHistory[] = new int[historyWindowSize];
-		for (int i = 0; i < historyWindowSize; i++) {
-			int historyEpoch = epoch - i;
-			if (edgeCostHistory.viewHistory(edgeKey, historyEpoch)) {
-				edgeHistory[i] = FREE_EDGE_COST;
-			}
-		}
-		return edgeHistory;
-	}
 	/**
 	 * Helper function. Updates the feature hashmap with a given key and value.
 	 * You can use HashUtil.hashToRange as h, and HashUtil.hashToSign as \xi.
