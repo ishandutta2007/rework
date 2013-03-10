@@ -55,7 +55,7 @@ public class AnalysisTest {
 		DataInstance.setHistoryWindowSize(historyWindowSize);
 		ExistenceModel existenceModel = new ExistenceModel(0.01, 0.2,
 				historyWindowSize, numDimensions);
-		CostModel costModel = new CostModel(0.1, 0, historyWindowSize,
+		CostModel costModel = new CostModel(0.01, 0.1, historyWindowSize,
 				numDimensions);
 
 		List<FacebookModel> models = new ArrayList<FacebookModel>();
@@ -93,12 +93,12 @@ public class AnalysisTest {
 				0.00400772772114436, existenceModel.errorMetricsPerEpoch
 						.get(14).getAverageLoss());
 		assertEqualsHelper("cost average loss for epoch 15",
-				0.022772114436040776, costModel.errorMetricsPerEpoch.get(14)
+				0.057402992436698455, costModel.errorMetricsPerEpoch.get(14)
 						.getAverageLoss());
 		assertEqualsHelper("existence f score for epoch 15",
 				0.9979921126064438, existenceModel.errorMetricsPerEpoch.get(14)
 						.getFScore());
-		assertEqualsHelper("cost f score for epoch 15", 0.9217071791972866,
+		assertEqualsHelper("cost f score for epoch 15", 0.8281548021903649,
 				costModel.errorMetricsPerEpoch.get(14).getFScore());
 		// No false positives since all the training data is positive for this model
 		assertEqualsHelper("existence false positive for epoch 15",
@@ -108,10 +108,10 @@ public class AnalysisTest {
 				195.0, existenceModel.errorMetricsPerEpoch
 						.get(14).getFalseNegative());
 		assertEqualsHelper("cost false positive for epoch 15",
-				362.0, costModel.errorMetricsPerEpoch.get(14)
+				2255.0, costModel.errorMetricsPerEpoch.get(14)
 						.getFalsePositive());
 		assertEqualsHelper("cost false negative for epoch 15",
-				746.0, costModel.errorMetricsPerEpoch.get(14)
+				538.0, costModel.errorMetricsPerEpoch.get(14)
 						.getFalseNegative());
 
 		// Test case for a path between two supernodes that is free
@@ -152,20 +152,24 @@ public class AnalysisTest {
 		ArrayList<Double> superNodesCostPrediction = costModel.predict(
 				superNodesPath, 16);
 		assertEqualsHelper("cost of link between two super nodes (free)",
-				0.9430090900805512, superNodesCostPrediction.get(0), DELTA);
+				0.7352650212154823, superNodesCostPrediction.get(0), DELTA);
 		ArrayList<Double> missingPathCostPrediction = costModel.predict(
 				missingPath, 16);
 		assertEqualsHelper(
 				"cost of link between two non-existent nodes (not free?)",
-				0.3970302138173132, missingPathCostPrediction.get(0), DELTA);
+				0.4999998982790982, missingPathCostPrediction.get(0), DELTA);
 		ArrayList<Double> notFreePathCostPrediction = costModel.predict(
 				notFreePath, 16);
 		assertEqualsHelper("cost of paid link between two nodes (not free)",
-				0.0012423935932208148, notFreePathCostPrediction.get(0), DELTA);
+				0.46343308328898397, notFreePathCostPrediction.get(0), DELTA);
 		ArrayList<Double> selfEdgeCostPrediction = costModel.predict(
 				selfEdgePath, 16);
 		assertEqualsHelper("self edge cost (1.0)", 1.0,
 				selfEdgeCostPrediction.get(0), DELTA);
+		
+		// TODO only train through epoch 14 and pick some test paths to test with, manually determining the "right" answer from epoch 15
+		// abcfklnors acceiinnooqrrrtuu|as28233|abcdehiinnrsttt ceeirsv cehint eeinnrtt eilnno|as59900
+		// cceeilnorst dehiiln|aabcdginorst aabceknoprsstw ehnorstu|as61321|as60366|akmosss
 		
 		Writer testPathPredictions = new BufferedWriter(
 				new FileWriter(
@@ -182,17 +186,17 @@ public class AnalysisTest {
 			while (testing.hasNext()) {
 				List<String> path = testing.nextInstance();
 				ArrayList<Double> linkPredictions = existenceModel.predict(
-						path, 16);
+						path, epoch);
 				ArrayList<Double> costPredictions = costModel.predict(path, epoch);
 				// Multiply them all together
 				Double pathPrediction = null;
 				for (int i = 0; i < linkPredictions.size(); i++) {
 					if (null == pathPrediction) {
-						pathPrediction = 1 //linkPredictions.get(i)
+						pathPrediction = linkPredictions.get(i)
 								* costPredictions.get(i);
 					} else {
 						pathPrediction = pathPrediction
-								* (1 //linkPredictions.get(i) 
+								* (linkPredictions.get(i) 
 										* costPredictions
 										.get(i));
 					}
