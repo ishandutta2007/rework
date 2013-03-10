@@ -120,9 +120,11 @@ public class DataInstance {
 			edgeCostHistory.recordHistory(edgeKey, this.epoch);
 		}
 		updateHashedTextFeature(edgeKey, 1);
+		updateHashedTextFeature("head|" + head, 1);
+		updateHashedTextFeature("tail|" + tail, 1);
 	}
 
-	public int[] getExistenceEdgeHistory() {
+	public int[] getEdgeExistenceHistory() {
 		return getEdgeHistory(edgeExistenceHistory, EDGE_EXISTS);
 	}
 
@@ -196,13 +198,13 @@ public class DataInstance {
 			validationMessages += ", Malformed epoch value: " + epoch;
 		}
 
-		if (!(1 == hashedTextFeature.size())) {
+		if (!((1 <= hashedTextFeature.size()) && (3 >= hashedTextFeature.size()))) {
 			valid = false;
 			validationMessages += ", Malformed hash feature: "
 					+ hashedTextFeature.size();
 		}
 
-		if (!valid) {
+		if (!valid && logger.isDebugEnabled()) {
 			logger.debug("Invalid data instance " + toString()
 					+ validationMessages);
 		}

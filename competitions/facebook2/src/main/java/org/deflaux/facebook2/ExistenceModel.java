@@ -32,6 +32,10 @@ public class ExistenceModel extends FacebookModel {
 			DataInstance instance) {
 		double dotProduct = 0.0;
 		// dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
+		int existenceHistory[] = instance.getEdgeExistenceHistory();
+		for (int i = 0; i < historyWindowSize; i++) {
+			dotProduct += weights.wHistoryFeature[i] * existenceHistory[i];
+		}
 		for (int featureid : featureids) {
 			dotProduct += weights.wHashedFeature[featureid]
 					* instance.hashedTextFeature.get(featureid);
@@ -42,6 +46,15 @@ public class ExistenceModel extends FacebookModel {
 	
 	void updateWeights(DataInstance instance, double gradient) {
 		// weights.w0 += -step * gradient; // no reg and assumed x0 = 1
+		int existenceHistory[] = instance.getEdgeExistenceHistory();
+		for (int i = 0; i < historyWindowSize; i++) {
+			double featureWeight = weights.wHistoryFeature[i];
+			weights.wHistoryFeature[i] = featureWeight
+					+ -step
+					* (gradient * existenceHistory[i] + lambda
+							* featureWeight);
+
+		}
 		for (int featureid : instance.hashedTextFeature.keySet()) {
 			// Can be null if this is this data instance is the first
 			// time we've seen this feature
