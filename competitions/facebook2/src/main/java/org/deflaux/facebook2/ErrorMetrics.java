@@ -1,10 +1,10 @@
 package org.deflaux.facebook2;
 
 public class ErrorMetrics {
-	double truePositive = 0;
-	double falsePositive = 0;
-	double trueNegative = 0;
-	double falseNegative = 0;
+	private double truePositive = 0;
+	private double falsePositive = 0;
+	private double trueNegative = 0;
+	private double falseNegative = 0;
 	
 	void update(int prediction, int label) {
 		if(1 == label) {
@@ -25,6 +25,22 @@ public class ErrorMetrics {
 		}
 	}
 	
+	public double getTruePositive() {
+		return truePositive;
+	}
+
+	public double getFalsePositive() {
+		return falsePositive;
+	}
+
+	public double getTrueNegative() {
+		return trueNegative;
+	}
+
+	public double getFalseNegative() {
+		return falseNegative;
+	}
+
 	double getPrecision() {
 		return truePositive / (truePositive + falsePositive);
 	}
@@ -46,7 +62,7 @@ public class ErrorMetrics {
 	}
 	
 	double getFScore() {
-		return 2 * ((getPrecision()*getRecall())/(getPrecision()+getRecall()));
+		return 2.0 * ((getPrecision()*getRecall())/(getPrecision()+getRecall()));
 	}
 
 	@Override

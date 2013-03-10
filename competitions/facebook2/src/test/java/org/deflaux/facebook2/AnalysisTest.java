@@ -58,8 +58,6 @@ public class AnalysisTest {
 			}
 		}
 		assertEqualsHelper("num instances", 722588, training.counter);
-		
-		// TODO figure out why this number changes, 376 corresponds to the number of names mapped to an empty key
 		assertEqualsHelper("num invalid", 376, numInvalid);
 
 		resetData();

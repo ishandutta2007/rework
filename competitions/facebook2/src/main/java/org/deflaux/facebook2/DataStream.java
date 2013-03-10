@@ -55,6 +55,8 @@ public class DataStream {
 
 	boolean nextEpoch() {
 		epoch++;
+		this.rawData = new ArrayList<String>();
+		this.rawDataIndex = 0;
 		String path = pathPattern.replaceAll(EPOCH_PLACEHOLDER,
 				Integer.toString(epoch));
 		try {
