@@ -18,6 +18,7 @@ abstract public class FacebookModel {
 
 	double step;
 	double lambda;
+	int historyWindowSize;
 	int numDimensions;
 	Weights weights;
 	int trainingCount;
@@ -29,11 +30,12 @@ abstract public class FacebookModel {
 
 	int idx; // TODO deleteme
 
-	public FacebookModel(double step, double lambda, int numDimensions) {
+	public FacebookModel(double step, double lambda, int historyWindowSize, int numDimensions) {
 		this.step = step;
 		this.lambda = lambda;
+		this.historyWindowSize = historyWindowSize;
 		this.numDimensions = numDimensions;
-		weights = new Weights(numDimensions);
+		weights = new Weights(historyWindowSize, numDimensions);
 		errorMetrics = new ErrorMetrics();
 		errorMetricsPerEpoch = new ArrayList<ErrorMetrics>();
 

@@ -75,10 +75,13 @@ public class AnalysisTest {
 		training.setShuffle(false);
 		
 		DecimalFormat formatter = new DecimalFormat("###.######");
-		int dim = (int) Math.pow(2,16); 
-		ExistenceModel existenceModel = new ExistenceModel(0.1, 0, dim);
-		CostModel costModel = new CostModel(0.1, 0, dim);
-		Stopwatch watch = new Stopwatch();
+		int historyWindowSize = 8;
+		int numDimensions = (int) Math.pow(2,16); 
+		
+		DataInstance.setHistoryWindowSize(historyWindowSize);
+		ExistenceModel existenceModel = new ExistenceModel(0.1, 0, historyWindowSize, numDimensions);
+		CostModel costModel = new CostModel(0.1, 0, historyWindowSize, numDimensions);
+
 		List<FacebookModel> models = new ArrayList<FacebookModel>();
 		models.add(existenceModel);
 		models.add(costModel);
@@ -88,16 +91,17 @@ public class AnalysisTest {
 		final double lambdas[] = { 0.0, 0.002, 0.004, 0.006, 0.008, 0.010, 0.012, 0.014 };
 		for (double lambda : lambdas) {
 			for (double step : steps) {
-				models.add(new ExistenceModel(step, lambda, dim));
-				models.add(new CostModel(step, lambda, dim));
+				models.add(new ExistenceModel(step, lambda, numDimensions));
+				models.add(new CostModel(step, lambda, numDimensions));
 			}
 		}
 		*/
 
 		int numInvalid = 0;
 		DataInstance instance = null;
+		Stopwatch watch = new Stopwatch();
 		while (training.hasNext()) {
-			instance = training.nextInstance(instance, dim);
+			instance = training.nextInstance(instance, numDimensions);
 			if (!instance.isValid()) {
 				numInvalid++;
 				continue;

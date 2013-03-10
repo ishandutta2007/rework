@@ -41,48 +41,38 @@ public class HistorySlidingWindow {
 		}
 	}
 
-	public void recordHistory(String entry, int epoch) {
-		int paneIndex = NOT_INITIALIZED;
+	int getPaneIndexForEpoch(int epoch) {
 		if (NOT_INITIALIZED == currentEpoch) {
 			currentEpoch = epoch;
 			currentSlot = 0;
-			paneIndex = currentSlot;
-		} else if (currentEpoch >= epoch) {
-			// Add an item to current or past history
-			if (numEpochsInWindow <= (currentEpoch - epoch)) {
-				// This is outside of our window
-				throw new IllegalArgumentException(
-						"Attempting to record history for an epoch outside of the window: " + epoch);
-			}
-			paneIndex = (currentSlot + (currentEpoch - epoch))
-					% numEpochsInWindow;
-		} else if (currentEpoch + 1 == epoch) {
+		}  else if (currentEpoch + 1 == epoch) {
 			// Slide our window forward by one epoch
 			currentEpoch = epoch;
 			currentSlot = (currentSlot + 1) % numEpochsInWindow;
 			windowPanes.set(currentSlot, new BloomFilter(filterSize,
 					numHashFuncToUse, Hash.MURMUR_HASH));
-			paneIndex = currentSlot;
-		} else {
+		} else if (!((currentEpoch >= epoch) && (currentEpoch - numEpochsInWindow < epoch))) {
 			throw new IllegalArgumentException(
-					"Attempting to record history for a non-monotonically increasing epoch");
+					"Attempting to access history for an epoch outside of the window: "
+							+ epoch);
 		}
+		int paneIndex = (currentSlot - (currentEpoch - epoch))
+				% numEpochsInWindow;
+		paneIndex = (0 > paneIndex) ? paneIndex + numEpochsInWindow : paneIndex;
+		return paneIndex;
+	}
+	
+	public void recordHistory(String entry, int epoch) {
+		int paneIndex = getPaneIndexForEpoch(epoch);
 		BloomFilter filter = windowPanes.get(paneIndex);
 		Key key = new Key(entry.getBytes());
 		filter.add(key);
 	}
 
 	public boolean viewHistory(String entry, int epoch) {
-		if (!((currentEpoch >= epoch) && (currentEpoch - numEpochsInWindow < epoch))) {
-			throw new IllegalArgumentException(
-					"Attempting to retrieve history for an epoch outside of the window");
-		}
-		int paneIndex = (currentSlot - (currentEpoch - epoch))
-				% numEpochsInWindow;
-		paneIndex = (0 > paneIndex) ? paneIndex + numEpochsInWindow : paneIndex;
+		int paneIndex = getPaneIndexForEpoch(epoch);
 		BloomFilter filter = windowPanes.get(paneIndex);
 		Key key = new Key(entry.getBytes());
 		return filter.membershipTest(key);
 	}
-
 }

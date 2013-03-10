@@ -13,8 +13,8 @@ import org.apache.log4j.Logger;
 public class ExistenceModel extends FacebookModel {
 	static Logger logger = Logger.getLogger("ExistenceModel");
 
-	public ExistenceModel(double step, double lambda, int numDimensions) {
-		super(step, lambda, numDimensions);
+	public ExistenceModel(double step, double lambda, int historyWindowSize, int numDimensions) {
+		super(step, lambda, historyWindowSize, numDimensions);
 	}
 
 	int getInstanceLabel(DataInstance instance) {
@@ -32,7 +32,6 @@ public class ExistenceModel extends FacebookModel {
 			DataInstance instance) {
 		double dotProduct = 0.0;
 		// dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
-		// dotProduct += weights.wCost * instance.cost;
 		for (int featureid : featureids) {
 			dotProduct += weights.wHashedFeature[featureid]
 					* instance.hashedTextFeature.get(featureid);
@@ -43,8 +42,6 @@ public class ExistenceModel extends FacebookModel {
 	
 	void updateWeights(DataInstance instance, double gradient) {
 		// weights.w0 += -step * gradient; // no reg and assumed x0 = 1
-		// weights.wCost += -step
-		// * (lambda * weights.wCost + instance.cost * gradient);
 		for (int featureid : instance.hashedTextFeature.keySet()) {
 			// Can be null if this is this data instance is the first
 			// time we've seen this feature

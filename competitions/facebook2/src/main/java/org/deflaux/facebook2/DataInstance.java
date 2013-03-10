@@ -13,7 +13,7 @@ import org.apache.log4j.Logger;
 public class DataInstance {
 	public static final int FREE_EDGE_COST = 1;
 	public static final int PAID_EDGE_COST = 0;
-	public static final int UNKNOWN_EDGE_COST = Integer.MAX_VALUE;
+	public static final int UNKNOWN_EDGE_COST = Integer.MIN_VALUE;
 	
 	public static final int EDGE_EXISTS = 1;
 	public static final int EDGE_EXISTENCE_UNKNOWN = 0;
@@ -24,12 +24,14 @@ public class DataInstance {
 	// BloomFilter
 	static final int NUM_BITS_EDGE_HISTORY = 720000;
 	static final int NUM_HASHES_EDGE_HISTORY = 10;
-	public static final int HISTORY_SLIDING_WINDOW_SIZE = 5;
+	public static final int DEFAULT_HISTORY_SLIDING_WINDOW_SIZE = 8;
 	
 	static Logger logger = Logger.getLogger("DataInstance");
-	static HistorySlidingWindow edgesHistory;
+	static int historyWindowSize;
+	static HistorySlidingWindow edgeExistenceHistory;
+	static HistorySlidingWindow edgeCostHistory;
 
-	int featuredim;
+	int numDimensions;
 	int epoch;
 	String tail;
 	String head;
@@ -38,6 +40,7 @@ public class DataInstance {
 	int cost; // Cost model label
 	int exists; // Existence model label
 
+	// TODO add head and tail into hash too
 	// TODO if we continue to hash only one feature into this, we can just hold
 	// the key and value, no need for the Map
 	Map<Integer, Integer> hashedTextFeature; // map hashed feature key to its
@@ -45,34 +48,45 @@ public class DataInstance {
 
 	static {
 		logger.setLevel(Level.INFO);
+		historyWindowSize = DEFAULT_HISTORY_SLIDING_WINDOW_SIZE;
 		clearEdgeHistory();
 	}
 	
+	public static int getHistoryWindowSize() {
+		return historyWindowSize;
+	}
+
+	public static void setHistoryWindowSize(int historyWindowSize) {
+		DataInstance.historyWindowSize = historyWindowSize;
+	}
+
 	public static void clearEdgeHistory() {
-		edgesHistory = new HistorySlidingWindow(HISTORY_SLIDING_WINDOW_SIZE,
+		edgeExistenceHistory = new HistorySlidingWindow(historyWindowSize,
+				NUM_BITS_EDGE_HISTORY, NUM_HASHES_EDGE_HISTORY);		
+		edgeCostHistory = new HistorySlidingWindow(historyWindowSize,
 				NUM_BITS_EDGE_HISTORY, NUM_HASHES_EDGE_HISTORY);		
 	}
 
-	public DataInstance(int dim) {
+	public DataInstance(int numDimensions) {
 		hashedTextFeature = new HashMap<Integer, Integer>();
 	}
 
-	public DataInstance(String line, int epoch, int dim, boolean hasLabel,
+	public DataInstance(String line, int epoch, int numDimensions, boolean hasLabel,
 			boolean validate) {
 		hashedTextFeature = new HashMap<Integer, Integer>();
-		setValues(line, epoch, dim, hasLabel, validate);
+		setValues(line, epoch, numDimensions, hasLabel, validate);
 	}
 
 	public static DataInstance reuse(DataInstance instance, String line,
-			int epoch, int dim, boolean hasLabel, boolean validate) {
+			int epoch, int numDimensions, boolean hasLabel, boolean validate) {
 		instance.hashedTextFeature.clear();
-		instance.setValues(line, epoch, dim, hasLabel, validate);
+		instance.setValues(line, epoch, numDimensions, hasLabel, validate);
 		return instance;
 	}
 
-	void setValues(String line, int epoch, int dim, boolean hasLabel,
+	void setValues(String line, int epoch, int numDimensions, boolean hasLabel,
 			boolean validate) {
-		this.featuredim = dim;
+		this.numDimensions = numDimensions;
 		this.epoch = epoch;
 
 		String[] fields = line.split("\\|");
@@ -85,13 +99,6 @@ public class DataInstance {
 			this.cost = UNKNOWN_EDGE_COST;
 			this.exists = EDGE_EXISTENCE_UNKNOWN;
 		}
-
-		edgeKey = tail + KEY_SEPARATOR + head;
-		if (EDGE_EXISTS == this.exists) {
-			edgesHistory.recordHistory(edgeKey, this.epoch);
-		}
-		updateFeature(edgeKey, 1);
-
 		if (validate) {
 			if (!isValid()) {
 				logger.error("Invalid data instance: " + line);
@@ -101,20 +108,40 @@ public class DataInstance {
 		// Remap cost so that "free" is true in our logistic regression model
 		cost = (0 == cost) ? FREE_EDGE_COST: PAID_EDGE_COST;
 
+
+		edgeKey = tail + KEY_SEPARATOR + head;
+		if (EDGE_EXISTS == this.exists) {
+			edgeExistenceHistory.recordHistory(edgeKey, this.epoch);
+		}
+		if (FREE_EDGE_COST == this.cost) {
+			edgeCostHistory.recordHistory(edgeKey, this.epoch);
+		}
+		updateHashedTextFeature(edgeKey, 1);
 	}
 
-	public int[] getEdgeHistory() {
+	public int[] getExistenceEdgeHistory() {
 		// Values default to zero
-		int edgeHistory[] = new int[HISTORY_SLIDING_WINDOW_SIZE];
-		for (int i = 0; i < HISTORY_SLIDING_WINDOW_SIZE; i++) {
+		int edgeHistory[] = new int[historyWindowSize];
+		for (int i = 0; i < historyWindowSize; i++) {
 			int historyEpoch = epoch - i;
-			if (edgesHistory.viewHistory(edgeKey, historyEpoch)) {
+			if (edgeExistenceHistory.viewHistory(edgeKey, historyEpoch)) {
 				edgeHistory[i] = EDGE_EXISTS;
 			}
 		}
 		return edgeHistory;
 	}
 
+	public int[] getEdgeCostHistory() {
+		// Values default to zero
+		int edgeHistory[] = new int[historyWindowSize];
+		for (int i = 0; i < historyWindowSize; i++) {
+			int historyEpoch = epoch - i;
+			if (edgeCostHistory.viewHistory(edgeKey, historyEpoch)) {
+				edgeHistory[i] = FREE_EDGE_COST;
+			}
+		}
+		return edgeHistory;
+	}
 	/**
 	 * Helper function. Updates the feature hashmap with a given key and value.
 	 * You can use HashUtil.hashToRange as h, and HashUtil.hashToSign as \xi.
@@ -122,8 +149,8 @@ public class DataInstance {
 	 * @param key
 	 * @param val
 	 */
-	void updateFeature(String key, int val) {
-		int hashKey = HashUtil.hashToRange(key, featuredim);
+	void updateHashedTextFeature(String key, int val) {
+		int hashKey = HashUtil.hashToRange(key, numDimensions);
 		int sign = HashUtil.hashToSign(key);
 		Integer featureValue = hashedTextFeature.get(hashKey);
 		if (null == featureValue) {
@@ -175,8 +202,9 @@ public class DataInstance {
 
 	@Override
 	public String toString() {
-		return "DataInstance [featuredim=" + featuredim + ", tail=" + tail
-				+ ", head=" + head + ", cost=" + cost + ", epoch=" + epoch
+		return "DataInstance [numDimensions=" + numDimensions + ", epoch="
+				+ epoch + ", tail=" + tail + ", head=" + head + ", edgeKey="
+				+ edgeKey + ", cost=" + cost + ", exists=" + exists
 				+ ", hashedTextFeature=" + hashedTextFeature + "]";
 	}
 }
