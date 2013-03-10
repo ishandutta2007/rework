@@ -127,38 +127,6 @@ public class AnalysisTest {
 		assertEqualsHelper("cost f score for epoch 15", 0.8655421686746988,
 				costModel.errorMetricsPerEpoch.get(14).getFScore());
 
-		Writer testPathPredictions = new BufferedWriter(
-				new FileWriter(
-						"/Users/deflaux/rework/competitions/facebook2/data/testPathPredictions.txt"));
-
-		// Normalization bugs:
-		// TODO why is link 'NIC' normalized to the empty string?
-		// TODO one path has Ltd normalized to the empty string
-		// TODO output something else for empty
-		// once all this is fixed (1) check num invalid again (2) take question
-		// mark out of predict
-
-		// TODO predictions for epochs 16 - 20
-		while (testing.hasNext()) {
-			List<String> path = testing.nextInstance();
-			ArrayList<Double> linkPredictions = existenceModel
-					.predict(path, 16);
-			ArrayList<Double> costPredictions = costModel.predict(path, 16);
-			// Multiply them all together
-			Double pathPrediction = null;
-			for (int i = 0; i < linkPredictions.size(); i++) {
-				if (null == pathPrediction) {
-					pathPrediction = linkPredictions.get(i)
-							* costPredictions.get(i);
-				} else {
-					pathPrediction = pathPrediction
-							* (linkPredictions.get(i) * costPredictions.get(i));
-				}
-			}
-			testPathPredictions.write(formatter.format(pathPrediction) + "\n");
-		}
-		testPathPredictions.close();
-
 		// Test case for a path between two supernodes that is free
 		// 'aabcdginorst aabceknoprsstw ehnorstu|aachikknosvy ceeeghirsv
 		// eegrsy|0'
@@ -211,6 +179,44 @@ public class AnalysisTest {
 				selfEdgePath, 16);
 		assertEqualsHelper("self edge cost (1.0)", 1.0,
 				selfEdgeCostPrediction.get(0), DELTA);
+		
+		Writer testPathPredictions = new BufferedWriter(
+				new FileWriter(
+						"/Users/deflaux/rework/competitions/facebook2/data/testPathPredictions.txt"));
+
+		// Normalization bugs:
+		// TODO why is link 'NIC' normalized to the empty string?
+		// TODO one path has Ltd normalized to the empty string
+		// TODO output something else for empty
+		// once all this is fixed (1) check num invalid again (2) take question
+		// mark out of predict
+
+		for (int epoch = 16; epoch <= 20; epoch++) {
+			while (testing.hasNext()) {
+				List<String> path = testing.nextInstance();
+				ArrayList<Double> linkPredictions = existenceModel.predict(
+						path, 16);
+				ArrayList<Double> costPredictions = costModel.predict(path, epoch);
+				// Multiply them all together
+				Double pathPrediction = null;
+				for (int i = 0; i < linkPredictions.size(); i++) {
+					if (null == pathPrediction) {
+						pathPrediction = linkPredictions.get(i)
+								* costPredictions.get(i);
+					} else {
+						pathPrediction = pathPrediction
+								* (linkPredictions.get(i) * costPredictions
+										.get(i));
+					}
+				}
+				testPathPredictions.write(formatter.format(pathPrediction)
+						+ "\n");
+			}
+			testing = new PredictionPaths(
+					"/Users/deflaux/rework/competitions/facebook2/data/normTestPaths.txt");
+		}
+		testPathPredictions.close();
+
 	}
 
 	void assertEqualsHelper(String testCase, Double expected, Double actual,

@@ -28,8 +28,6 @@ abstract public class FacebookModel {
 	ErrorMetrics errorMetrics;
 	ArrayList<ErrorMetrics> errorMetricsPerEpoch;
 
-	int idx; // TODO deleteme
-
 	public FacebookModel(double step, double lambda, int historyWindowSize, int numDimensions) {
 		this.step = step;
 		this.lambda = lambda;
@@ -41,9 +39,6 @@ abstract public class FacebookModel {
 
 		trainingCount = epochCount = currentEpoch = 0;
 		finalSweepPerformed = false;
-
-		// TODO deleteme
-		idx = HashUtil.hashToRange("missing|does not exist", numDimensions);
 	}
 
 	abstract int getInstanceLabel(DataInstance instance);
@@ -112,11 +107,6 @@ abstract public class FacebookModel {
 
 		Set<Integer> featureids = instance.hashedTextFeature.keySet();
 
-		// TODO deleteme
-		if (featureids.contains(idx)) {
-			logger.info("idx: " + instance.tail + "|" + instance.head);
-		}
-
 		int label = getInstanceLabel(instance);
 
 		if (0 != lambda) {
@@ -130,13 +120,6 @@ abstract public class FacebookModel {
 		// Predict the label, record the loss
 		int prediction = (exp / (1 + exp)) > 0.5 ? 1 : 0;
 		errorMetrics.update(prediction, label);
-
-		// TODO deleteme
-		// sanity check
-		/*
-		 * if (15 == currentEpoch) { logger.debug(this.getClass().getName() +
-		 * "pred: " + click_hat + " label: " + label); }
-		 */
 
 		// Compute the gradient
 		double gradient = (label == 1) ? (-1 / (1 + exp)) : (exp / (1 + exp));
@@ -157,10 +140,6 @@ abstract public class FacebookModel {
 		}
 		performDelayedRegularization(allFeatures, trainingCount);
 		finalSweepPerformed = true;
-
-		// TODO deleteme
-		logger.info("Weight for missing edge: " + weights.wHashedFeature[idx]);
-
 	}
 
 	/**
