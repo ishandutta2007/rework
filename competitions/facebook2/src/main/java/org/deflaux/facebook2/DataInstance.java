@@ -98,17 +98,14 @@ public class DataInstance {
 			} else if (1 == cost) {
 				cost = PAID_EDGE_COST;
 			}
+			// else { leave crufty data in so that validation can alert us to it }
+			
 			exists = EDGE_EXISTS; // All links in training data "exist"
 		} else {
 			cost = UNKNOWN_EDGE_COST;
 			exists = EDGE_EXISTENCE_UNKNOWN;
 		}
-		if (validate) {
-			if (!isValid()) {
-				logger.error("Invalid data instance: " + line);
-			}
-		}
-
+		
 		edgeKey = tail + KEY_SEPARATOR + head;
 		if (EDGE_EXISTS == exists) {
 			edgeExistenceHistory.recordHistory(edgeKey, this.epoch);
@@ -116,9 +113,16 @@ public class DataInstance {
 		if (FREE_EDGE_COST == cost) {
 			edgeCostHistory.recordHistory(edgeKey, this.epoch);
 		}
+
 		updateHashedTextFeature(edgeKey, 1);
 		updateHashedTextFeature("head|" + head, 1);
 		updateHashedTextFeature("tail|" + tail, 1);
+
+		if (validate) {
+			if (!isValid()) {
+				logger.error("Invalid data instance: " + line);
+			}
+		}
 	}
 
 	public int[] getEdgeExistenceHistory() {
@@ -126,7 +130,24 @@ public class DataInstance {
 	}
 
 	public int[] getEdgeCostHistory() {
-		return getEdgeHistory(edgeCostHistory, FREE_EDGE_COST);
+		int costHistory[] = getEdgeHistory(edgeCostHistory, FREE_EDGE_COST);
+		
+		int existenceHistory[] = getEdgeHistory(edgeExistenceHistory, EDGE_EXISTS);
+		
+		// Use existence history to fill in gaps in cost history with prior cost because
+		// only 1.4% of edges change cost in our training data 
+		int priorCost = DataInstance.PAID_EDGE_COST; // use a negative default
+		for(int i = existenceHistory.length-1; i > 0; i--) { // start with oldest first
+			if(DataInstance.EDGE_EXISTS == existenceHistory[i]) {
+				// Observe the cost value to be used to fill in gaps in future time periods
+				priorCost = costHistory[i];
+			}
+			else {
+				costHistory[i] = priorCost;
+			}
+		}
+		
+		return costHistory;
 	}
 
 	/**

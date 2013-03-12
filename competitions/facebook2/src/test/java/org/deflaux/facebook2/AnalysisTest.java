@@ -18,9 +18,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class AnalysisTest {
-	static final double DELTA = 1e-6;
+	static final double DELTA = 1e-3;
 	static final Logger logger = Logger.getLogger("AnalysisTest");
-	static final boolean printAssertions = false;
+	
+	// mvn test -DargLine="-DprintAssertions=true"
+	static final boolean printAssertions = Boolean.parseBoolean(System.getProperty("printAssertions"));
 
 	static DataStream training;
 	static PredictionPaths testing;
@@ -94,12 +96,12 @@ public class AnalysisTest {
 				0.00400772772114436, existenceModel.errorMetricsPerEpoch
 						.get(14).getAverageLoss());
 		assertEqualsHelper("cost average loss for epoch 15",
-				0.057402992436698455, costModel.errorMetricsPerEpoch.get(14)
+				0.05489559355475172, costModel.errorMetricsPerEpoch.get(14)
 						.getAverageLoss());
 		assertEqualsHelper("existence f score for epoch 15",
 				0.9979921126064438, existenceModel.errorMetricsPerEpoch.get(14)
 						.getFScore());
-		assertEqualsHelper("cost f score for epoch 15", 0.8281548021903649,
+		assertEqualsHelper("cost f score for epoch 15", 0.8341508848183795,
 				costModel.errorMetricsPerEpoch.get(14).getFScore());
 		// No false positives since all the training data is positive for this
 		// model
@@ -107,9 +109,9 @@ public class AnalysisTest {
 				existenceModel.errorMetricsPerEpoch.get(14).getFalsePositive());
 		assertEqualsHelper("existence false negative for epoch 15", 195.0,
 				existenceModel.errorMetricsPerEpoch.get(14).getFalseNegative());
-		assertEqualsHelper("cost false positive for epoch 15", 2255.0,
+		assertEqualsHelper("cost false positive for epoch 15", 2120.0,
 				costModel.errorMetricsPerEpoch.get(14).getFalsePositive());
-		assertEqualsHelper("cost false negative for epoch 15", 538.0,
+		assertEqualsHelper("cost false negative for epoch 15", 551.0,
 				costModel.errorMetricsPerEpoch.get(14).getFalseNegative());
 
 		// Test case for a path between two supernodes that is free
@@ -150,7 +152,7 @@ public class AnalysisTest {
 		List<Double> superNodesCostPrediction = costModel.predict(
 				superNodesPath, 16);
 		assertEqualsHelper("cost of link between two super nodes (free)",
-				0.7352650212154823, superNodesCostPrediction.get(0), DELTA);
+				0.7780755591838049, superNodesCostPrediction.get(0), DELTA);
 		List<Double> missingPathCostPrediction = costModel.predict(missingPath,
 				16);
 		assertEqualsHelper(
@@ -212,29 +214,29 @@ public class AnalysisTest {
 
 			switch (epoch) {
 			case 16:
-				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.6309956698488746,
+				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.6517095082029511,
 						optimalPathPrediction);
-				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24506292467034826, nonOptimalPathPrediction);
+				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24505139136164802, nonOptimalPathPrediction);
 				break;
 			case 17:
-				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.5813610509876052,
+				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.6255009257318885,
 						optimalPathPrediction);
-				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24506292467034826, nonOptimalPathPrediction);
+				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24505139136164802, nonOptimalPathPrediction);
 				break;
 			case 18:
-				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.5240060489830546,
+				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.591147969011099,
 						optimalPathPrediction);
-				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24506292467034826, nonOptimalPathPrediction);
+				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24505139136164802, nonOptimalPathPrediction);
 				break;
 			case 19:
-				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.4640625041906731,
+				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.546160979490995,
 						optimalPathPrediction);
-				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24506292467034826, nonOptimalPathPrediction);
+				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24505139136164802, nonOptimalPathPrediction);
 				break;
 			case 20:
-				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.4184742229163553,
+				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.5164909491032909,
 						optimalPathPrediction);
-				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24506292467034826, nonOptimalPathPrediction);
+				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24505139136164802, nonOptimalPathPrediction);
 				break;
 			default:
 				fail("unexpected epoch " + epoch);

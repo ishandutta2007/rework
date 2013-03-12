@@ -48,12 +48,9 @@ public class CostModel extends FacebookModel {
 
 		// weights.w0 += -step * gradient; // no reg and assumed x0 = 1
 
+		// Note that we use existence history to fill in gaps in cost history with prior cost because
+		// only 1.4% of edges change cost in our training data 
 		int costHistory[] = instance.getEdgeCostHistory();
-
-		// TODO use existence history to fill in gaps in cost history because
-		// only 1.4% of edges changed cost in our training data (e.g., if
-		// the edge did not exist at epoch T, fill in that value with the _mode_
-		// of the cost history when the edges were present)
 		for (int i = 0; i < historyWindowSize; i++) {
 			double featureWeight = weights.wHistoryFeature[i];
 

@@ -16,7 +16,7 @@ public class DataStreamTest {
 	static final Logger logger = Logger.getLogger("DataStreamTest");
 
 	static DataStream training;
-	boolean printAssertions = false;
+	static final boolean printAssertions = Boolean.parseBoolean(System.getProperty("printAssertions"));
 	
 	@Before
 	public void resetData() throws FileNotFoundException {
