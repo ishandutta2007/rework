@@ -6,6 +6,7 @@ import static org.junit.Assert.fail;
 
 import java.io.FileNotFoundException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -16,14 +17,20 @@ public class DataStreamTest {
 	static final Logger logger = Logger.getLogger("DataStreamTest");
 
 	static DataStream training;
-	static final boolean printAssertions = Boolean.parseBoolean(System.getProperty("printAssertions"));
-	
+	static PredictionPaths testing;
+
+	static final boolean printAssertions = Boolean.parseBoolean(System
+			.getProperty("printAssertions"));
+
 	@Before
 	public void resetData() throws FileNotFoundException {
 		// Creates a data stream from the trainingdata
 		training = new DataStream(
 				"/Users/deflaux/rework/competitions/facebook2/data/normTrain"
 						+ DataStream.EPOCH_PLACEHOLDER + ".txt", false);
+		testing = new PredictionPaths(
+				"/Users/deflaux/rework/competitions/facebook2/data/normTestPaths.txt");
+
 		DataInstance.clearEdgeHistory();
 	}
 
@@ -46,13 +53,11 @@ public class DataStreamTest {
 			}
 			nodes.add(instance.head);
 			nodes.add(instance.tail);
-			if(DataInstance.FREE_EDGE_COST == instance.cost) {
+			if (DataInstance.FREE_EDGE_COST == instance.cost) {
 				freeEdges.add(instance.edgeKey);
-			}
-			else if(DataInstance.PAID_EDGE_COST == instance.cost) {
+			} else if (DataInstance.PAID_EDGE_COST == instance.cost) {
 				paidEdges.add(instance.edgeKey);
-			}
-			else {
+			} else {
 				fail("unexpected value for edge cost: " + instance.cost);
 			}
 		}
@@ -64,10 +69,13 @@ public class DataStreamTest {
 		DataInstance nextFirst = training.nextInstance(null, dim);
 		assertFalse(first.head.equals(nextFirst.head));
 		assertFalse(first.tail.equals(nextFirst.tail));
-		
-		assertEqualsHelper("number of unique nodes", 44015, nodes.size());
-		assertEqualsHelper("number of unique FREE edges", 24716, freeEdges.size());
-		assertEqualsHelper("number of unique PAID edges", 119418, paidEdges.size());
+
+		assertEqualsHelper("number of unique training nodes", 44015,
+				nodes.size());
+		assertEqualsHelper("number of unique FREE training edges", 24716,
+				freeEdges.size());
+		assertEqualsHelper("number of unique PAID training edges", 119418,
+				paidEdges.size());
 
 		Set<String> allEdges = new HashSet<String>(freeEdges);
 		allEdges.addAll(paidEdges);
@@ -75,9 +83,57 @@ public class DataStreamTest {
 		Set<String> edgesWithACostChange = new HashSet<String>(freeEdges);
 		edgesWithACostChange.retainAll(paidEdges);
 
-		assertEqualsHelper("number of unique nodes", 44015, nodes.size());
-		assertEqualsHelper("number of unique edges", 142191, allEdges.size());
-		assertEqualsHelper("number of unique edges whose cost changed", 1943, edgesWithACostChange.size());
+		assertEqualsHelper("number of unique training edges", 142191,
+				allEdges.size());
+		assertEqualsHelper(
+				"number of unique training edges whose cost changed", 1943,
+				edgesWithACostChange.size());
+
+		Set<String> testNodes = new HashSet<String>();
+		Set<String> testEdges = new HashSet<String>();
+		int numTestPathsKnown = 0;
+		while (testing.hasNext()) {
+			List<String> path = testing.nextInstance();
+			boolean pathKnown = true;
+			testNodes.addAll(path);
+			for (int tailIdx = 0; tailIdx < path.size(); tailIdx++) {
+				String head = null;
+				if (tailIdx == path.size() - 1) {
+					// We're at the end of this list, time to stop
+					break;
+				} else {
+					head = path.get(tailIdx + 1);
+				}
+				String tail = path.get(tailIdx);
+				String line = tail + "|" + head + "|?";
+				DataInstance instance = new DataInstance(line, 16, 2, false,
+						false);
+				testEdges.add(instance.edgeKey);
+				if (!allEdges.contains(instance.edgeKey)) {
+					pathKnown = false;
+				}
+			}
+			if (pathKnown) {
+				numTestPathsKnown++;
+			}
+		}
+
+		assertEqualsHelper("number of unique test nodes", 11676,
+				testNodes.size());
+		assertEqualsHelper("number of unique test edges", 20192,
+				testEdges.size());
+		testNodes.removeAll(nodes);
+		testEdges.removeAll(allEdges);
+		assertEqualsHelper("number of unique test nodes not in training", 6620,
+				testNodes.size());
+		assertEqualsHelper("number of unique test edges not in training",
+				17414, testEdges.size());
+		assertEqualsHelper(
+				"Out of 10,000 how many test paths do we have training data for",
+				121, numTestPathsKnown);
+		// okay, if we only have full data for 1% of our test paths, its very
+		// likely that I have a bug in the way I normalized the test path node
+		// names
 	}
 
 	void assertEqualsHelper(String testCase, Object expected, Object actual) {
