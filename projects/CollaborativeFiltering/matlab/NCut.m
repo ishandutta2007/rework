@@ -3,5 +3,10 @@ function [ U ] = NCut( W, k )
 % Equation: See spectralclustering-annotated.pdf slides 44
 
 %% Your code goes in here
-error ('NCut not implementd.');
+I = eye(size(W,1));
+D = diag(sum(W,2));
+Lsym =  I - D^-1/2 * W * D^-1/2;
+[eigV, eigD] = eig(Lsym);
+U = eigV(:,1:k);
+
 end
