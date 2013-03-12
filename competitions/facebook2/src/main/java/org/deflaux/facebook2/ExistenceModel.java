@@ -8,12 +8,13 @@ import org.apache.log4j.Logger;
  * Note: not thread safe
  * 
  * @author deflaux
- *
+ * 
  */
 public class ExistenceModel extends FacebookModel {
 	static Logger logger = Logger.getLogger("ExistenceModel");
 
-	public ExistenceModel(double step, double lambda, int historyWindowSize, int numDimensions) {
+	public ExistenceModel(double step, double lambda, int historyWindowSize,
+			int numDimensions) {
 		super(step, lambda, historyWindowSize, numDimensions);
 	}
 
@@ -43,18 +44,20 @@ public class ExistenceModel extends FacebookModel {
 		return dotProduct;
 	}
 
-	
 	void updateWeights(DataInstance instance, double gradient) {
+
 		// weights.w0 += -step * gradient; // no reg and assumed x0 = 1
+
 		int existenceHistory[] = instance.getEdgeExistenceHistory();
 		for (int i = 0; i < historyWindowSize; i++) {
 			double featureWeight = weights.wHistoryFeature[i];
-			weights.wHistoryFeature[i] = featureWeight
-					+ -step
-					* (gradient * existenceHistory[i] + lambda
-							* featureWeight);
+
+			// TODO regularize older weights more heavily
+			weights.wHistoryFeature[i] = featureWeight + -step
+					* (gradient * existenceHistory[i] + lambda * featureWeight);
 
 		}
+
 		for (int featureid : instance.hashedTextFeature.keySet()) {
 			// Can be null if this is this data instance is the first
 			// time we've seen this feature

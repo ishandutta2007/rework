@@ -1,6 +1,7 @@
 package org.deflaux.facebook2;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
@@ -100,19 +101,16 @@ public class AnalysisTest {
 						.getFScore());
 		assertEqualsHelper("cost f score for epoch 15", 0.8281548021903649,
 				costModel.errorMetricsPerEpoch.get(14).getFScore());
-		// No false positives since all the training data is positive for this model
-		assertEqualsHelper("existence false positive for epoch 15",
-				0.0, existenceModel.errorMetricsPerEpoch
-						.get(14).getFalsePositive());
-		assertEqualsHelper("existence false negative for epoch 15",
-				195.0, existenceModel.errorMetricsPerEpoch
-						.get(14).getFalseNegative());
-		assertEqualsHelper("cost false positive for epoch 15",
-				2255.0, costModel.errorMetricsPerEpoch.get(14)
-						.getFalsePositive());
-		assertEqualsHelper("cost false negative for epoch 15",
-				538.0, costModel.errorMetricsPerEpoch.get(14)
-						.getFalseNegative());
+		// No false positives since all the training data is positive for this
+		// model
+		assertEqualsHelper("existence false positive for epoch 15", 0.0,
+				existenceModel.errorMetricsPerEpoch.get(14).getFalsePositive());
+		assertEqualsHelper("existence false negative for epoch 15", 195.0,
+				existenceModel.errorMetricsPerEpoch.get(14).getFalseNegative());
+		assertEqualsHelper("cost false positive for epoch 15", 2255.0,
+				costModel.errorMetricsPerEpoch.get(14).getFalsePositive());
+		assertEqualsHelper("cost false negative for epoch 15", 538.0,
+				costModel.errorMetricsPerEpoch.get(14).getFalseNegative());
 
 		// Test case for a path between two supernodes that is free
 		// 'aabcdginorst aabceknoprsstw ehnorstu|aachikknosvy ceeeghirsv
@@ -132,45 +130,68 @@ public class AnalysisTest {
 		List<String> selfEdgePath = new ArrayList<String>();
 		selfEdgePath.add("aabclnopt aadt ceenrst");
 
-		ArrayList<Double> superNodesExistencePrediction = existenceModel
-				.predict(superNodesPath, 16);
+		List<Double> superNodesExistencePrediction = existenceModel.predict(
+				superNodesPath, 16);
 		assertEqualsHelper("link between two super nodes (.99)",
 				0.906439349052297, superNodesExistencePrediction.get(0), DELTA);
-		ArrayList<Double> missingPathPrediction = existenceModel.predict(
+		List<Double> missingPathPrediction = existenceModel.predict(
 				missingPath, 16);
 		assertEqualsHelper("link between two non-existent nodes (0.0)",
 				0.5906333116838719, missingPathPrediction.get(0), DELTA);
-		ArrayList<Double> notFreePathPrediction = existenceModel.predict(
+		List<Double> notFreePathPrediction = existenceModel.predict(
 				notFreePath, 16);
 		assertEqualsHelper("paid link between two nodes (.99)",
 				0.9055536086222568, notFreePathPrediction.get(0), DELTA);
-		ArrayList<Double> selfEdgePathPrediction = existenceModel.predict(
+		List<Double> selfEdgePathPrediction = existenceModel.predict(
 				selfEdgePath, 16);
 		assertEqualsHelper("self edge (1.0)", 1.0,
 				selfEdgePathPrediction.get(0), DELTA);
 
-		ArrayList<Double> superNodesCostPrediction = costModel.predict(
+		List<Double> superNodesCostPrediction = costModel.predict(
 				superNodesPath, 16);
 		assertEqualsHelper("cost of link between two super nodes (free)",
 				0.7352650212154823, superNodesCostPrediction.get(0), DELTA);
-		ArrayList<Double> missingPathCostPrediction = costModel.predict(
-				missingPath, 16);
+		List<Double> missingPathCostPrediction = costModel.predict(missingPath,
+				16);
 		assertEqualsHelper(
 				"cost of link between two non-existent nodes (not free?)",
 				0.4999998982790982, missingPathCostPrediction.get(0), DELTA);
-		ArrayList<Double> notFreePathCostPrediction = costModel.predict(
-				notFreePath, 16);
+		List<Double> notFreePathCostPrediction = costModel.predict(notFreePath,
+				16);
 		assertEqualsHelper("cost of paid link between two nodes (not free)",
 				0.46343308328898397, notFreePathCostPrediction.get(0), DELTA);
-		ArrayList<Double> selfEdgeCostPrediction = costModel.predict(
-				selfEdgePath, 16);
+		List<Double> selfEdgeCostPrediction = costModel.predict(selfEdgePath,
+				16);
 		assertEqualsHelper("self edge cost (1.0)", 1.0,
 				selfEdgeCostPrediction.get(0), DELTA);
-		
-		// TODO only train through epoch 14 and pick some test paths to test with, manually determining the "right" answer from epoch 15
-		// abcfklnors acceiinnooqrrrtuu|as28233|abcdehiinnrsttt ceeirsv cehint eeinnrtt eilnno|as59900
-		// cceeilnorst dehiiln|aabcdginorst aabceknoprsstw ehnorstu|as61321|as60366|akmosss
-		
+
+		// TODO think more about non-optimal versus non-existent paths
+		// The existence model is too strongly positive right now to use it
+		// alone
+		// The cost model is useful for predicting cost, but how strongly does
+		// that relate to optimality?
+		// See how often costs actually change
+		// See whether more of the test paths which were optimal at some point,
+		// are low cost
+
+		// cceeilnorst dehiiln|aabcdginorst aabceknoprsstw
+		// ehnorstu|as61321|as60366|akmosss
+		List<String> optimalTestPath = new ArrayList<String>();
+		optimalTestPath.add("cceeilnorst dehiiln");
+		optimalTestPath.add("aabcdginorst aabceknoprsstw ehnorstu");
+		optimalTestPath.add("as61321");
+		optimalTestPath.add("as60366");
+		optimalTestPath.add("akmosss");
+
+		// abcfklnors acceiinnooqrrrtuu|as28233|abcdehiinnrsttt ceeirsv cehint
+		// eeinnrtt eilnno|as59900
+		List<String> nonOptimalTestPath = new ArrayList<String>();
+		nonOptimalTestPath.add("abcfklnors acceiinnooqrrrtuu");
+		nonOptimalTestPath.add("as28233");
+		nonOptimalTestPath
+				.add("abcdehiinnrsttt ceeirsv cehint eeinnrtt eilnno");
+		nonOptimalTestPath.add("as59900");
+
 		Writer testPathPredictions = new BufferedWriter(
 				new FileWriter(
 						"/Users/deflaux/rework/competitions/facebook2/data/testPathPredictions.txt"));
@@ -182,25 +203,47 @@ public class AnalysisTest {
 		// once all this is fixed (1) check num invalid again (2) take question
 		// mark out of predict
 
+		Double pathPrediction = null;
 		for (int epoch = 16; epoch <= 20; epoch++) {
+			Double optimalPathPrediction = predictPath(optimalTestPath, epoch,
+					existenceModel, costModel);
+			Double nonOptimalPathPrediction = predictPath(nonOptimalTestPath, epoch,
+					existenceModel, costModel);
+
+			switch (epoch) {
+			case 16:
+				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.6309956698488746,
+						optimalPathPrediction);
+				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24506292467034826, nonOptimalPathPrediction);
+				break;
+			case 17:
+				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.5813610509876052,
+						optimalPathPrediction);
+				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24506292467034826, nonOptimalPathPrediction);
+				break;
+			case 18:
+				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.5240060489830546,
+						optimalPathPrediction);
+				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24506292467034826, nonOptimalPathPrediction);
+				break;
+			case 19:
+				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.4640625041906731,
+						optimalPathPrediction);
+				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24506292467034826, nonOptimalPathPrediction);
+				break;
+			case 20:
+				assertEqualsHelper(epoch + " optimalTestPath prediction", 0.4184742229163553,
+						optimalPathPrediction);
+				assertEqualsHelper(epoch + " nonOptimalTestPath prediction", 0.24506292467034826, nonOptimalPathPrediction);
+				break;
+			default:
+				fail("unexpected epoch " + epoch);
+			}
+
 			while (testing.hasNext()) {
 				List<String> path = testing.nextInstance();
-				ArrayList<Double> linkPredictions = existenceModel.predict(
-						path, epoch);
-				ArrayList<Double> costPredictions = costModel.predict(path, epoch);
-				// Multiply them all together
-				Double pathPrediction = null;
-				for (int i = 0; i < linkPredictions.size(); i++) {
-					if (null == pathPrediction) {
-						pathPrediction = linkPredictions.get(i)
-								* costPredictions.get(i);
-					} else {
-						pathPrediction = pathPrediction
-								* (linkPredictions.get(i) 
-										* costPredictions
-										.get(i));
-					}
-				}
+				pathPrediction = predictPath(path, epoch, existenceModel,
+						costModel);
 				testPathPredictions.write(formatter.format(pathPrediction)
 						+ "\n");
 			}
@@ -209,6 +252,18 @@ public class AnalysisTest {
 		}
 		testPathPredictions.close();
 
+	}
+
+	private Double predictPath(List<String> path, int epoch,
+			ExistenceModel existenceModel, CostModel costModel) {
+		Double pathPrediction = 0.0;
+		List<Double> linkPredictions = existenceModel.predict(path, epoch);
+		List<Double> costPredictions = costModel.predict(path, epoch);
+		// Multiply them together and take the average?
+		for (int i = 0; i < linkPredictions.size(); i++) {
+			pathPrediction += linkPredictions.get(i) * costPredictions.get(i);
+		}
+		return pathPrediction / linkPredictions.size();
 	}
 
 	void assertEqualsHelper(String testCase, Double expected, Double actual,

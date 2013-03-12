@@ -40,9 +40,6 @@ public class DataInstance {
 	int cost; // Cost model label
 	int exists; // Existence model label
 
-	// TODO add head and tail into hash too
-	// TODO if we continue to hash only one feature into this, we can just hold
-	// the key and value, no need for the Map
 	Map<Integer, Integer> hashedTextFeature; // map hashed feature key to its
 												// value;
 
