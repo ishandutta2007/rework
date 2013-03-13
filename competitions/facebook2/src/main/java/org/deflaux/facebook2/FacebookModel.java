@@ -149,12 +149,7 @@ abstract public class FacebookModel {
 	 * @param dataStream
 	 * @return An array storing the CTR for each datapoint in the test data.
 	 */
-	public ArrayList<Double> predict(List<String> path, int epoch) {
-
-		if (!finalSweepPerformed) {
-			performFinalSweep();
-		}
-
+	public ArrayList<Double> predictPath(List<String> path, int epoch) {
 		ArrayList<Double> predictions = new ArrayList<Double>();
 
 		for (int tailIdx = 0; tailIdx < path.size(); tailIdx++) {
@@ -174,22 +169,30 @@ abstract public class FacebookModel {
 			String tail = path.get(tailIdx);
 
 			// TODO add all vertices to data instance hash and then make one prediction per path as opposed to one prediction per edge?
-			// TODO this masks some heads/tails that are the empty string due to normalization
-			String edgeKey = tail + "|" + head + "|?";
-			DataInstance instance = new DataInstance(edgeKey,
-					epoch, numDimensions, false, false);
-			double exp = Math.exp(computeWeightFeatureProduct(
-					instance.hashedTextFeature.keySet(), instance));
-			predictions.add(exp / (1 + exp));
+			predictions.add(predictEdge(tail, head, epoch));
 		}
 		return predictions;
+	}
+	
+	public Double predictEdge(String tail, String head, int epoch) {
+		if (!finalSweepPerformed) {
+			performFinalSweep();
+		}
+
+		String edgeKey = tail + "|" + head;
+		DataInstance instance = new DataInstance(edgeKey,
+				epoch, numDimensions, false, false);
+		double exp = Math.exp(computeWeightFeatureProduct(
+				instance.hashedTextFeature.keySet(), instance));
+		return (exp / (1 + exp));
 	}
 
 	@Override
 	public String toString() {
+		int finalEpoch = errorMetricsPerEpoch.size();
 		return this.getClass().getName() + " [step=" + step + ", lambda="
 				+ lambda + ", numDimensions=" + numDimensions
-				+ ", trainingCount=" + trainingCount + ", avgLossPerEpoch="
-				+ errorMetricsPerEpoch + "]";
+				+ ", trainingCount=" + trainingCount + ", metrics for epoch " + finalEpoch + "="
+				+ errorMetricsPerEpoch.get(finalEpoch-1) + "]";
 	}
 }

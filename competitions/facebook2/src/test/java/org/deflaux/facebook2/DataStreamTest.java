@@ -2,7 +2,6 @@ package org.deflaux.facebook2;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.FileNotFoundException;
@@ -105,7 +104,7 @@ public class DataStreamTest {
 					head = path.get(tailIdx + 1);
 				}
 				String tail = path.get(tailIdx);
-				String line = tail + "|" + head + "|?";
+				String line = tail + "|" + head;
 				DataInstance instance = new DataInstance(line, 16, 2, false,
 						false);
 				testEdges.add(instance.edgeKey);

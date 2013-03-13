@@ -59,20 +59,13 @@ public class AnalysisTest {
 		DataInstance.setHistoryWindowSize(historyWindowSize);
 		ExistenceModel existenceModel = new ExistenceModel(0.01, 0.2,
 				historyWindowSize, numDimensions);
+//		CostModel costModel = new CostModel(0.005, 0.001, historyWindowSize,
 		CostModel costModel = new CostModel(0.01, 0.1, historyWindowSize,
 				numDimensions);
 
 		List<FacebookModel> models = new ArrayList<FacebookModel>();
 		models.add(existenceModel);
 		models.add(costModel);
-
-		/*
-		 * final double steps[] = { 0.001, 0.01, 0.05 }; final double lambdas[]
-		 * = { 0.0, 0.002, 0.004, 0.006, 0.008, 0.010, 0.012, 0.014 }; for
-		 * (double lambda : lambdas) { for (double step : steps) {
-		 * models.add(new ExistenceModel(step, lambda, numDimensions));
-		 * models.add(new CostModel(step, lambda, numDimensions)); } }
-		 */
 
 		int numInvalid = 0;
 		DataInstance instance = null;
@@ -133,37 +126,37 @@ public class AnalysisTest {
 		List<String> selfEdgePath = new ArrayList<String>();
 		selfEdgePath.add("aabclnopt aadt ceenrst");
 
-		List<Double> superNodesExistencePrediction = existenceModel.predict(
+		List<Double> superNodesExistencePrediction = existenceModel.predictPath(
 				superNodesPath, 16);
 		assertEqualsHelper("link between two super nodes (.99)",
 				0.9064528567834964, superNodesExistencePrediction.get(0), DELTA);
-		List<Double> missingPathPrediction = existenceModel.predict(
+		List<Double> missingPathPrediction = existenceModel.predictPath(
 				missingPath, 16);
 		assertEqualsHelper("link between two non-existent nodes (0.0)",
 				0.5000000000081758, missingPathPrediction.get(0), DELTA);
-		List<Double> notFreePathPrediction = existenceModel.predict(
+		List<Double> notFreePathPrediction = existenceModel.predictPath(
 				notFreePath, 16);
 		assertEqualsHelper("paid link between two nodes (.99)",
 				0.9054978873289241, notFreePathPrediction.get(0), DELTA);
-		List<Double> selfEdgePathPrediction = existenceModel.predict(
+		List<Double> selfEdgePathPrediction = existenceModel.predictPath(
 				selfEdgePath, 16);
 		assertEqualsHelper("self edge (1.0)", 1.0,
 				selfEdgePathPrediction.get(0), DELTA);
 
-		List<Double> superNodesCostPrediction = costModel.predict(
+		List<Double> superNodesCostPrediction = costModel.predictPath(
 				superNodesPath, 16);
 		assertEqualsHelper("cost of link between two super nodes (free)",
 				0.7780755591838049, superNodesCostPrediction.get(0), DELTA);
-		List<Double> missingPathCostPrediction = costModel.predict(missingPath,
+		List<Double> missingPathCostPrediction = costModel.predictPath(missingPath,
 				16);
 		assertEqualsHelper(
 				"cost of link between two non-existent nodes (not free?)",
 				0.4999998982790982, missingPathCostPrediction.get(0), DELTA);
-		List<Double> notFreePathCostPrediction = costModel.predict(notFreePath,
+		List<Double> notFreePathCostPrediction = costModel.predictPath(notFreePath,
 				16);
 		assertEqualsHelper("cost of paid link between two nodes (not free)",
 				0.46343308328898397, notFreePathCostPrediction.get(0), DELTA);
-		List<Double> selfEdgeCostPrediction = costModel.predict(selfEdgePath,
+		List<Double> selfEdgeCostPrediction = costModel.predictPath(selfEdgePath,
 				16);
 		assertEqualsHelper("self edge cost (1.0)", 1.0,
 				selfEdgeCostPrediction.get(0), DELTA);
@@ -198,13 +191,6 @@ public class AnalysisTest {
 		Writer testPathPredictions = new BufferedWriter(
 				new FileWriter(
 						"/Users/deflaux/rework/competitions/facebook2/data/testPathPredictions.txt"));
-
-		// Normalization bugs:
-		// TODO why is link 'NIC' normalized to the empty string?
-		// TODO one path has Ltd normalized to the empty string
-		// TODO output something else for empty
-		// once all this is fixed (1) check num invalid again (2) take question
-		// mark out of predict
 
 		Double pathPrediction = null;
 		for (int epoch = 16; epoch <= 20; epoch++) {
@@ -265,8 +251,8 @@ public class AnalysisTest {
 	private Double predictPath(List<String> path, int epoch,
 			ExistenceModel existenceModel, CostModel costModel) {
 		Double pathPrediction = 0.0;
-		List<Double> linkPredictions = existenceModel.predict(path, epoch);
-		List<Double> costPredictions = costModel.predict(path, epoch);
+		List<Double> linkPredictions = existenceModel.predictPath(path, epoch);
+		List<Double> costPredictions = costModel.predictPath(path, epoch);
 		// Multiply them together and take the average?
 		for (int i = 0; i < linkPredictions.size(); i++) {
 			pathPrediction += linkPredictions.get(i) * costPredictions.get(i);
