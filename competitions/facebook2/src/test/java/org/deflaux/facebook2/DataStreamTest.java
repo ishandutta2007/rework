@@ -2,6 +2,7 @@ package org.deflaux.facebook2;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.FileNotFoundException;
@@ -19,8 +20,7 @@ public class DataStreamTest {
 	static DataStream training;
 	static PredictionPaths testing;
 
-	static final boolean printAssertions = Boolean.parseBoolean(System
-			.getProperty("printAssertions"));
+	static final boolean printAssertions = Boolean.parseBoolean(System.getProperty("printAssertions"));
 
 	@Before
 	public void resetData() throws FileNotFoundException {
@@ -62,7 +62,7 @@ public class DataStreamTest {
 			}
 		}
 		assertEquals("num instances", 722588, training.counter);
-		assertEquals("num invalid", 376, numInvalid);
+		assertEqualsHelper("num invalid", 0, numInvalid);
 
 		resetData();
 		training.hasNext();
@@ -70,11 +70,11 @@ public class DataStreamTest {
 		assertFalse(first.head.equals(nextFirst.head));
 		assertFalse(first.tail.equals(nextFirst.tail));
 
-		assertEqualsHelper("number of unique training nodes", 44015,
+		assertEqualsHelper("number of unique training nodes", 44132,
 				nodes.size());
-		assertEqualsHelper("number of unique FREE training edges", 24716,
+		assertEqualsHelper("number of unique FREE training edges", 24744,
 				freeEdges.size());
-		assertEqualsHelper("number of unique PAID training edges", 119418,
+		assertEqualsHelper("number of unique PAID training edges", 119551,
 				paidEdges.size());
 
 		Set<String> allEdges = new HashSet<String>(freeEdges);
@@ -83,10 +83,10 @@ public class DataStreamTest {
 		Set<String> edgesWithACostChange = new HashSet<String>(freeEdges);
 		edgesWithACostChange.retainAll(paidEdges);
 
-		assertEqualsHelper("number of unique training edges", 142191,
+		assertEqualsHelper("number of unique training edges", 142355,
 				allEdges.size());
 		assertEqualsHelper(
-				"number of unique training edges whose cost changed", 1943,
+				"number of unique training edges whose cost changed", 1940,
 				edgesWithACostChange.size());
 
 		Set<String> testNodes = new HashSet<String>();
@@ -118,22 +118,22 @@ public class DataStreamTest {
 			}
 		}
 
-		assertEqualsHelper("number of unique test nodes", 11676,
+		assertEqualsHelper("number of unique test nodes", 10602,
 				testNodes.size());
-		assertEqualsHelper("number of unique test edges", 20192,
+		assertEqualsHelper("number of unique test edges", 18503,
 				testEdges.size());
 		testNodes.removeAll(nodes);
 		testEdges.removeAll(allEdges);
-		assertEqualsHelper("number of unique test nodes not in training", 6620,
+		assertEqualsHelper("number of unique test nodes not in training", 240,
 				testNodes.size());
+		for(String tn : testNodes) {
+			System.out.println("not in training nodes: " + tn);
+		}
 		assertEqualsHelper("number of unique test edges not in training",
-				17414, testEdges.size());
+				2898, testEdges.size());
 		assertEqualsHelper(
 				"Out of 10,000 how many test paths do we have training data for",
-				121, numTestPathsKnown);
-		// okay, if we only have full data for 1% of our test paths, its very
-		// likely that I have a bug in the way I normalized the test path node
-		// names
+				7538, numTestPathsKnown);
 	}
 
 	void assertEqualsHelper(String testCase, Object expected, Object actual) {
