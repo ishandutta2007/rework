@@ -76,14 +76,14 @@ public class DataStreamTest {
 		assertEqualsHelper("number of unique PAID training edges", 119551,
 				paidEdges.size());
 
-		Set<String> allEdges = new HashSet<String>(freeEdges);
-		allEdges.addAll(paidEdges);
+		Set<String> trainingEdges = new HashSet<String>(freeEdges);
+		trainingEdges.addAll(paidEdges);
 
 		Set<String> edgesWithACostChange = new HashSet<String>(freeEdges);
 		edgesWithACostChange.retainAll(paidEdges);
 
 		assertEqualsHelper("number of unique training edges", 142355,
-				allEdges.size());
+				trainingEdges.size());
 		assertEqualsHelper(
 				"number of unique training edges whose cost changed", 1940,
 				edgesWithACostChange.size());
@@ -108,7 +108,7 @@ public class DataStreamTest {
 				DataInstance instance = new DataInstance(line, 16, 2, false,
 						false);
 				testEdges.add(instance.edgeKey);
-				if (!allEdges.contains(instance.edgeKey)) {
+				if (!trainingEdges.contains(instance.edgeKey)) {
 					pathKnown = false;
 				}
 			}
@@ -116,13 +116,13 @@ public class DataStreamTest {
 				numTestPathsKnown++;
 			}
 		}
-
+		
 		assertEqualsHelper("number of unique test nodes", 10602,
 				testNodes.size());
 		assertEqualsHelper("number of unique test edges", 18503,
 				testEdges.size());
 		testNodes.removeAll(nodes);
-		testEdges.removeAll(allEdges);
+		testEdges.removeAll(trainingEdges);
 		assertEqualsHelper("number of unique test nodes not in training", 240,
 				testNodes.size());
 		for(String tn : testNodes) {

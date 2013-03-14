@@ -20,7 +20,7 @@ import org.junit.Test;
 public class PredictGraphTest {
 	static final Logger logger = Logger.getLogger("PredictGraphTest");
 	
-	static final double EXISTENCE_PREDICTION_THRESHOLD = 0.8;
+	static final double EXISTENCE_PREDICTION_THRESHOLD = 0.9;
 	static final double COST_PREDICTION_THRESHOLD = 0.6;
 	
 	static DataStream training;
@@ -40,7 +40,7 @@ public class PredictGraphTest {
 		DataInstance.clearEdgeHistory();
 	}
 
-	@Ignore
+//	@Ignore
 	@Test
 	public void testPredictGraph() throws IOException {
 		int historyWindowSize = 8;
