@@ -19,14 +19,15 @@ import org.junit.Test;
 
 public class PredictGraphTest {
 	static final Logger logger = Logger.getLogger("PredictGraphTest");
-	
-	static final double EXISTENCE_PREDICTION_THRESHOLD = 0.9;
+
+	static final double EXISTENCE_PREDICTION_THRESHOLD = 0.7;
 	static final double COST_PREDICTION_THRESHOLD = 0.6;
-	
+
 	static DataStream training;
 	static PredictionPaths testing;
 
-	static final boolean printAssertions = Boolean.parseBoolean(System.getProperty("printAssertions"));
+	static final boolean printAssertions = Boolean.parseBoolean(System
+			.getProperty("printAssertions"));
 
 	@Before
 	public void resetData() throws FileNotFoundException {
@@ -40,7 +41,7 @@ public class PredictGraphTest {
 		DataInstance.clearEdgeHistory();
 	}
 
-//	@Ignore
+	// @Ignore
 	@Test
 	public void testPredictGraph() throws IOException {
 		int historyWindowSize = 8;
@@ -56,16 +57,19 @@ public class PredictGraphTest {
 		models.add(existenceModel);
 		models.add(costModel);
 
-		Set<String> nodes = new HashSet<String>();
+		Set<String> edges = new HashSet<String>();
 		DataInstance instance = null;
 		Stopwatch watch = new Stopwatch();
 		while (training.hasNext()) {
 			instance = training.nextInstance(instance, numDimensions);
-			nodes.add(instance.head);
-			nodes.add(instance.tail);
+			if (15 == training.epoch) {
+				// Do not train with data from epoch 15
+				break;
+			}
 			if (!instance.isValid()) {
 				continue;
 			}
+			edges.add(instance.tail + "|" + instance.head);
 			for (FacebookModel model : models) {
 				model.train(instance);
 			}
@@ -75,40 +79,47 @@ public class PredictGraphTest {
 			logger.info(model);
 		}
 
-		assertEquals("num instances", 722588, training.counter);
-		assertEqualsHelper("number of unique training nodes", 44132,
-				nodes.size());
+		assertEqualsHelper("num instances", 722588, training.counter);
+		assertEqualsHelper("number of unique training edges", 142355,
+				edges.size());
 
 		while (testing.hasNext()) {
 			List<String> path = testing.nextInstance();
-			nodes.addAll(path);
+			if (1 == path.size())
+				continue;
+			for (int i = 0; i < path.size() - 1; i++) {
+				edges.add(path.get(i) + "|" + path.get(i + 1));
+			}
 		}
 
-		assertEqualsHelper("number of unique training and test nodes", 44132+240,
-				nodes.size());
-		
-		// n^2 loop to predict all edges
-		int epoch = 16;
-		Writer predictedGraph = new BufferedWriter(
-				new FileWriter(
-						"/Users/deflaux/rework/competitions/facebook2/data/graph" + epoch + ".txt"));
+		assertEqualsHelper("number of unique training and test edges",
+				142355 + 2898, edges.size());
 
-		int numTailNodes = 0;
+		// Instead of a n^2 loop to predict all edges, just predict for edges we
+		// have seen in the past plus edges in the test set
+		int epoch = 15;
+		Writer predictedGraph = new BufferedWriter(new FileWriter(
+				"/Users/deflaux/rework/competitions/facebook2/data/graph"
+						+ epoch + ".txt"));
+
 		int numEdges = 0;
-		for(String tail : nodes) {
-			numTailNodes++;
-			for(String head : nodes) {
-				Double existencePrediction = existenceModel.predictEdge(tail, head, epoch); 
-				if(EXISTENCE_PREDICTION_THRESHOLD < existencePrediction) {
-					// The edge exists for the graph at this epoch
-					// Remember to write out the rawCost -> zero means free
-					int cost = (COST_PREDICTION_THRESHOLD < costModel.predictEdge(tail, head, epoch)) ? 0 : 1; 
-					predictedGraph.write(tail + "|" + head + "|" + cost + "\n");
-					numEdges++;
-				}
+		for (String edge : edges) {
+			String[] fields = edge.split("\\|");
+			String tail = fields[0];
+			String head = fields[1];
+			Double existencePrediction = existenceModel.predictEdge(tail, head,
+					epoch);
+			if (EXISTENCE_PREDICTION_THRESHOLD < existencePrediction) {
+				// The edge exists for the graph at this epoch
+				// Remember to write out the rawCost -> zero means free
+				int cost = (COST_PREDICTION_THRESHOLD < costModel.predictEdge(
+						tail, head, epoch)) ? 0 : 1;
+				predictedGraph.write(tail + "|" + head + "|" + cost + "\n");
 			}
-			if(0 == numTailNodes % 1000) {
-				logger.info("Progress: " + numTailNodes/(double)nodes.size() + " with " + numEdges + " edges");
+			numEdges++;
+			if (0 == numEdges % 1000) {
+				logger.info("Progress: " + numEdges / (double) edges.size()
+						+ " with " + numEdges + " edges");
 			}
 		}
 		predictedGraph.close();

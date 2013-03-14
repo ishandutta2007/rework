@@ -152,25 +152,18 @@ abstract public class FacebookModel {
 	public ArrayList<Double> predictPath(List<String> path, int epoch) {
 		ArrayList<Double> predictions = new ArrayList<Double>();
 
-		for (int tailIdx = 0; tailIdx < path.size(); tailIdx++) {
-			String head = null;
-			if (tailIdx == path.size() - 1) {
-				// We're at the end of this list, time to stop
-				if (1 == path.size()) {
-					// Special case: for single node paths predict 1 for both
-					// existence model and cost model because self-edges always
-					// exist and they are always free
-					predictions.add(1.0);
-				}
-				break;
-			} else {
-				head = path.get(tailIdx + 1);
-			}
-			String tail = path.get(tailIdx);
-
+		for (int tailIdx = 0; tailIdx < path.size()-1; tailIdx++) {
 			// TODO add all vertices to data instance hash and then make one prediction per path as opposed to one prediction per edge?
-			predictions.add(predictEdge(tail, head, epoch));
+			predictions.add(predictEdge(path.get(tailIdx), path.get(tailIdx + 1), epoch));
 		}
+
+		if (1 == path.size()) {
+			// Special case: for single node paths predict 1 for both
+			// existence model and cost model because self-edges always
+			// exist and they are always free
+			predictions.add(1.0);
+		}
+
 		return predictions;
 	}
 	
