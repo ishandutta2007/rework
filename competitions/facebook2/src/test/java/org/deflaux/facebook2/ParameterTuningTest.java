@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.deflaux.facebook2.io.DataStream;
+import org.deflaux.util.Stopwatch;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;

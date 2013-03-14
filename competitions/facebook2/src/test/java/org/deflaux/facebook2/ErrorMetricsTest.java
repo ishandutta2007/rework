@@ -2,6 +2,7 @@ package org.deflaux.facebook2;
 
 import static org.junit.Assert.*;
 
+import org.deflaux.ml.ErrorMetrics;
 import org.junit.Test;
 
 public class ErrorMetricsTest {

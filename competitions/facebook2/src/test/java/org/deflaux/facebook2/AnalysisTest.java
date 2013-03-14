@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.deflaux.facebook2.io.DataStream;
+import org.deflaux.facebook2.io.PredictionPaths;
+import org.deflaux.util.Stopwatch;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;

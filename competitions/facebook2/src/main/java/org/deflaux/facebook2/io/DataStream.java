@@ -1,4 +1,4 @@
-package org.deflaux.facebook2;
+package org.deflaux.facebook2.io;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Scanner;
 
 import org.apache.log4j.Logger;
+import org.deflaux.facebook2.DataInstance;
 
 /**
  * Simulate a data stream from file-based batch data
@@ -43,6 +44,14 @@ public class DataStream {
 		this.counter = 0;
 		this.rawDataIndex = 0;
 		this.rawData = new ArrayList<String>();
+	}
+
+	public int getEpoch() {
+		return epoch;
+	}
+
+	public int getCounter() {
+		return counter;
 	}
 
 	public boolean isShuffled() {

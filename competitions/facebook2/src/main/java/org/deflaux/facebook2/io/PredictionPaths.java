@@ -1,4 +1,4 @@
-package org.deflaux.facebook2;
+package org.deflaux.facebook2.io;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;

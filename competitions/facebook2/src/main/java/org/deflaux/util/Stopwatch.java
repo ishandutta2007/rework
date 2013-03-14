@@ -1,4 +1,4 @@
-package org.deflaux.facebook2;
+package org.deflaux.util;
 
 /*************************************************************************
  *  Compilation:  javac Stopwatch.java

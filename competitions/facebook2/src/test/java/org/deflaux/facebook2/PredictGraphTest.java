@@ -13,8 +13,10 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
+import org.deflaux.facebook2.io.DataStream;
+import org.deflaux.facebook2.io.PredictionPaths;
+import org.deflaux.util.Stopwatch;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class PredictGraphTest {
@@ -41,7 +43,6 @@ public class PredictGraphTest {
 		DataInstance.clearEdgeHistory();
 	}
 
-	// @Ignore
 	@Test
 	public void testPredictGraph() throws IOException {
 		int historyWindowSize = 8;
@@ -62,7 +63,7 @@ public class PredictGraphTest {
 		Stopwatch watch = new Stopwatch();
 		while (training.hasNext()) {
 			instance = training.nextInstance(instance, numDimensions);
-			if (15 == training.epoch) {
+			if (15 == training.getEpoch()) {
 				// Do not train with data from epoch 15
 				break;
 			}
@@ -79,8 +80,8 @@ public class PredictGraphTest {
 			logger.info(model);
 		}
 
-		assertEqualsHelper("num instances", 722588, training.counter);
-		assertEqualsHelper("number of unique training edges", 142355,
+		assertEqualsHelper("num instances", 673345, training.getCounter());
+		assertEqualsHelper("number of unique training edges", 137065,
 				edges.size());
 
 		while (testing.hasNext()) {
@@ -93,7 +94,7 @@ public class PredictGraphTest {
 		}
 
 		assertEqualsHelper("number of unique training and test edges",
-				142355 + 2898, edges.size());
+				140160, edges.size());
 
 		// Instead of a n^2 loop to predict all edges, just predict for edges we
 		// have seen in the past plus edges in the test set

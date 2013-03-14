@@ -1,4 +1,4 @@
-package org.deflaux.facebook2;
+package org.deflaux.ml;
 
 public class ErrorMetrics {
 	private double truePositive = 0;
@@ -6,7 +6,7 @@ public class ErrorMetrics {
 	private double trueNegative = 0;
 	private double falseNegative = 0;
 	
-	void update(int prediction, int label) {
+	public void update(int prediction, int label) {
 		if(1 == label) {
 			if(1 == prediction) {
 				truePositive++;
@@ -41,27 +41,27 @@ public class ErrorMetrics {
 		return falseNegative;
 	}
 
-	double getPrecision() {
+	public double getPrecision() {
 		return truePositive / (truePositive + falsePositive);
 	}
 	
-	double getRecall() {
+	public double getRecall() {
 		return truePositive / (truePositive + falseNegative);
 	}
 	
-	double getLoss() {
+	public double getLoss() {
 		return falsePositive + falseNegative;
 	}
 	
-	double getCount() {
+	public double getCount() {
 		return truePositive + trueNegative + falsePositive + falseNegative;
 	}
 	
-	double getAverageLoss() {
+	public double getAverageLoss() {
 		return getLoss()/getCount();
 	}
 	
-	double getFScore() {
+	public double getFScore() {
 		return 2.0 * ((getPrecision()*getRecall())/(getPrecision()+getRecall()));
 	}
 

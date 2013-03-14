@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
+import org.deflaux.facebook2.io.DataStream;
+import org.deflaux.facebook2.io.PredictionPaths;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -60,7 +62,7 @@ public class DataStreamTest {
 				fail("unexpected value for edge cost: " + instance.cost);
 			}
 		}
-		assertEquals("num instances", 722588, training.counter);
+		assertEquals("num instances", 722588, training.getCounter());
 		assertEqualsHelper("num invalid", 0, numInvalid);
 
 		resetData();
