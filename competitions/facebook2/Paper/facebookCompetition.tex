@@ -51,15 +51,16 @@ multiple optimal routes for a given source and destination.''[1]
 The domain of the data in this problem are the connections between
 autonomous systems[2] in the Internet.  More specifically, the nodes in the
 graph correspond to gateway routers for independent networks, and the directed
-edges between them encode the network peering relationships with edge weight indicating cost of
+edges between them encode the network peering relationships with edge weight
+indicating cost type of
 transit over those links.
 
 The training dataset consists of 15 graphs with anywhere from 46,603 to 49,520 directed edges each (so on the
 order of ~750,000 edges total).  Each graph was collected at sequential time
-points indicating operational direct connections and their costs in the
+points indicating operational direct connections and their cost types in the
 network known at that point in time.  The format of each edge in the
 training graph is \texttt{tail router AS Name | head router AS
-  Name | cost for use of the link} where the cost is either 0 for ``free'' or 1
+  Name | cost type for use of the link} where the cost type is either 0 for ``free'' or 1
 indicating that a fee is to be paid.  The number of unique node names in the
 training dataset is 372,037 but part of the competition is to figure out
 which of those "messy" names are duplicates.  A training edge may look like:
@@ -80,9 +81,8 @@ permuted and then fed incrementally to the learning algorithm, with all the
 edges of graph 1 streamed prior to those of graph 2, etc...
 
 Note that to meet the goals of this competition, two models are needed: (1)
-a classification model for edge existence and (2) a regression model for
-edge cost\footnote{I may opt to create just the classification model for the
-  purposes of this project.}.  Both will be learned incrementally as the edge data streams in
+a classification model for edge existence and (2) a classification model for
+edge cost type.  Both will be learned incrementally as the edge data streams in
 and will reuse features.
 
 \textbf{Challenges}
@@ -101,16 +101,16 @@ found in the input data.  Techniques such as tf-idf were used to determine
 which term(s) to remove from a multi-word node name to see if it
 corresponded to a shorter word name.  This is the only batch process in the project; everything else is streaming.
 
-\subsection{Features}
+\subsection{Features and Outcomes}
 
 \textbf{Modeling Connections} A feature is created for each $(tail,head)$ pair and then hashed[3] into a
 constrained dimensional space since we do not know the true dimensionality
-of our input space.  For the classification model, the feature's value is always 1
-since we have no negative samples.  For the regression model the feature's value is 0
-for a free link or 1 for a paid link.
+of our input space.  
 
 \textbf{Modeling Connectedness} A feature is created for the degree of each node
-  involved in the edge.  There are some nodes in
+  involved in the edge  and then hashed[3] into a
+constrained dimensional space since we do not know the true dimensionality
+of our input space.  There are some nodes in
   the data which are very high degree and likely to be robust in terms of
   existence.  The value for this feature will be approximated rather than
   exact to adhere with our streaming data and its incomplete nature.  The feature value will be facilitated by the use of a
@@ -118,7 +118,45 @@ for a free link or 1 for a paid link.
   this node is connected.  The degree will be approximated by the
   number of bits set to true in the bloom filter.  
 
-\subsection{Learning}
+\textbf{Modeling Temporality} NEED ADVICE HERE
+
+\subsubsection{Edge Cost Type Model}
+Let $s$ and $t$ be two nodes in the graph at time $t$.  Then we have $y_{cost\{u \rightarrow v\}}^{(t)} \in \{0,1\}$ where $1$ means that a fee must be paid for
+traffic traversing the edge directly
+between $s$ and $t$ and $0$ means that there is no fee.
+
+
+$x_{cost\{u \rightarrow v\}}^{(t)}$ is a column vector of length $n+m$
+where 
+\begin{itemize}
+\item $n$ is the dimension of the space into which we've hashed our node names
+\item $m$ is the dimension of the space into which we've hashed our directed
+edge names
+\end{itemize}
+
+The vector which consists of the following features created from
+edge $u \rightarrow v$ and the current epoch:
+\begin{itemize}
+\item The first $n$ values in $x$ are a Count-Min sketch of the degree of nodes in
+  the graph.  For a particular $x$ this is sparse.  The only entries that will have values are the hashed entries for node $u$ and $v$.
+\item The next $m$ values in $x$ are a Count-Min sketch of the number of
+  times we have seen edges in the graph.  For a particular $x$ this is
+  sparse.  The only entries that will have values is the hashed entry for
+  edge $u \rightarrow v$ with value 1.
+\end{itemize}
+
+\subsubsection{Edge Existence Model}
+
+Let $u$ and $v$ be two nodes in the graph at time $t$.  Then we have
+$y_{exists\{u \rightarrow v\}}^{(t)} \in \{0,1\}$ where $1$ means that an edge exists directly
+between $u$ and $v$, $0$ that the edge does not exist.  Note that in our
+training data we only have outcomes where $y_{exists\{u \rightarrow v\}}^{(t)} = 1$.
+Edges missing from the training data are assumed $y_{exists\{u \rightarrow v\}}^{(t)} = 0$.
+
+$x_{exists\{u \rightarrow v\}}^{(t)}$ is defined exactly the same as for the
+edge cost model.
+
+\subsection{Learning Algorithm}
 
 Stochastic gradient descent will be used.  In addition to penalization via
 regularization, weights will be boosted using the time interval $t$ so that more
@@ -129,24 +167,24 @@ recent data is emphasized.\footnote{I would greatly appreciate any
   where the power situation is sporadic.)}
 
 \begin{displaymath}
-w_i^{(t+1)} = w_i^{(t)} + \eta \{- \lambda w_i^{(t)} + x_i^{(t)} [ y^t -  p(Y=1|x^{(t)},w^{(t)})] + epoch(t)*\tau \}
+w_i^{(t+1)} = w_i^{(t)} + epoch(t)*\tau*\eta \{- \lambda w_i^{(t)} + x_i^{(t)} [ y^t -  p(Y=1|x^{(t)},w^{(t)})] \}
 \end{displaymath}
 where $epoch(t) \in \{ 1,...,15 \}$ for each of our 15 training graphs.  In a more realistic situation, the epoch would be derived from the time at
 which the edge information was received by the learner.
 
-\subsection{Prediction Pseudocode}
+% \subsection{Prediction Pseudocode}
 
-\textsf{\small for each edge in the path, use the existence model to determine its probability of existence, multiply all the probabilities together}
+% \textsf{\small for each edge in the path, use the existence model to determine its probability of existence, multiply all the probabilities together}
 
-\textsf{\small for each edge in the path, use the cost model to determine its probable cost, sum all the costs together}
+% \textsf{\small for each edge in the path, use the cost model to determine its probable cost, sum all the costs together}
 
-\textsf{\small generate additional possible paths between tail and head (can keep graph generation simple at first and remove links in the test path to try shorter paths and/or replace intermediate nodes in the path with nodes of high degree)}
+% \textsf{\small generate additional possible paths between tail and head (can keep graph generation simple at first and remove links in the test path to try shorter paths and/or replace intermediate nodes in the path with nodes of high degree)}
 
-\textsf{\small compute the existence probability and cost of each candiate path graph}
+% \textsf{\small compute the existence probability and cost of each candiate path graph}
 
-\textsf{\small use decision theory to compare the test path with the candidate paths to determine the final prediction}
+% \textsf{\small use decision theory to compare the test path with the candidate paths to determine the final prediction}
 
-\section{Preliminary Results}
+\section{Current Results}
 
 \subsection{AS Name Cleaning}
 
@@ -171,6 +209,12 @@ serve at the baseline for this project.
   \begin{center}
     \includegraphics[scale=.4]{randomPredictions.png}
   \end{center}
+
+\section{Discussion}
+
+\section{Next Steps}
+
+QUOTE TUBES HERE
 
 \subsubsection*{References}
 

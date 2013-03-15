@@ -14,6 +14,7 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.deflaux.ml.ErrorMetrics;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class CompareGraphsTest {
@@ -21,7 +22,68 @@ public class CompareGraphsTest {
 	
 	static final boolean printAssertions = Boolean.parseBoolean(System.getProperty("printAssertions"));
 	
-	Map<String,Integer> readEdgesFromFile(String filePath) throws FileNotFoundException {
+	@Test
+	public void testCompareGraphs15And16() throws IOException {
+		String filePathActualGraph = "/Users/deflaux/rework/competitions/facebook2/data/normTrain15.txt";
+		String filePathPredictedGraph = "/Users/deflaux/rework/competitions/facebook2/data/graph16.txt";
+		ErrorMetrics existenceMetrics = new ErrorMetrics();
+		ErrorMetrics costMetrics = new ErrorMetrics();
+		
+		compareGraphs(filePathActualGraph, filePathPredictedGraph, existenceMetrics, costMetrics);
+		
+		assertEqualsHelper("num edges in 15 actual graph", 48741.0, existenceMetrics.getTruePositive() + existenceMetrics.getFalseNegative());
+		assertEqualsHelper("num edges in 16 predicted graph", 90248.0, existenceMetrics.getTruePositive() + existenceMetrics.getFalsePositive());
+		
+		assertEqualsHelper("edges from 15 not in 16", 14482.0, existenceMetrics.getFalseNegative());
+		assertEqualsHelper("Existence f-score: " + existenceMetrics, 0.49297426415040035, existenceMetrics.getFScore());
+		assertEqualsHelper("Cost f-score: " + costMetrics, 0.9976549298203262, costMetrics.getFScore());
+	}
+
+//	@Ignore // shuffle was on so these values changed a bit
+	@Test
+	public void testCompareGraphs15And15() throws IOException {
+		String filePathActualGraph = "/Users/deflaux/rework/competitions/facebook2/data/normTrain15.txt";
+		String filePathPredictedGraph = "/Users/deflaux/rework/competitions/facebook2/data/graph15.txt";
+		ErrorMetrics existenceMetrics = new ErrorMetrics();
+		ErrorMetrics costMetrics = new ErrorMetrics();
+		
+		compareGraphs(filePathActualGraph, filePathPredictedGraph, existenceMetrics, costMetrics);
+		
+		assertEqualsHelper("num edges in 15 actual graph", 48741.0, existenceMetrics.getTruePositive() + existenceMetrics.getFalseNegative());
+		assertEqualsHelper("num edges in 15 predicted graph", 56748.0, existenceMetrics.getTruePositive() + existenceMetrics.getFalsePositive());
+		
+		assertEqualsHelper("edges from 15 not in 15", 9093.0, existenceMetrics.getFalseNegative());
+		assertEqualsHelper("Existence f-score: " + existenceMetrics, 0.7516992293035293, existenceMetrics.getFScore());
+		assertEqualsHelper("Cost f-score: " + costMetrics, 0.9933842391875064, costMetrics.getFScore());				
+	}
+	
+	public static void compareGraphs(String filePathActualGraph, String filePathPredictedGraph, ErrorMetrics existenceMetrics, ErrorMetrics costMetrics) throws FileNotFoundException {
+		Map<String,Integer> actualEdges = readEdgesFromFile(filePathActualGraph);
+		Map<String,Integer> predictedEdges = readEdgesFromFile(filePathPredictedGraph);
+		
+		Set<String> actualEdgesMissingFromPredicted = new HashSet<String>(actualEdges.keySet());
+		actualEdgesMissingFromPredicted.removeAll(predictedEdges.keySet());
+		
+		// Record existence true and false positives
+		for(String edge : predictedEdges.keySet()) {
+			if(actualEdges.containsKey(edge)) {
+				existenceMetrics.update(1, 1);
+				costMetrics.update(predictedEdges.get(edge), actualEdges.get(edge));
+			}
+			else {
+				existenceMetrics.update(1, 0);
+			}
+		}
+		
+		// Record existence false negatives
+		for(int i = 0; i < actualEdgesMissingFromPredicted.size(); i++) {
+			existenceMetrics.update(0, 1);
+		}
+		
+		// TODO no good way to know existence true negatives		
+	}
+
+	public static Map<String,Integer> readEdgesFromFile(String filePath) throws FileNotFoundException {
 		Map<String,Integer> edges = new HashMap<String, Integer>();
 		Scanner sc = new Scanner(new BufferedReader(new FileReader(filePath)));
 		while(sc.hasNextLine()) {
@@ -35,61 +97,7 @@ public class CompareGraphsTest {
 		return edges;
 	}
 
-	@Test
-	public void testCompareGraphs15And16() throws IOException {
-		
-		Map<String,Integer> epoch15Edges = readEdgesFromFile("/Users/deflaux/rework/competitions/facebook2/data/normTrain15.txt");
-		Map<String,Integer> epoch16Edges = readEdgesFromFile("/Users/deflaux/rework/competitions/facebook2/data/graph16.txt");
-		
-		assertEqualsHelper("num edges in 15", 48741, epoch15Edges.size());
-		assertEqualsHelper("num edges in 16", 90248, epoch16Edges.size());
-		
-		Set<String> epoch15KeysMissingFrom16 = new HashSet<String>(epoch15Edges.keySet());
-		epoch15KeysMissingFrom16.removeAll(epoch16Edges.keySet());
-		assertEqualsHelper("edges from 15 not in 16 " + ((double)epoch15KeysMissingFrom16.size())/((double)epoch15Edges.size()), 14482, epoch15KeysMissingFrom16.size());
-		assertEqualsHelper("existence error rate", 0.297121519870335, ((double)epoch15KeysMissingFrom16.size())/((double)epoch15Edges.size()));
-	}
-
-	@Test
-	public void testCompareGraphs15And15() throws IOException {
-		
-		Map<String,Integer> epoch15ActualEdges = readEdgesFromFile("/Users/deflaux/rework/competitions/facebook2/data/normTrain15.txt");
-		Map<String,Integer> epoch15PredictedEdges = readEdgesFromFile("/Users/deflaux/rework/competitions/facebook2/data/graph15.txt");
-		
-		assertEqualsHelper("num edges in 15Actual", 48741, epoch15ActualEdges.size());
-		assertEqualsHelper("num edges in 15Predicted", 57392, epoch15PredictedEdges.size());
-		
-		Set<String> epoch15ActualKeysMissingFrom15Predicted = new HashSet<String>(epoch15ActualEdges.keySet());
-		epoch15ActualKeysMissingFrom15Predicted.removeAll(epoch15PredictedEdges.keySet());
-		assertEqualsHelper("edges from 15Actual not in 15Predicted " + ((double)epoch15ActualKeysMissingFrom15Predicted.size())/((double)epoch15ActualEdges.size()), 9039, epoch15ActualKeysMissingFrom15Predicted.size());
-		assertEqualsHelper("existence error rate", 0.18544962146857882, ((double)epoch15ActualKeysMissingFrom15Predicted.size())/((double)epoch15ActualEdges.size()));
-		
-		ErrorMetrics existenceMetrics = new ErrorMetrics();
-		ErrorMetrics costMetrics = new ErrorMetrics();
-		
-		// Record existence true and false positives
-		for(String edge : epoch15PredictedEdges.keySet()) {
-			if(epoch15ActualEdges.containsKey(edge)) {
-				existenceMetrics.update(1, 1);
-				costMetrics.update(epoch15PredictedEdges.get(edge), epoch15ActualEdges.get(edge));
-			}
-			else {
-				existenceMetrics.update(1, 0);
-			}
-		}
-		
-		// Record existence false negatives
-		for(int i = 0; i < epoch15ActualKeysMissingFrom15Predicted.size(); i++) {
-			existenceMetrics.update(0, 1);
-		}
-		
-		// TODO no good way to know existence true negatives
-		
-		assertEqualsHelper("Existence f-score: " + existenceMetrics, 0.7481556160666334, existenceMetrics.getFScore());
-		assertEqualsHelper("Cost f-score: " + costMetrics, 0.9937642403165847, costMetrics.getFScore());
-	}
-
-	void assertEqualsHelper(String testCase, Object expected, Object actual) {
+	public static void assertEqualsHelper(String testCase, Object expected, Object actual) {
 		if (true == printAssertions) {
 			logger.info("Test case: " + testCase + ", expected: " + expected
 					+ ", actual: " + actual);
