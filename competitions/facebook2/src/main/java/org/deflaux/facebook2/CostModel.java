@@ -32,7 +32,7 @@ public class CostModel extends FacebookModel {
 	double computeWeightFeatureProduct(Set<Integer> featureids,
 			DataInstance instance) {
 		double dotProduct = 0.0;
-		// dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
+		dotProduct += weights.w0; // x0 = 1, so not bothering with w0*1
 		int costHistory[] = instance.getEdgeCostHistory();
 		for (int i = 0; i < historyWindowSize; i++) {
 			dotProduct += weights.wHistoryFeature[i] * costHistory[i];
@@ -46,7 +46,7 @@ public class CostModel extends FacebookModel {
 
 	void updateWeights(DataInstance instance, double gradient) {
 
-		// weights.w0 += -step * gradient; // no reg and assumed x0 = 1
+		weights.w0 += -step * gradient; // no reg and assumed x0 = 1
 
 		// Note that we use existence history to fill in gaps in cost history with prior cost because
 		// only 1.4% of edges change cost in our training data 
