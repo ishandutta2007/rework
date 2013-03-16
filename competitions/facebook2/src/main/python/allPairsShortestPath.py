@@ -132,7 +132,7 @@ class TestAllPairsShortestPath(unittest.TestCase):
             print('For Coursera: %d' % (shortestShortestPathCost))
             self.assertEqual(shortestShortestPathCost, 42)
 
-    def test_courseraG3(self):
+    def footest_courseraG3(self):
         file = '/Users/deflaux/courseWork/courseraAlg/p2a4/g3.txt'
         (vertices, edges) = self.fileInputTestHelper(file)
         apsp = AllPairsShortestPaths(vertices, edges)
@@ -143,7 +143,7 @@ class TestAllPairsShortestPath(unittest.TestCase):
             print('For Coursera: %d' % (shortestShortestPathCost))
             self.assertEqual(shortestShortestPathCost, -19)
 
-    def footest_kaggle(self):
+    def test_kaggle(self):
         dataDir = '/Users/deflaux/rework/competitions/facebook2/data/' 
         outfile = open(dataDir + 'optimalPathPreds.txt', 'w')
         for epoch in range(16,21):

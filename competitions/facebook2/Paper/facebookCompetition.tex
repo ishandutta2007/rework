@@ -8,7 +8,7 @@
 
 
 \title{Facebook's Mapping the Internet Kaggle Competition \\
-{\small Mid-term progress report for CSE599 Machine Learning for Big Data term project}}
+{\small CSE599 Machine Learning for Big Data Term Project Report}}
 
 
 \author{Nicole Deflaux \\
@@ -121,12 +121,17 @@ of our input space.  There are some nodes in
 \textbf{Modeling Temporality} NEED ADVICE HERE
 
 \subsubsection{Edge Cost Type Model}
-Let $s$ and $t$ be two nodes in the graph at time $t$.  Then we have $y_{cost\{u \rightarrow v\}}^{(t)} \in \{0,1\}$ where $1$ means that a fee must be paid for
+Let $s$ and $t$ be two nodes in the graph at time $t$.  Then we have
+
+$y_{cost\{u \rightarrow v\}}^{(t)} \in \{0,1\}$ 
+
+where $1$ means that a fee must be paid for
 traffic traversing the edge directly
 between $s$ and $t$ and $0$ means that there is no fee.
 
+$x_{cost\{u \rightarrow v\}}^{(t)} \in R^{d+h}$ 
 
-$x_{cost\{u \rightarrow v\}}^{(t)}$ is a column vector of length $n+m$
+is a column vector of length $n+m$
 where 
 \begin{itemize}
 \item $n$ is the dimension of the space into which we've hashed our node names
@@ -148,12 +153,17 @@ edge $u \rightarrow v$ and the current epoch:
 \subsubsection{Edge Existence Model}
 
 Let $u$ and $v$ be two nodes in the graph at time $t$.  Then we have
-$y_{exists\{u \rightarrow v\}}^{(t)} \in \{0,1\}$ where $1$ means that an edge exists directly
+
+$y_{exists\{u \rightarrow v\}}^{(t)} \in \{0,1\}$ 
+
+where $1$ means that an edge exists directly
 between $u$ and $v$, $0$ that the edge does not exist.  Note that in our
 training data we only have outcomes where $y_{exists\{u \rightarrow v\}}^{(t)} = 1$.
 Edges missing from the training data are assumed $y_{exists\{u \rightarrow v\}}^{(t)} = 0$.
 
-$x_{exists\{u \rightarrow v\}}^{(t)}$ is defined exactly the same as for the
+$x_{exists\{u \rightarrow v\}}^{(t)} \in R^{d+h}$ 
+
+is defined exactly the same as for the
 edge cost model.
 
 \subsection{Learning Algorithm}
@@ -215,6 +225,17 @@ serve at the baseline for this project.
 \section{Next Steps}
 
 QUOTE TUBES HERE
+
+penalize older history more heavily
+
+~/rework/competitions/facebook2>find . -name *.java | xargs cat | wc -l
+    2352
+~/rework/competitions/facebook2>find . -name *.py | xargs cat | wc -l
+     571
+~/rework/competitions/facebook2>find . -name *.R | xargs cat | wc -l
+      80
+~/rework/competitions/facebook2>find src/main/ -name *.java | xargs cat | wc -l
+    1130
 
 \subsubsection*{References}
 
