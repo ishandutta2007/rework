@@ -4,9 +4,6 @@
 import unittest, string, re, cPickle, os, sys
 
 DATA_DIR = '/Users/deflaux/rework/competitions/facebook2/data'
-# TODO compute term frequency to determine the stop words, as60 was badly merged
-STOP_WORDS = ['llc', 'inc', 'ltd', 'isp', 'fop', 'co', 'sa', 'com', 'llp', 'plc', 'sa', 'net', 'limited', 'incorporated', 'services', 'network', 'information', 'technology']
-STOP_WORDS = set([ ''.join(sorted(stopWord)) for stopWord in STOP_WORDS])
 
 class CleanNames(unittest.TestCase):
 
@@ -23,9 +20,9 @@ class CleanNames(unittest.TestCase):
 
         self.assertEqual((['01224abeilmost'], ['as22140']), self.keyify('T-MOBILE-AS22140'))
         self.assertEqual((['03339aenst'], ['as30933']), self.keyify('AS30933.net')) 
-        self.assertEqual((['03339aenst'], ['as30933']), self.keyify('AS30933.net L.L.C.'))
-        self.assertEqual((['aeeegmrrsv'], []), self.keyify('MEGASERVER-AS MegaServer MegaServer Ltd.'))
-        self.assertEqual((['aeeegmrrsv'], []), self.keyify('MEGASERVER-AS MegaServer MegaServer inc.'))
+        self.assertEqual((['03339aenst', 'cll'], ['as30933']), self.keyify('AS30933.net L.L.C.'))
+        self.assertEqual((['aaeeegmrrssv', 'aeeegmrrsv', 'dlt'], []), self.keyify('MEGASERVER-AS MegaServer MegaServer Ltd.'))
+        self.assertEqual((['aaeeegmrrssv', 'aeeegmrrsv', 'cin'], []), self.keyify('MEGASERVER-AS MegaServer MegaServer inc.'))
         self.assertEqual((['cin'], []), self.keyify('NIC'))
         self.assertEqual((['abcdefghijklmnopqrstuvwxyz'], []), self.keyify('==='))
     
@@ -45,39 +42,36 @@ class CleanNames(unittest.TestCase):
 
     def test_mergeMappings(self):
         m = {}
-        m['four one three two xxx yyy zzz'] = [4]
-        m['four three two xxx yyy zzz'] = [3]
-        m['four one three xxx yyy zzz'] = [3]
-        m['four one two xxx yyy zzz'] = [3]
-        m['one three two xxx yyy zzz'] = [3]
-        m['one two xxx yyy zzz'] = [2]
-        m['one three xxx yyy zzz'] = [2]
-        m['four one xxx yyy zzz'] = [2]
-        m['three two xxx yyy zzz'] = [2]
-        m['four two xxx yyy zzz'] = [2]
-        m['four three xxx yyy zzz'] = [2]
-        m['one xxx yyy zzz'] = [1]
-        m['four xxx yyy zzz'] = [1]
-        self.consolidateSubKeys(m, {})
+        a = {}
+        self.insertMapping(m, a, 'foo bar baz as42')
+        self.insertMapping(m, a, 'foo bar')
+        self.insertMapping(m, a, 'foo baz')
+        self.insertMapping(m, a, 'bar baz')
+        self.insertMapping(m, a, 'foo')
+        self.insertMapping(m, a, 'bar')
+        self.insertMapping(m, a, 'baz')
+        self.insertMapping(m, a, '42')
+
+        print(m)
+        self.assertEquals(8, len(m))
+        self.consolidateSubKeys(m)
+        print(m)
+        self.assertEquals(8, len(m))
+        self.mergeAsnameMappings(m, a)
+        print(m)
+        self.assertEquals(8, len(m))
         self.nukeIndirectMappings(m)
         print(m)
-        self.assertEquals(3, len(m))
-        
+        self.assertEquals(1, len(m))
 
-    def test_nameCleaning(self):
+    def footest_nameCleaning(self):
         numGraphs = 15
         
         (keyToName, asnameToKey) = self.cleanNames(numGraphs)
 
-        (termFreq, stopWords) = self.filterStopWords(keyToName)
-
-        expectedStopWords = ['llc', 'inc', 'ltd', 'isp', 'fop', 'co', 'sa', 'com', 'llp', 'plc', 'sa', 'net', 'limited', 'incorporated', 'services', 'network', 'information', 'technology']
-        # TODO tests 
+        self.consolidateSubKeys(keyToName)
         
-        self.consolidateSubKeys(keyToName, termFreq)
-        self.consolidateSubSubKeys(keyToName, termFreq)
-        
-        self.mergeMappings(keyToName, asnameToKey)
+        self.mergeAsnameMappings(keyToName, asnameToKey)
 
         self.writeKeyifiedData(keyToName, numGraphs)
         self.writeKeyifiedPaths(keyToName)
@@ -92,13 +86,13 @@ class CleanNames(unittest.TestCase):
                    numSingleUseKeys = numSingleUseKeys +1
         outfile.close()
 
+        print('number of keys: %d, number of single-use keys: %d' % (len(keyToName), numSingleUseKeys))
         if(numGraphs == 1):
-            self.assertEqual(len(keyToName), 21523)
-            self.assertEqual(numSingleUseKeys, 8277)
+            self.assertEqual(len(keyToName), 0) # update this
+            self.assertEqual(numSingleUseKeys, 0) # update this
         else:
-            print('number of keys: %d, number of single-use keys: %d' % (len(keyToName), numSingleUseKeys))
-            self.assertEqual(len(keyToName), 44372)
-            self.assertEqual(numSingleUseKeys, 9861)
+            self.assertEqual(len(keyToName), 22580)
+            self.assertEqual(numSingleUseKeys, 215)
 
     def cleanNames(self, numGraphs, unpickle=True):
         '''Load data from file and compute normalized keys for all entries'''
@@ -209,81 +203,33 @@ class CleanNames(unittest.TestCase):
         outfile.close()
         infile.close()
         
-    def filterStopWords(self, keyToName):
-        ''' Compute term frequencies, no need to do tf-idf because we
-        already reduced it to unique terms per 'document'.  TODO use most
-        frequent words as stop words'''
-        termFreq = {}
+    def consolidateSubKeys(self, keyToName):
+        ''' If one key is a subset of another key, merge them'''
+        keysByLength = []
         for key in keyToName:
-            for part in key.split():
-                if(part in termFreq):
-                    termFreq[part] = termFreq[part]+1
-                else:
-                    termFreq[part] = 1
+            keysByLength.append((string.count(key, ' ')+1, key))
+            
+        keysByLength.sort(key=lambda tup: tup[0])
+        keysByLength.reverse()
 
-        # TODO
-        # dictionary to tuple
-        # sort on freq
-        # use threshold for stopwords
-        stopWords = set([])
-        return(termFreq, stopWords)
-
-    def consolidateSubKeys(self, keyToName, termFreq):            
-        '''For each key, remove one word and see if it is still a key,
-        if so merge them.   TODO consider difflib http://stackoverflow.com/questions/3551423/python-comparing-two-strings'''
-        for key in keyToName:
-            keyParts = set(key.split())
-            if(1 == len(keyParts)): 
+        for i in range(0,len(keysByLength)):
+            largerKey = keysByLength[i][1]
+            if(not isinstance(keyToName[largerKey], list)):
                 continue
-            for partToRemove in keyParts:
-                keyPartsSubset = keyParts.copy()
-                keyPartsSubset.remove(partToRemove)
-                if(keyPartsSubset.issubset(STOP_WORDS)):
-                    # Don't make smaller keys that are all stop words
+            largerKeySet = set(largerKey.split())
+            for j in range(i+1,len(keysByLength)):
+                smallerKey = keysByLength[j][1]
+                if(not isinstance(keyToName[smallerKey], list)):
                     continue
-                partsRemaining = [p for p in keyPartsSubset]
-                partsRemaining.sort()
-                smallerKey = ' '.join(partsRemaining)
-                # Special handling for short keys
-                if(1 == len(partsRemaining)):
-                    if(termFreq[partToRemove] < termFreq[smallerKey]):
-                        # if we did not retain the item with lower freq
-                        # in our smallerKey, skip this loop
-                        continue
-                if(smallerKey in keyToName):
-                    self._merge(key, smallerKey, keyToName)
-                    break
+                smallerKeySet = set(smallerKey.split())
+                if(smallerKeySet.issubset(largerKeySet)):
+                    smallerKey = [p for p in smallerKeySet]
+                    smallerKey.sort()
+                    largerKey = [p for p in largerKeySet]
+                    largerKey.sort()
+                    self._merge(' '.join(smallerKey), ' '.join(largerKey), keyToName)
                 
-    def consolidateSubSubKeys(self, keyToName, termFreq):            
-        '''For each key, remove TWO words and see if it is still a key,
-        if so merge them.'''
-        for key in keyToName:
-            keyParts = set(key.split())
-            if(4 >= len(keyParts)): 
-                continue
-            for partToRemoveOne in keyParts:
-                keyPartsSubsetOne = keyParts.copy()
-                keyPartsSubsetOne.remove(partToRemoveOne)
-                for partToRemoveTwo in keyPartsSubsetOne:
-                    keyPartsSubset = keyParts.copy()
-                    keyPartsSubset.remove(partToRemoveTwo)
-                    if(keyPartsSubset.issubset(STOP_WORDS)):
-                        # Don't make smaller keys that are all stop words
-                        continue
-                    partsRemaining = [p for p in keyPartsSubset]
-                    partsRemaining.sort()
-                    smallerKey = ' '.join(partsRemaining)
-                    # Special handling for short keys
-                    if(1 == len(partsRemaining)):
-                        if(termFreq[partToRemove] < termFreq[smallerKey]):
-                            # if we did not retain the item with lower freq
-                            # in our smallerKey, skip this loop
-                            continue
-                    if(smallerKey in keyToName):
-                        self._merge(key, smallerKey, keyToName)
-                        break
-                
-    def mergeMappings(self, keyToName, asnameToKey):
+    def mergeAsnameMappings(self, keyToName, asnameToKey):
         for asname in asnameToKey:
             for key in [k for k in set(asnameToKey[asname])]:
                 if(asname == key):
@@ -338,23 +284,19 @@ class CleanNames(unittest.TestCase):
         the name, we unscramble them by sorting the letters in the words
         that make up the name and then sorting all those words'''
 
-        # more ideas
-        # 1) move stop word logic to here, use term freq threshold to determine what is a stop word???
-        # 2) similarity measures that take into account tf-idf
-        name = re.sub('-AS\s', ' ', name)
-        
         normalizedName = self.normalize(name)
         if('' == normalizedName):
             normalizedName = 'abcdefghijklmnopqrstuvwxyz'
         words = normalizedName.split()
         if(1 == len(words) and re.match('^\d+$', words[0])):
-            # if the name is just a number, do not sort it, return it as-is
+            # if the name is just a number, do not sort it, return it as-is with as prefix
             return (['as'+words[0]], ['as'+words[0]])
         
         ### ASNAME, specifically parse for asnames
         asnames = [ word for word in words if re.match('^as[1-9]\d+', word)]
         asnames.extend([ word for word in words if re.search('as[1-9]\d+$', word)])
         asnames = [re.search('(as[1-9]\d+)', asname).group(1) for asname in asnames]
+        
         # remove duplicate words
         asnames = [ asnames for asnames in set(asnames)]
         if(1 < len(asnames)):
@@ -367,13 +309,7 @@ class CleanNames(unittest.TestCase):
         sortedWords = [ ''.join(sorted(word)) for word in words]
         
         # remove duplicate words
-        sortedWords = set(sortedWords)
-        if(not set(sortedWords).issubset(STOP_WORDS)):
-            # remove stop words IF there are some non-stop word parts
-            sortedWords = [w for w in sortedWords if w not in STOP_WORDS]
-        else:
-            sortedWords = [w for w in sortedWords]            
-
+        sortedWords = [w for w in set(sortedWords)]
         # sort the unique words
         sortedWords.sort()
     
