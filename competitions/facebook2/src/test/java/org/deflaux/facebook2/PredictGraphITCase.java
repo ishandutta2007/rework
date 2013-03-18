@@ -21,10 +21,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class PredictGraphTest {
+public class PredictGraphITCase {
 	static final Logger logger = Logger.getLogger("PredictGraphTest");
 
-	static final double EXISTENCE_PREDICTION_THRESHOLD = 0.7;
+	static final double EXISTENCE_PREDICTION_THRESHOLD = 0.6;
 	static final double COST_PREDICTION_THRESHOLD = 0.6;
 
 	static DataStream training;

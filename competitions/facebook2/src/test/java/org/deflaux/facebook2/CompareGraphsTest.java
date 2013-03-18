@@ -23,23 +23,21 @@ public class CompareGraphsTest {
 	static final boolean printAssertions = Boolean.parseBoolean(System.getProperty("printAssertions"));
 	
 	@Test
-	public void testCompareGraphs15And16() throws IOException {
+	public void testSanityCheckCompareGraphs() throws IOException {
 		String filePathActualGraph = "/Users/deflaux/rework/competitions/facebook2/data/normTrain15.txt";
-		String filePathPredictedGraph = "/Users/deflaux/rework/competitions/facebook2/data/graph16.txt";
 		ErrorMetrics existenceMetrics = new ErrorMetrics();
 		ErrorMetrics costMetrics = new ErrorMetrics();
 		
-		compareGraphs(filePathActualGraph, filePathPredictedGraph, existenceMetrics, costMetrics);
+		compareGraphs(filePathActualGraph, filePathActualGraph, existenceMetrics, costMetrics);
 		
-		assertEqualsHelper("num edges in 15 actual graph", 48741.0, existenceMetrics.getTruePositive() + existenceMetrics.getFalseNegative());
-		assertEqualsHelper("num edges in 16 predicted graph", 90248.0, existenceMetrics.getTruePositive() + existenceMetrics.getFalsePositive());
+		assertEqualsHelper("num edges in 15 actual graph", 48741.0, existenceMetrics.getTruePositive());
 		
-		assertEqualsHelper("edges from 15 not in 16", 14482.0, existenceMetrics.getFalseNegative());
-		assertEqualsHelper("Existence f-score: " + existenceMetrics, 0.49297426415040035, existenceMetrics.getFScore());
-		assertEqualsHelper("Cost f-score: " + costMetrics, 0.9976549298203262, costMetrics.getFScore());
+		assertEqualsHelper("edges from 15 not in 15", 0.0, existenceMetrics.getFalseNegative());
+		assertEqualsHelper("Existence f-score: " + existenceMetrics, 1.0, existenceMetrics.getFScore());
+		assertEqualsHelper("Cost f-score: " + costMetrics, 1.0, costMetrics.getFScore());
 	}
 
-//	@Ignore // shuffle was on so these values changed a bit
+	@Ignore
 	@Test
 	public void testCompareGraphs15And15() throws IOException {
 		String filePathActualGraph = "/Users/deflaux/rework/competitions/facebook2/data/normTrain15.txt";
