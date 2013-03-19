@@ -1,14 +1,9 @@
 package org.deflaux.facebook2;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +16,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class AnalysisTest {
-	static final double DELTA = 1e-3;
+	static final double DELTA = 1e-2;
 	static final Logger logger = Logger.getLogger("AnalysisTest");
 
 	// mvn test -DargLine="-DprintAssertions=true"
@@ -30,12 +25,15 @@ public class AnalysisTest {
 
 	static DataStream training;
 	static PredictionPaths testing;
+	static int historyWindowSize = 10;
+	static int numDimensions = (int) Math.pow(2, 16);
 
 	@BeforeClass
 	public static void beforeClass() {
 		// This is no longer needed since apparently Hadoop has already
 		// configured log4j
 		// BasicConfigurator.configure();
+		DataInstance.setHistoryWindowSize(historyWindowSize);
 	}
 
 	@Before
@@ -46,6 +44,7 @@ public class AnalysisTest {
 						+ DataStream.EPOCH_PLACEHOLDER + ".txt", false);
 		testing = new PredictionPaths(
 				"/Users/deflaux/rework/competitions/facebook2/data/normTestPaths.txt");
+		DataInstance.setHistoryWindowSize(historyWindowSize);
 		DataInstance.clearEdgeHistory();
 	}
 
@@ -55,11 +54,6 @@ public class AnalysisTest {
 		// reproducible
 		training.setShuffle(false);
 
-		DecimalFormat formatter = new DecimalFormat("###.######");
-		int historyWindowSize = 8;
-		int numDimensions = (int) Math.pow(2, 16);
-
-		DataInstance.setHistoryWindowSize(historyWindowSize);
 		ExistenceModel existenceModel = new ExistenceModel(0.05, 0.1,
 				historyWindowSize, numDimensions);
 		CostModel costModel = new CostModel(0.05, 0.001, historyWindowSize,
@@ -89,51 +83,50 @@ public class AnalysisTest {
 		assertEqualsHelper("num invalid", 0, numInvalid);
 
 		assertEqualsHelper("existence average loss for epoch 15",
-				0.01485240041907188,
-				existenceModel.errorMetricsPerEpoch.get(14).getAverageLoss());
+				0.0027732697877935046,
+				existenceModel.errorMetricsPerEpoch.get(14).getAverageLoss(), DELTA);
 		assertEqualsHelper("cost average loss for epoch 15",
-				0.024096633045050227, costModel.errorMetricsPerEpoch.get(14)
-						.getAverageLoss());
+				0.016619075987592186, costModel.errorMetricsPerEpoch.get(14)
+						.getAverageLoss(), DELTA);
 		assertEqualsHelper("existence f score for epoch 15",
-				0.9925182387333782, existenceModel.errorMetricsPerEpoch.get(14)
-						.getFScore());
-		assertEqualsHelper("cost f score for epoch 15", 0.9176206194255215,
-				costModel.errorMetricsPerEpoch.get(14).getFScore());
+				0.9986114396799111, existenceModel.errorMetricsPerEpoch.get(14)
+						.getFScore(), DELTA);
+		assertEqualsHelper("cost f score for epoch 15", 0.9430642550496164,
+				costModel.errorMetricsPerEpoch.get(14).getFScore(), DELTA);
 		// No false positives since all the training data is positive for this
 		// model
 		assertEqualsHelper("existence false positive for epoch 15", 0.0,
 				existenceModel.errorMetricsPerEpoch.get(14).getFalsePositive());
-		assertEqualsHelper("existence false negative for epoch 15", 723.0,
+		assertEqualsHelper("existence false negative for epoch 15", 129.0,
 				existenceModel.errorMetricsPerEpoch.get(14).getFalseNegative());
-		assertEqualsHelper("cost false positive for epoch 15", 430.0,
+		assertEqualsHelper("cost false positive for epoch 15", 241.0,
 				costModel.errorMetricsPerEpoch.get(14).getFalsePositive());
-		assertEqualsHelper("cost false negative for epoch 15", 743.0,
+		assertEqualsHelper("cost false negative for epoch 15", 526.0,
 				costModel.errorMetricsPerEpoch.get(14).getFalseNegative());
 
 		// Test case for a path between two supernodes that is free and goes in
 		// both directions
-		// 'aabcdginorst aabceknoprsstw ehnorstu|aachikknosvy ceeeghirsv
-		// eegrsy|0'
+		String superNode1 = "aachikknosvy acnns ceeeghirsv eegrsy fop";
+		String superNode2 = "aabcdginorst aabceknoprsstw corss ehnorstu";
 		List<String> superNodesPath = new ArrayList<String>();
-		superNodesPath.add("aabcdginorst aabceknoprsstw ehnorstu");
-		superNodesPath.add("aachikknosvy ceeeghirsv eegrsy");
+		superNodesPath.add(superNode2);
+		superNodesPath.add(superNode1);
 		List<String> missingPath = new ArrayList<String>();
 		missingPath.add("missing");
 		missingPath.add("does not exist");
 		// Test case for a link that is not free and only goes in one direction
-		// 'aabclnopt aadt
-		// ceenrst|aachikknosvy ceeeghirsv eegrsy|1'
+		String normalNode = "aabclnopt aadt abclot ceenrst";
 		List<String> notFreePath = new ArrayList<String>();
-		notFreePath.add("aabclnopt aadt ceenrst");
-		notFreePath.add("aachikknosvy ceeeghirsv eegrsy");
+		notFreePath.add(normalNode);
+		notFreePath.add(superNode1);
 		// Test case for self edge
 		List<String> selfEdgePath = new ArrayList<String>();
-		selfEdgePath.add("aabclnopt aadt ceenrst");
+		selfEdgePath.add(normalNode);
 
 		List<Double> superNodesExistencePrediction = existenceModel
 				.predictPath(superNodesPath, 16);
 		assertEqualsHelper("link between two super nodes (.99)",
-				0.9481924940415402, superNodesExistencePrediction.get(0), DELTA);
+				0.9699367295194332, superNodesExistencePrediction.get(0), DELTA);
 		List<Double> missingPathPrediction = existenceModel.predictPath(
 				missingPath, 16);
 		assertEqualsHelper("link between two non-existent nodes (0.0)",
@@ -141,7 +134,7 @@ public class AnalysisTest {
 		List<Double> notFreePathPrediction = existenceModel.predictPath(
 				notFreePath, 16);
 		assertEqualsHelper("paid link between two nodes (.99)",
-				0.9462583404841636, notFreePathPrediction.get(0), DELTA);
+				0.9699317075808634, notFreePathPrediction.get(0), DELTA);
 		List<Double> selfEdgePathPrediction = existenceModel.predictPath(
 				selfEdgePath, 16);
 		assertEqualsHelper("self edge (1.0)", 1.0,
@@ -150,128 +143,30 @@ public class AnalysisTest {
 				"missing edge between existing nodes (0.0)",
 				0.5000000004769575,
 				existenceModel.predictEdge(notFreePath.get(1),
-						notFreePath.get(0), 16));
+						notFreePath.get(0), 16), DELTA);
 
 		List<Double> superNodesCostPrediction = costModel.predictPath(
 				superNodesPath, 16);
 		assertEqualsHelper("cost of link between two super nodes (free)",
-				0.7831533781996293, superNodesCostPrediction.get(0), DELTA);
+				0.9490541549330433, superNodesCostPrediction.get(0), DELTA);
 		List<Double> missingPathCostPrediction = costModel.predictPath(
 				missingPath, 16);
 		assertEqualsHelper(
 				"cost of link between two non-existent nodes (not free?)",
-				0.49526607585186244, missingPathCostPrediction.get(0), DELTA);
+				0.021307255565861747, missingPathCostPrediction.get(0), DELTA);
 		List<Double> notFreePathCostPrediction = costModel.predictPath(
 				notFreePath, 16);
 		assertEqualsHelper("cost of paid link between two nodes (not free)",
-				0.06640988833979317, notFreePathCostPrediction.get(0), DELTA);
+				0.011264026671426293, notFreePathCostPrediction.get(0), DELTA);
 		List<Double> selfEdgeCostPrediction = costModel.predictPath(
 				selfEdgePath, 16);
 		assertEqualsHelper("self edge cost (1.0)", 1.0,
 				selfEdgeCostPrediction.get(0), DELTA);
 		assertEqualsHelper(
 				"cost of missing edge between existing nodes (0.0)",
-				0.5086387247678874,
+				0.021601273174569655,
 				costModel.predictEdge(notFreePath.get(1),
-						notFreePath.get(0), 16));
-
-		// TODO think more about non-optimal versus non-existent paths
-		// The existence model is too strongly positive right now to use it
-		// alone
-		// The cost model is useful for predicting cost, but how strongly does
-		// that relate to optimality?
-		// See how often costs actually change
-		// See whether more of the test paths which were optimal at some point,
-		// are low cost
-
-		// cceeilnorst dehiiln|aabcdginorst aabceknoprsstw
-		// ehnorstu|as61321|as60366|akmosss
-		List<String> optimalTestPath = new ArrayList<String>();
-		optimalTestPath.add("cceeilnorst dehiiln");
-		optimalTestPath.add("aabcdginorst aabceknoprsstw ehnorstu");
-		optimalTestPath.add("as61321");
-		optimalTestPath.add("as60366");
-		optimalTestPath.add("akmosss");
-
-		// abcfklnors acceiinnooqrrrtuu|as28233|abcdehiinnrsttt ceeirsv cehint
-		// eeinnrtt eilnno|as59900
-		List<String> nonOptimalTestPath = new ArrayList<String>();
-		nonOptimalTestPath.add("abcfklnors acceiinnooqrrrtuu");
-		nonOptimalTestPath.add("as28233");
-		nonOptimalTestPath
-				.add("abcdehiinnrsttt ceeirsv cehint eeinnrtt eilnno");
-		nonOptimalTestPath.add("as59900");
-
-		Writer testPathPredictions = new BufferedWriter(
-				new FileWriter(
-						"/Users/deflaux/rework/competitions/facebook2/data/testPathPredictions.txt"));
-
-		Double pathPrediction = null;
-		for (int epoch = 16; epoch <= 20; epoch++) {
-			Double optimalPathPrediction = predictPath(optimalTestPath, epoch,
-					existenceModel, costModel);
-			Double nonOptimalPathPrediction = predictPath(nonOptimalTestPath,
-					epoch, existenceModel, costModel);
-
-			switch (epoch) {
-			case 16:
-				assertEqualsHelper(epoch + " optimalTestPath prediction",
-						0.6948828681252357, optimalPathPrediction, DELTA);
-				assertEqualsHelper(epoch + " nonOptimalTestPath prediction",
-						0.1813483124439911, nonOptimalPathPrediction, DELTA);
-				break;
-			case 17:
-				assertEqualsHelper(epoch + " optimalTestPath prediction",
-						0.6720896217697186, optimalPathPrediction, DELTA);
-				assertEqualsHelper(epoch + " nonOptimalTestPath prediction",
-						0.1813483124439911, nonOptimalPathPrediction, DELTA);
-				break;
-			case 18:
-				assertEqualsHelper(epoch + " optimalTestPath prediction",
-						0.6375675583372872, optimalPathPrediction, DELTA);
-				assertEqualsHelper(epoch + " nonOptimalTestPath prediction",
-						0.1813483124439911, nonOptimalPathPrediction, DELTA);
-				break;
-			case 19:
-				assertEqualsHelper(epoch + " optimalTestPath prediction",
-						0.5953823955143761, optimalPathPrediction, DELTA);
-				assertEqualsHelper(epoch + " nonOptimalTestPath prediction",
-						0.1813483124439911, nonOptimalPathPrediction, DELTA);
-				break;
-			case 20:
-				assertEqualsHelper(epoch + " optimalTestPath prediction",
-						0.5609270296129919, optimalPathPrediction, DELTA);
-				assertEqualsHelper(epoch + " nonOptimalTestPath prediction",
-						0.1813483124439911, nonOptimalPathPrediction, DELTA);
-				break;
-			default:
-				fail("unexpected epoch " + epoch);
-			}
-
-			while (testing.hasNext()) {
-				List<String> path = testing.nextInstance();
-				pathPrediction = predictPath(path, epoch, existenceModel,
-						costModel);
-				testPathPredictions.write(formatter.format(pathPrediction)
-						+ "\n");
-			}
-			testing = new PredictionPaths(
-					"/Users/deflaux/rework/competitions/facebook2/data/normTestPaths.txt");
-		}
-		testPathPredictions.close();
-
-	}
-
-	private Double predictPath(List<String> path, int epoch,
-			ExistenceModel existenceModel, CostModel costModel) {
-		Double pathPrediction = 0.0;
-		List<Double> linkPredictions = existenceModel.predictPath(path, epoch);
-		List<Double> costPredictions = costModel.predictPath(path, epoch);
-		// Multiply them together and take the average?
-		for (int i = 0; i < linkPredictions.size(); i++) {
-			pathPrediction += linkPredictions.get(i) * costPredictions.get(i);
-		}
-		return pathPrediction / linkPredictions.size();
+						notFreePath.get(0), 16), DELTA);
 	}
 
 	void assertEqualsHelper(String testCase, Double expected, Double actual,

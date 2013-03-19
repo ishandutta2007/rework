@@ -71,11 +71,11 @@ public class DataStreamTest {
 		assertFalse(first.head.equals(nextFirst.head));
 		assertFalse(first.tail.equals(nextFirst.tail));
 
-		assertEqualsHelper("number of unique training nodes", 44132,
+		assertEqualsHelper("number of unique training nodes", 22568,
 				nodes.size());
-		assertEqualsHelper("number of unique FREE training edges", 24744,
+		assertEqualsHelper("number of unique FREE training edges", 13937,
 				freeEdges.size());
-		assertEqualsHelper("number of unique PAID training edges", 119551,
+		assertEqualsHelper("number of unique PAID training edges", 55439,
 				paidEdges.size());
 
 		Set<String> trainingEdges = new HashSet<String>(freeEdges);
@@ -84,10 +84,10 @@ public class DataStreamTest {
 		Set<String> edgesWithACostChange = new HashSet<String>(freeEdges);
 		edgesWithACostChange.retainAll(paidEdges);
 
-		assertEqualsHelper("number of unique training edges", 142355,
+		assertEqualsHelper("number of unique training edges", 67612,
 				trainingEdges.size());
 		assertEqualsHelper(
-				"number of unique training edges whose cost changed", 1940,
+				"number of unique training edges whose cost changed", 1764,
 				edgesWithACostChange.size());
 
 		Set<String> testNodes = new HashSet<String>();
@@ -119,22 +119,22 @@ public class DataStreamTest {
 			}
 		}
 		
-		assertEqualsHelper("number of unique test nodes", 10602,
+		assertEqualsHelper("number of unique test nodes", 9454,
 				testNodes.size());
-		assertEqualsHelper("number of unique test edges", 18503,
+		assertEqualsHelper("number of unique test edges", 15491,
 				testEdges.size());
 		testNodes.removeAll(nodes);
 		testEdges.removeAll(trainingEdges);
-		assertEqualsHelper("number of unique test nodes not in training", 240,
+		assertEqualsHelper("number of unique test nodes not in training", 12,
 				testNodes.size());
 		for(String tn : testNodes) {
 			System.out.println("not in training nodes: " + tn);
 		}
 		assertEqualsHelper("number of unique test edges not in training",
-				2898, testEdges.size());
+				236, testEdges.size());
 		assertEqualsHelper(
-				"Out of 10,000 how many test paths do we have training data for",
-				7538, numTestPathsKnown);
+				"Out of 10,000 test paths, we have training data for",
+				9672, numTestPathsKnown);
 	}
 
 	void assertEqualsHelper(String testCase, Object expected, Object actual) {

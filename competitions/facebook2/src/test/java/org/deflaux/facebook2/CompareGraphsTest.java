@@ -30,7 +30,11 @@ public class CompareGraphsTest {
 		
 		compareGraphs(filePathActualGraph, filePathActualGraph, existenceMetrics, costMetrics);
 		
-		assertEqualsHelper("num edges in 15 actual graph", 48741.0, existenceMetrics.getTruePositive());
+		// Dev Note: this is the number of unique edges in the file, not the total number of edges
+		// cut -d '|' -f "1-2" normTrain15.txt | sort | uniq | wc -l
+		// Not 
+		// wc -l normTrain15.txt
+		assertEqualsHelper("num edges in 15 actual graph", 48825.0, existenceMetrics.getTruePositive());
 		
 		assertEqualsHelper("edges from 15 not in 15", 0.0, existenceMetrics.getFalseNegative());
 		assertEqualsHelper("Existence f-score: " + existenceMetrics, 1.0, existenceMetrics.getFScore());
@@ -50,7 +54,7 @@ public class CompareGraphsTest {
 		assertEqualsHelper("num edges in 15 actual graph", 48741.0, existenceMetrics.getTruePositive() + existenceMetrics.getFalseNegative());
 		assertEqualsHelper("num edges in 15 predicted graph", 56748.0, existenceMetrics.getTruePositive() + existenceMetrics.getFalsePositive());
 		
-		assertEqualsHelper("edges from 15 not in 15", 9093.0, existenceMetrics.getFalseNegative());
+		assertEqualsHelper("edges from actual 15 not in predicted 15", 9093.0, existenceMetrics.getFalseNegative());
 		assertEqualsHelper("Existence f-score: " + existenceMetrics, 0.7516992293035293, existenceMetrics.getFScore());
 		assertEqualsHelper("Cost f-score: " + costMetrics, 0.9933842391875064, costMetrics.getFScore());				
 	}

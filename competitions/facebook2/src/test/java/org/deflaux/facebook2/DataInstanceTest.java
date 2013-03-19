@@ -13,6 +13,7 @@ public class DataInstanceTest {
 
 	@Before
 	public void setup() {
+		DataInstance.setHistoryWindowSize(8);
 		DataInstance.clearEdgeHistory();
 	}
 
