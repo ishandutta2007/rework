@@ -13,6 +13,7 @@ class Dijkstra:
         for edge in edges:
             self.gr.add_edge(edge, wt=edges[edge])
         self.vertices = vertices
+        self.edges = edges
         self.numVertices = len(vertices)
         self.numEdges = len(edges)
 
@@ -42,43 +43,87 @@ class Dijkstra:
         path.reverse()
         return(path)
 
-class TestAllPairsShortestPath(unittest.TestCase):
+    def pathCost(self, path):
+        if(1 == len(path)):
+            return 0
+        pathCost = 0
+        for i in range(0, len(path)-1):
+            edge = Edge(tail=path[i], head=path[i+1])
+            if(edge in self.edges):
+                pathCost += self.edges[edge]
+            else:
+                pathCost = sys.maxint
+        return(pathCost)
+                
+class TestDijkstra(unittest.TestCase):
 
-    def test_smallkaggle(self):
+    def footest_smallkaggle(self):
         dataDir = '/Users/deflaux/rework/competitions/facebook2/data/' 
         file = dataDir + 'graph16.txt'
         (vertices, edges) = self.fileInputTestHelper(file,separator='|')
         dijk = Dijkstra(vertices, edges)
-        self.assertEqual(['as62836','aegjmmoo'],
-                         dijk.shortestPath(tailName='as62836', headName='aegjmmoo'))
         self.assertEqual(0,
                          dijk.shortestPathCost(tailName='as62836', headName='aegjmmoo'))
-        self.assertEqual(['bciklmnnoprrst su','as60366','0002 0002accnott aaeiilnnnortt accnott'],
-                         dijk.shortestPath(tailName='bciklmnnoprrst su', headName='0002 0002accnott aaeiilnnnortt accnott'))
         self.assertEqual(0,
                          dijk.shortestPathCost(tailName='bciklmnnoprrst su', headName='0002 0002accnott aaeiilnnnortt accnott'))
+        self.assertEqual(1,
+                         dijk.shortestPathCost(tailName='beeegnstu fgist', headName='as63415'))
+        self.assertEqual(['bciklmnnoprrst su','as60366','0002 0002accnott aaeiilnnnortt accnott'],
+                         dijk.shortestPath(tailName='bciklmnnoprrst su', headName='0002 0002accnott aaeiilnnnortt accnott'))
+        self.assertEqual(['as62836','aegjmmoo'],
+                         dijk.shortestPath(tailName='as62836', headName='aegjmmoo'))
         
     def test_kaggle(self):
         dataDir = '/Users/deflaux/rework/competitions/facebook2/data/' 
         outfile = open(dataDir + 'optimalPathPreds.txt', 'w')
         for epoch in range(16,21):
-            file = dataDir + 'graph' + str(epoch) + '.txt'
-            (vertices, edges) = self.fileInputTestHelper(file,separator='|')
-            dijk = Dijkstra(vertices, edges)
-            infile = open('/Users/deflaux/rework/competitions/facebook2/data/normTestPaths.txt', 'r')
-            for line in infile:
-                values = line.split('|')
-                if(1 == len(values)):
-                    outfile.write('1\n')
-                    continue
-                values = [v.strip() for v in values]
-                shortestPath = dijk.shortestPath(tailName=values[0],
+            graphFilePath = dataDir + 'graph' + str(epoch) + '.txt'
+            self.predictGraph(graphFilePath, dataDir, outfile)
+
+    def footest_sanity(self):
+        dataDir = '/Users/deflaux/rework/competitions/facebook2/data/' 
+        for epoch in range(11,16):
+            outfile = open(dataDir + 'optimalPathPredsActual' + str(epoch) + '.txt', 'w')
+            graphFilePath = dataDir + 'normTrain' + str(epoch) + '.txt'
+            self.predictGraph(graphFilePath, dataDir, outfile)
+            outfile = open(dataDir + 'optimalPathPredsPredicted' + str(epoch) + '.txt', 'w')
+            graphFilePath = dataDir + 'graph' + str(epoch) + '.txt'
+            self.predictGraph(graphFilePath, dataDir, outfile)
+
+    def test_historicalOptimalityForDataCleaningV1(self):
+        dataDir = '/Users/deflaux/rework/competitions/facebook2/data/FromPosterSession/' 
+        for epoch in range(1,16): 
+            outfile = open(dataDir + 'optimalPathPredsActual' + str(epoch) + '.txt', 'w')
+            graphFilePath = dataDir + 'normTrain' + str(epoch) + '.txt'
+            self.predictGraph(graphFilePath, dataDir, outfile)
+
+    def test_historicalOptimalityForDataCleaningV2(self):
+        dataDir = '/Users/deflaux/rework/competitions/facebook2/data/' 
+        for epoch in range(1,16): 
+            outfile = open(dataDir + 'optimalPathPredsActual' + str(epoch) + '.txt', 'w')
+            graphFilePath = dataDir + 'normTrain' + str(epoch) + '.txt'
+            self.predictGraph(graphFilePath, dataDir, outfile)
+
+    def predictGraph(self, graphFilePath, dataDir, outfile):
+        (vertices, edges) = self.fileInputTestHelper(graphFilePath,separator='|')
+        dijk = Dijkstra(vertices, edges)
+        infile = open(dataDir + 'normTestPaths.txt', 'r')
+        for line in infile:
+            values = line.split('|')
+            if(1 == len(values)):
+                outfile.write('1\n')
+                continue
+            values = [v.strip() for v in values]
+            shortestPathCost = dijk.shortestPathCost(tailName=values[0],
                                                  headName=values[len(values)-1])
-                testPath = [string.strip(p) for p in values]
-                if(shortestPath == testPath):
-                    outfile.write('1\n')
-                else:
-                     outfile.write('0\n')
+            testPath = [string.strip(p) for p in values]
+            testPathCost = dijk.pathCost(testPath)
+            if(shortestPathCost == testPathCost):
+                outfile.write('1\n')
+            elif(shortestPathCost > testPathCost):
+                outfile.write('-1\n')
+            else:
+                outfile.write('0\n')
                     
     def test_simple(self):
         edges = {}

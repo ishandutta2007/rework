@@ -127,9 +127,6 @@ public class DataStreamTest {
 		testEdges.removeAll(trainingEdges);
 		assertEqualsHelper("number of unique test nodes not in training", 12,
 				testNodes.size());
-		for(String tn : testNodes) {
-			System.out.println("not in training nodes: " + tn);
-		}
 		assertEqualsHelper("number of unique test edges not in training",
 				236, testEdges.size());
 		assertEqualsHelper(

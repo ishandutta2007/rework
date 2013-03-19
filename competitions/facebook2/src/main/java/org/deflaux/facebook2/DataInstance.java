@@ -92,7 +92,7 @@ public class DataInstance {
 		tail = fields[0];
 		head = fields[1];
 		if (hasLabel) {
-			cost = Integer.valueOf(fields[2]);
+			cost = Integer.valueOf(fields[2].trim());
 			// Remap cost so that "free" is true in our logistic regression
 			// model
 			if (0 == cost) {
