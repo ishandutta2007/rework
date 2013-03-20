@@ -26,9 +26,11 @@ University of Washington Non-Matriculated Student, ID 1210660 \\
 \maketitle
 
 \begin{abstract}
-  This project applies online machine learning techniques appropriate for
+  This project applied online machine learning techniques appropriate for
   Big Data problems to the task of interdomain routing.
 \end{abstract}
+
+\tableofcontents
 
 \section{Project Idea}
 ``The Task: you will be given a path which, at one point in the training time
@@ -52,38 +54,38 @@ The domain of the data in this problem are the connections between
 autonomous systems[2] in the Internet.  More specifically, the nodes in the
 graph correspond to gateway routers for independent networks, and the directed
 edges between them encode the network peering relationships with edge weight
-indicating cost type of
+indicating the cost type of
 transit over those links.
 
-The training dataset consists of 15 graphs with anywhere from 46,603 to 49,520 directed edges each (so on the
-order of ~750,000 edges total).  Each graph was collected at sequential time
+The training dataset consists of 15 graphs with anywhere from $46,603$ to $49,520$ directed edges each (so on the
+order of $\approx 750,000$ edges total).  Each graph was collected at sequential time
 points indicating operational direct connections and their cost types in the
 network known at that point in time.  The format of each edge in the
 training graph is \texttt{tail router AS Name | head router AS
   Name | cost type for use of the link} where the cost type is either 0 for ``free'' or 1
 indicating that a fee is to be paid.  The number of unique node names in the
-training dataset is 372,037 but part of the competition is to figure out
+training dataset is $372,037$ but part of the competition is to figure out
 which of those "messy" names are duplicates.  A training edge may look like:
 
 \texttt{{\small GOOGLE-CORPNET Google Ireland Limited | FACEBOOK-CORP - Facebook Inc | 1}}
 
-The test dataset consists of 10,000 single or multi-edge paths for the (unobserved)
+The test dataset consists of $10,000$ single or multi-edge paths for the (unobserved)
 graphs at the next five time intervals.  A test path may look like:
 
 \texttt{{\small REDWIRE - VoloNet Technologies, Inc | NCN-AS FOP Sergey Sergeevich | DKB | JMC-AS - JPMorgan Chase \& Co. | PIERCE-COUNTY - Pierce County}}
 
-\subsection{Learning}
+\subsection{Approach and Challenges}
 
-Although this competition could be performed using batch machine learning,
-for the purposes of this project the problem will be reformulated as one for
-online machine learning.  The edges in each training graph will be randomly
-permuted and then fed incrementally to the learning algorithm, with all the
-edges of graph 1 streamed prior to those of graph 2, etc...
+Although this competition could have been performed using batch machine
+learning, for the purposes of this project the problem was reformulated as
+one for online machine learning.  The edges in each training graph were
+randomly permuted and then fed incrementally to the learning algorithm, with
+all the edges of graph 1 streamed prior to those of graph 2, etc...
 
-Note that to meet the goals of this competition, two models are needed: (1)
+Note that to meet the goals of this competition, two models were needed: (1)
 a classification model for edge existence and (2) a classification model for
-edge cost type.  Both will be learned incrementally as the edge data streams in
-and will reuse features.
+edge cost type.  Both were learned incrementally as the edge data streamed in
+and reused features.
 
 \textbf{Challenges}
 \begin{itemize}
@@ -93,149 +95,336 @@ and will reuse features.
 \item messy data: node names are mangled in the data and de-duping is needed
 \end{itemize}
 
-\section{Software and Algorithms}
+\section{Implementation}
 
 \subsection{Data Cleaning}
-Software was written to normalize and deduplicate the ``messy'' node names
-found in the input data.  Techniques such as tf-idf were used to determine
-which term(s) to remove from a multi-word node name to see if it
-corresponded to a shorter word name.  This is the only batch process in the project; everything else is streaming.
 
-\subsection{Features and Outcomes}
+Preprocessing was performed to compute a mapping of ``messy'' names to
+opaque keys.  An example is showing in Figure~1.  The software was able to reduce the number of unique node
+names in the training and test data from $384,644$ to $22,580$.  Additional
+results from the data cleaning process can be seen in Table~2.
 
-\textbf{Modeling Connections} A feature is created for each $(tail,head)$ pair and then hashed[3] into a
-constrained dimensional space since we do not know the true dimensionality
-of our input space.  
+\begin{table}
+\begin{tabular}{rrl} 
+\textbf{Raw Data} & \textbf{Cleaned Data} & \\
+372,042 & 22,568 & unique node names in training data \\ 
+23,991 & 9,454 & unique node names in test paths\\
+12,602 & 12 & unique node names in test paths but not in training data\\
+544,428 & 67,612 & unique edges in training data \\
+34,492 & 15,491 & unique edges in test paths \\
+NA & 215 & unique nodes names only used in a single edge \\
+31,208 & 236 & unique edges in test paths but not in training data \\
+87,468 & 13,937 & unique free cost type edges in training data \\
+458,171 & 55,439 & unique paid cost type edges in training data \\
+1,211 & 1,764 & unique edges that changed cost type in training data \\
+22 & 9,672 & number of test paths for which we have training data for all edges
+in the path \\
+\end{tabular}
+\caption{Data Cleaning Results}
+\end{table}
 
-\textbf{Modeling Connectedness} A feature is created for the degree of each node
-  involved in the edge  and then hashed[3] into a
-constrained dimensional space since we do not know the true dimensionality
-of our input space.  There are some nodes in
-  the data which are very high degree and likely to be robust in terms of
-  existence.  The value for this feature will be approximated rather than
-  exact to adhere with our streaming data and its incomplete nature.  The feature value will be facilitated by the use of a
-  bloom filter for each node observed encoding the set of nodes to which
-  this node is connected.  The degree will be approximated by the
-  number of bits set to true in the bloom filter.  
+\begin{figure}
+{\small \texttt{abccefkooopr abcefkoo cin | 38 | ['FACEBOOK-CORP Inc - Facebook Inc', 'Facebook FACEBOOK-CORP - Facebook Inc', 'O-BEFKORACOPC - Facebook Inc', 'FACEBOOK-CORP - Facebook FACEBOOK-CORP Inc', 'Inc FACEBOOK-CORP - Facebook Inc', 'FACEBOOK-CORP - FACEBOOK-CORP Facebook Inc', 'FACEBOOK-CORP - Facebook Inc', 'BPEAOC-CRFKOO - Facebook Inc', 'FACEBOOK-CORP - ceaoFkob Inc', 'FACEBOOK-CORP - - Facebook Inc', '- FACEBOOK-CORP - Facebook Inc', 'ECOBCARK-OOFP - Facebook Inc', 'FACEBOOK-CORP - Facebook', 'FACEBOOK-CORP - boackFeo Inc', 'FACEBOOK-CORP Facebook - Facebook Inc', '- Facebook Inc', 'FACEBOOK-CORP - Facebook Facebook Inc', 'FACEBOOK-CORP - Facebook ncI', 'FACEBOOK-CORP - Facebook Inc Inc', 'FACEBOOK-CORP FACEBOOK-CORP - Facebook Inc']}}
+\caption{A mapping of a single key to 38 ``messy'' names}
+\end{figure}
 
-\textbf{Modeling Temporality} NEED ADVICE HERE
+% \begin{tabular}{rl} 
+% 22,568 &  unique node names in training data \\ 
+% 9,454 &  unique node names in test paths\\
+% 12 &  unique node names in test paths but not in training data\\
+% 67,612 &  unique edges in training data \\
+% 15,491 &  unique edges in test paths \\
+% 236 &  unique edges in test paths but not in training data \\
+% 13,937 &  unique free cost type edges in training data \\
+% 55,439 &  unique paid cost type edges in training data \\
+% 1,764 &  unique edges that changed cost type in training data \\
+% 9,672 & number of test paths for which we have training data for all edges
+% in the path \\
+% 215 & unique nodes names only used in a single edge \\
+% \end{tabular}
 
-\subsubsection{Edge Cost Type Model}
-Let $s$ and $t$ be two nodes in the graph at time $t$.  Then we have
+% V1 O(n) Software was written to normalize and deduplicate the ``messy'' node names
+% found in the input data.  Techniques such as tf-idf were used to determine
+% which term(s) to remove from a multi-word node name to see if it
+% corresponded to a shorter word name. 
 
-$y_{cost\{u \rightarrow v\}}^{(t)} \in \{0,1\}$ 
+% union find
 
-where $1$ means that a fee must be paid for
-traffic traversing the edge directly
-between $s$ and $t$ and $0$ means that there is no fee.
+% V2 O(n^2)
 
-$x_{cost\{u \rightarrow v\}}^{(t)} \in R^{d+h}$ 
+\subsection{Features}
 
-is a column vector of length $n+m$
-where 
-\begin{itemize}
-\item $n$ is the dimension of the space into which we've hashed our node names
-\item $m$ is the dimension of the space into which we've hashed our directed
-edge names
-\end{itemize}
+\textbf{Modeling Connections} A feature is created for each $tail
+\rightarrow head$ pair and then hashed[3] into a constrained dimensional
+space since, for this task reformulated as online learning, the true
+dimensionality of our input space will change.
 
-The vector which consists of the following features created from
-edge $u \rightarrow v$ and the current epoch:
-\begin{itemize}
-\item The first $n$ values in $x$ are a Count-Min sketch of the degree of nodes in
-  the graph.  For a particular $x$ this is sparse.  The only entries that will have values are the hashed entries for node $u$ and $v$.
-\item The next $m$ values in $x$ are a Count-Min sketch of the number of
-  times we have seen edges in the graph.  For a particular $x$ this is
-  sparse.  The only entries that will have values is the hashed entry for
-  edge $u \rightarrow v$ with value 1.
-\end{itemize}
+\textbf{Modeling Connectedness} Features are created for the $head$ and
+$tail$ of each edge and then hashed[3] into the same constrained dimensional
+space.  There are some nodes in the data which are very high degree and
+likely to be robust in terms of existence.  This feature attempts to
+approximate the degree of each node per the data streamed in.
+
+\textbf{Modeling Temporality} Features are created from a sliding window of
+past information from prior epochs about existence and cost of the edge.
+Bloom filters are used to compactly store this high dimensional historical
+data.
+
+Note that time is a very important factor in this model.  In this
+reformulated version of the problem, information about
+the network is continually streaming in.  The notion of epoch is used to
+indicate a interval of time during which we would expect to receive the
+state from \emph{most} nodes in the graph.
+
+This notion of epoch maps onto the training data such that all edges from
+\texttt{train1.txt} regardless of their order are considered to be in $epoch
+1$, all edges from \texttt{train2.txt} regardless of their order are
+considered to be in $epoch 2$, ... all edges from \texttt{train15.txt}
+regardless of their order are considered to be in $epoch 15$.  Therefore
+when we train upon an edge at time $t$ the function $epoch(t)$ is defined as
+$epoch(t) \in {1, ..., 15}$ corresponding to the training graph from which
+the edge came.\footnote{In a more realistic situation, the duration of an
+  epoch might be 5 minutes, or 30 minutes, or an hour; when we train upon an
+  edge at time $t$ the function $epoch(t)$ is defined as $epoch(t) \in N$
+  monontonically increasing as each epoch duration elapses.}
+
+
+\subsection{Models}
 
 \subsubsection{Edge Existence Model}
 
-Let $u$ and $v$ be two nodes in the graph at time $t$.  Then we have
+Let $u$ and $v$ be two nodes in the graph at time $t$.  Then we have the
+binary label $y_{exists\{u \rightarrow v\}}^{(t)} \in \{0,1\}$ where $1$
+means that an edge exists directly between $u$ and $v$, $0$ that the edge
+does not exist.  Note that in our training data we only have labels where
+$y_{exists\{u \rightarrow v\}}^{(t)} = 1$.
 
-$y_{exists\{u \rightarrow v\}}^{(t)} \in \{0,1\}$ 
+% Edges missing from the training data are assumed $y_{exists\{u \rightarrow
+%   v\}}^{(t)} = 0$.  
 
-where $1$ means that an edge exists directly
-between $u$ and $v$, $0$ that the edge does not exist.  Note that in our
-training data we only have outcomes where $y_{exists\{u \rightarrow v\}}^{(t)} = 1$.
-Edges missing from the training data are assumed $y_{exists\{u \rightarrow v\}}^{(t)} = 0$.
+We have the feature vector $x_{exists\{u \rightarrow v\}}^{(t)} \in R^{d+h}$
+which is a column vector of length $d+h$ where
+\begin{itemize}
+\item $d$ is the dimension of the space into which we've hashed our edge,
+  tail, and head names
+\item $h$ is the size of the sliding window of historical data
+\end{itemize}
 
-$x_{exists\{u \rightarrow v\}}^{(t)} \in R^{d+h}$ 
+For a particular edge $u \rightarrow v$ and the current epoch, the feature
+vector will hold the following values:
+\begin{itemize}
+\item The first $d$ values in $x$ are sparse.  The only entries that will
+  have values are the hashed entries for the edge, tail, and head names of
+  edge $u \rightarrow v$.
+\item The next $h$ values in $x$ are binary indicators of the existence of
+  edge $u \rightarrow v$ at $epoch(t)-1, epoch(t)-2, ..., epoch(t)-h$.
+\end{itemize}
 
-is defined exactly the same as for the
-edge cost model.
+\subsubsection{Edge Cost Type Model}
+Let $u$ and $v$ be two nodes in the graph at time $t$.  Then we have the
+binary label $y_{cost\{u \rightarrow v\}}^{(t)} \in \{0,1\}$ where $0$ means
+that a fee must be paid for traffic traversing the edge directly between $u$
+and $v$ and $1$ means that there is no fee.
+
+We have the features vector similar to the existence model $x_{cost\{u
+  \rightarrow v\}}^{(t)} \in R^{d+h}$ which is a column vector of length
+$d+h$ where
+\begin{itemize}
+\item $d$ is the dimension of the space into which we've hashed our edge,
+  tail, and head names
+\item $h$ is the size of the sliding window of historical data
+\end{itemize}
+
+For a particular edge $u \rightarrow v$ and the current epoch, the feature
+vector will hold the following values:
+\begin{itemize}
+\item The first $d$ values in $x$ are sparse.  The only entries that will
+  have values are the hashed entries for the edge, tail, and head names of
+  edge $u \rightarrow v$.
+\item The next $h$ values in $x$ are binary indicators of cost type free of
+  edge $u \rightarrow v$ at  $epoch(t)-1, epoch(t)-2, ..., epoch(t)-h$.  Note that when building
+  this portion of the feature vector, if the edge did not exist during
+  $epoch(t)-j$ where $j < h$ we backfill the with cost value from the most
+  recently observed prior epoch.
+\end{itemize}
 
 \subsection{Learning Algorithm}
 
-Stochastic gradient descent will be used.  In addition to penalization via
-regularization, weights will be boosted using the time interval $t$ so that more
-recent data is emphasized.\footnote{I would greatly appreciate any
-  suggestions as to how to better model recency of edges and also robustness
-  of edges over time.  (e.g., a recent edge may have come and go repeatedly so it
-  should be considered ``flaky''; a specific example may be routers in India
-  where the power situation is sporadic.)}
+Stochastic gradient descent[4][5] was used to train both models.
 
 \begin{displaymath}
-w_i^{(t+1)} = w_i^{(t)} + epoch(t)*\tau*\eta \{- \lambda w_i^{(t)} + x_i^{(t)} [ y^t -  p(Y=1|x^{(t)},w^{(t)})] \}
+w_i^{(t+1)} = w_i^{(t)} + \eta \{- \lambda w_i^{(t)} + x_i^{(t)} [ y^t -  Prob(Y=1|x^{(t)},w^{(t)})] \}
 \end{displaymath}
-where $epoch(t) \in \{ 1,...,15 \}$ for each of our 15 training graphs.  In a more realistic situation, the epoch would be derived from the time at
-which the edge information was received by the learner.
 
-% \subsection{Prediction Pseudocode}
+where
+\begin{displaymath}
+Prob(Y=1|x^{(t)},w^{(t)}) = \frac{exp(\sum_{k=1}^{d+h} w_kx_k)}{1+exp(\sum_{k=1}^{d+h} w_kx_k)}
+\end{displaymath}
 
-% \textsf{\small for each edge in the path, use the existence model to determine its probability of existence, multiply all the probabilities together}
+Note that during each traing step, we are also recording history.  When we
+train upon edge $u \rightarrow v$ at time $t$ the edge is added to the
+existence bloom filter associated with $epoch(t)$.  If it is of the free
+cost type, it is also added to the cost bloom filter associated with
+$epoch(t)$.
 
-% \textsf{\small for each edge in the path, use the cost model to determine its probable cost, sum all the costs together}
+\subsection{Prediction Process}
+\label{sec-pred}
 
-% \textsf{\small generate additional possible paths between tail and head (can keep graph generation simple at first and remove links in the test path to try shorter paths and/or replace intermediate nodes in the path with nodes of high degree)}
+Prediction for this Kaggle competition consists of multiple steps.
 
-% \textsf{\small compute the existence probability and cost of each candiate path graph}
+\begin{enumerate}
+\item First predict the graph for epoch 16.  To do this, for each possible edge in the graph:
+  \begin{enumerate}
+  \item predict whether the edge in the graph exists during epoch 16
+  \item if the prediction is true, then predict its cost type
+  \end{enumerate}
+\item Then determine the optimality of the test paths.  To do this, for each path in the test paths:
+  \begin{enumerate}
+  \item compute the cost of the test path in our predicted graph for epoch 16
+  \item use Dijkstra's algorithm to compute cost of the shortest path in the
+    predicted graph between the tail and the head of the test path
+  \item if the costs are equal, the path is still ``optimal'' in epoch 16
+  \end{enumerate}
+\end{enumerate}
 
-% \textsf{\small use decision theory to compare the test path with the candidate paths to determine the final prediction}
+Repeat this for epochs 17 through 20.
+
+\subsection{Software}
+
+The code for this implementation is hosted on github
+\url{https://github.com/deflaux/rework/tree/master/competitions/facebook2}
+and consists of Java, Python, and R code.
+
+% \begin{verbatim}
+% ~/rework/competitions/facebook2>find . -name *.java | xargs cat | wc -l
+%     2352
+% ~/rework/competitions/facebook2>find . -name *.py | xargs cat | wc -l
+%      571
+% ~/rework/competitions/facebook2>find . -name *.R | xargs cat | wc -l
+%       80
+% ~/rework/competitions/facebook2>find src/main/ -name *.java | xargs cat | wc -l
+%     1130
+% \end{verbatim}
+
 
 \section{Current Results}
 
-\subsection{AS Name Cleaning}
+Some amount of model parameter tuning was performed and the chosen
+parameters are shown in Table~2.
 
-Preprocessing was performed to compute a mapping of ``messy'' names to opaque
-keys.  The software was able to reduce the number of unique node names from
-372,037 to 44,015. For example the following key maps to 35 different unique node names
-found in the data:
+\begin{table}
+\begin{tabular}{rrl} 
+\textbf{Existence Model} & \textbf{Cost Model} & \textbf{Parameter} \\
+10 & 10 & $h$ history sliding window size\\
+65,536 & 65,536 & $d$ dimensionality of hashed text feature\\
+0.05 & 0.05 & $\eta$ step size of stochastic gradient descent\\
+0.1 & 0.001 & $\lambda$ regularization for stochastic gradient descent\\
+\end{tabular}
+\caption{Model parameters used for the current results}
+\end{table}
 
-{\small \texttt{abccefkooopr abcefkoo|35|['FACEBOOK-CORP Inc - Facebook
-    Inc', 'Facebook FACEBOOK-CORP - Facebook Inc', 'O-BEFKORACOPC - Facebook
-    Inc', \\
-... \\'FACEBOOK-CORP - Facebook Inc Inc', 'FACEBOOK-CORP FACEBOOK-CORP - Facebook Inc']}}
+\subsection{Training Performance}
 
-\subsection{Random Chance Prediction}
+For both models, the training data was skewed. For the existence model,
+\emph{all data} was positive.  For the cost model, only $17\%$ of edges were of
+the free cost type.  Training performance improved over time in general, but
+not always, as shown in Figure~2 and Figure~3.
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[scale=.1]{trainingLosses.png}
+  \end{center}
+  \caption{Training losses per epoch}
+\end{figure}
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[scale=.1]{trainingAverageLoss.png}
+  \end{center}
+  \caption{Average training losses per epoch}
+\end{figure}
+
+\subsection{Graph Prediction Performance}
+
+As mentioned previously, the test graphs for epochs 16 through 20 are not
+provided to contestants.  In order to determine the performance of graph
+prediction, training data from epochs 1 through 10 \emph{only} were used to
+train the model.  Then the graphs for epochs 11 through 15 were predicted
+and compared against the training graphs for epochs 11 through 15.  The
+results can be seen in Figure~4.  For both models performance degrades over
+time, as anticipated, as the model has less history upon which to form its
+prediction.  Note that the existence model degrades more rapidly than the
+cost model for at least two reasons (1) we only predict cost if we have
+already determined that the edge exists, and (2) we observed in the training
+data that edges only change cost 2.6\% of the time so the cost history
+backfilling strategy works well.
+
+\begin{figure}
+  \begin{center}
+    \includegraphics[scale=.1]{predictingFutureGraphs.png}
+  \end{center}
+  \caption{F-Score of predicted future graphs}
+\end{figure}
+
+\subsection{Optimality Prediction Performance}
+
+In order to determine the performance of optimality prediction, I performed
+the second step in Section~\ref{sec-pred} upon both the training graphs and
+predicted graphs for epochs 11 through 15.  From Figure XXX you can see YYY.
+
+\subsection{Kaggle Leaderboard Position}
 
 Kaggle leaderboard rankings are determined as follows: ``Your predictions
 will be evaluated by the Area Under the ROC Curve (AUC) metric.  While the
-ground-truth is binary, real-valued submissions are allowed. ``[1]  Included
-is a screenshot of the ranking of a random chance prediction which will
-serve at the baseline for this project.
+ground-truth is binary, real-valued submissions are allowed. ``[1]  Figure~5
+shows the leaderboard position of a random chance prediction which 
+serves as the baseline for this project.  Figure~6 shows the leaderboard
+position for optimality predictions of the $10,000$ test paths in epochs 16
+though 20 using the models trained with data from epochs 1 through 15.
 
+Note that the benchmark model submitted by the contest creators is at
+leaderboard position 36.  It is described as ``This benchmark takes the mode over the 15 training graphs. If the given path is optimal in the graph, it receives a value of 1. If not, it gets a 0. The mode is then taken over all 15 values.''
+
+Computing the historical mode over my own normalized training data results
+in a leaderboard position of XXX shown in Figure~7 which implies YYY
+
+\begin{figure}
   \begin{center}
     \includegraphics[scale=.4]{randomPredictions.png}
   \end{center}
+  \caption{Random Change Prediction Leaderboard Score}
+\end{figure}
 
-\section{Discussion}
+\begin{figure}
+  \begin{center}
+    \includegraphics[scale=.4]{leaderboard.png}
+  \end{center}
+  \caption{Current Model Leaderboard Score}
+\end{figure}
 
 \section{Next Steps}
 
-QUOTE TUBES HERE
+Many different approaches could be taken to improve the performance of this model.
 
-penalize older history more heavily
+\begin{itemize}
+\item improve the name cleaning process to bring the historical mode of my
+  normalized training graphs closer to that of the benchmark model.
+\item penalize older history more heavily
+\item fabricate negative existence data for training
+\item try other ways to model recency of edges and also robustness
+  of edges over time  (e.g., a recent edge may have come and go repeatedly so it
+  should be considered ``flaky''; a specific example may be routers in India
+  where the power situation is sporadic.)
+\item use a min-count sketch[6] at each epoch to record the degree of each
+node and use it in feature values for future time periods 
+\end{itemize}
 
-~/rework/competitions/facebook2>find . -name *.java | xargs cat | wc -l
-    2352
-~/rework/competitions/facebook2>find . -name *.py | xargs cat | wc -l
-     571
-~/rework/competitions/facebook2>find . -name *.R | xargs cat | wc -l
-      80
-~/rework/competitions/facebook2>find src/main/ -name *.java | xargs cat | wc -l
-    1130
+\begin{quote}
+For all of us sitting in front of our screens, the Internet only works
+because every network is connected, somehow, to every other. So where do
+those connections physically happen? More than most anywhere else, the
+answer is ``Ashburn.''[7]  
+\end{quote}
 
 \subsubsection*{References}
 
@@ -248,5 +437,16 @@ penalize older history more heavily
 
 [4] Nemirovski, Arkadi, et al. {\it Robust stochastic approximation approach to stochastic programming.} SIAM Journal on Optimization 19.4 (2009): 1574-1609.
 }
+
+[5] Le Cun, Leon Bottou Yann. {\it Large Scale Online Learning.} Advances in
+Neural Information Processing Systems 16: Proceedings of the 2003
+Conference. Vol. 16. MIT Press, 2004.
+
+[6] Cormode, Graham, and S. Muthukrishnan. {\it An improved data stream
+  summary: the count-min sketch and its applications.} Journal of Algorithms
+55.1 (2005): 58-75. 
+
+[7] Blum, Andrew. {\it Tubes: A Journey to the Center of the
+  Internet}. Ecco, 2012.
 
 \end{document}

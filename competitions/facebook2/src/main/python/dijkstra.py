@@ -73,31 +73,28 @@ class TestDijkstra(unittest.TestCase):
         self.assertEqual(['as62836','aegjmmoo'],
                          dijk.shortestPath(tailName='as62836', headName='aegjmmoo'))
         
-    def test_kaggle(self):
+    def footest_kaggle(self):
         dataDir = '/Users/deflaux/rework/competitions/facebook2/data/' 
         outfile = open(dataDir + 'optimalPathPreds.txt', 'w')
         for epoch in range(16,21):
             graphFilePath = dataDir + 'graph' + str(epoch) + '.txt'
             self.predictGraph(graphFilePath, dataDir, outfile)
 
-    def footest_sanity(self):
+    def test_sanity(self):
         dataDir = '/Users/deflaux/rework/competitions/facebook2/data/' 
         for epoch in range(11,16):
-            outfile = open(dataDir + 'optimalPathPredsActual' + str(epoch) + '.txt', 'w')
-            graphFilePath = dataDir + 'normTrain' + str(epoch) + '.txt'
-            self.predictGraph(graphFilePath, dataDir, outfile)
             outfile = open(dataDir + 'optimalPathPredsPredicted' + str(epoch) + '.txt', 'w')
             graphFilePath = dataDir + 'graph' + str(epoch) + '.txt'
             self.predictGraph(graphFilePath, dataDir, outfile)
 
-    def test_historicalOptimalityForDataCleaningV1(self):
+    def footest_historicalOptimalityForDataCleaningV1(self):
         dataDir = '/Users/deflaux/rework/competitions/facebook2/data/FromPosterSession/' 
         for epoch in range(1,16): 
             outfile = open(dataDir + 'optimalPathPredsActual' + str(epoch) + '.txt', 'w')
             graphFilePath = dataDir + 'normTrain' + str(epoch) + '.txt'
             self.predictGraph(graphFilePath, dataDir, outfile)
 
-    def test_historicalOptimalityForDataCleaningV2(self):
+    def footest_historicalOptimalityForDataCleaningV2(self):
         dataDir = '/Users/deflaux/rework/competitions/facebook2/data/' 
         for epoch in range(1,16): 
             outfile = open(dataDir + 'optimalPathPredsActual' + str(epoch) + '.txt', 'w')

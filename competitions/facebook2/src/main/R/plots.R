@@ -1,67 +1,111 @@
-# 11 Existence f-score: 0.7511368294612811, ErrorMetrics [truePositive=39396.0, falsePositive=17504.0, trueNegative=0.0, falseNegative=8601.0, getPrecision()=0.6923725834797891, getRecall()=0.8208013000812551, getLoss()=26105.0, getFScore()=0.7511368294612811], org.deflaux.facebook2.ExistenceModel [step=0.05, lambda=0.1, numDimensions=65536, trainingCount=477663, metrics for epoch 11=ErrorMetrics [truePositive=48249.0, falsePositive=0.0, trueNegative=0.0, falseNegative=744.0, getPrecision()=1.0, getRecall()=0.9848141571244872, getLoss()=744.0, getFScore()=0.9923489850064786]]
-# 11 Cost f-score: 0.9947273780134711, ErrorMetrics [truePositive=32638.0, falsePositive=55.0, trueNegative=6412.0, falseNegative=291.0, getPrecision()=0.9983176826843667, getRecall()=0.9911628048224969, getLoss()=346.0, getFScore()=0.9947273780134711], org.deflaux.facebook2.CostModel [step=0.05, lambda=0.0010, numDimensions=65536, trainingCount=477663, metrics for epoch 11=ErrorMetrics [truePositive=7540.0, falsePositive=452.0, trueNegative=40216.0, falseNegative=785.0, getPrecision()=0.9434434434434434, getRecall()=0.9057057057057057, getLoss()=1237.0, getFScore()=0.9241894956180671]]
-
 library(ggplot2)
+library(testthat)
 setwd('/Users/deflaux/rework/competitions/facebook2')
 
-x <-    rbind(c(epoch=11, model='Cost', fscore=0.9947273780134711),
-    c(epoch=11, model='Existence', fscore=0.7511368294612811),
-      c(epoch=12, model='Cost', fscore=0.9943872922144823),
-      c(epoch=12, model='Existence', fscore=0.7563505914291255),
-      c(epoch=13, model='Cost', fscore= 0.9943001102188631),
-      c(epoch=13, model='Existence', fscore=0.7560101390154066),
-      c(epoch=14, model='Cost', fscore= 0.9935555993950155),
-      c(epoch=14, model='Existence', fscore=0.7384952369144298),
-      c(epoch=15, model='Cost', fscore= 0.9920433579335792),
-      c(epoch=15, model='Existence', fscore=0.6923697478991596))
+x <- rbind(
+    c(epoch=11,model='Existence',fscore=0.9078122641984003),
+    c(epoch=11,model='Cost',fscore=0.9958175609497844),
+    c(epoch=12,model='Existence',fscore=0.9029328974847908),
+    c(epoch=12,model='Cost',fscore=0.995648924243233),
+    c(epoch=13,model='Existence',fscore=0.8937851390366206),
+    c(epoch=13,model='Cost',fscore=0.994868323065466),
+    c(epoch=14,model='Existence',fscore=0.8716191510922141),
+    c(epoch=14,model='Cost',fscore=0.9939125312087973),
+    c(epoch=15,model='Existence',fscore=0.8555241995374397),
+    c(epoch=15,model='Cost',fscore=0.9924948164588383)
+    )
 data <- data.frame(cbind(epoch=as.numeric(x[,'epoch']), model=x[,'model'], FScore=as.numeric(x[,'fscore'])))
 
 Epoch=as.numeric(x[,'epoch'])
 FScore=as.numeric(x[,'fscore'])
 Model=x[,'model']
 theme_set(theme_gray(base_size = 18))
-qplot(Epoch, FScore, shape=Model, color=Model,   
+qplot(Epoch, FScore, linetype=Model, color=Model,   
       geom=c("point", "smooth"), alpha=I(1/50),
-      ylim=c(0.0, 1.0), size= I(1),
+      ylim=c(0.8, 1.0), size= I(1),
       main='Predicting Future Graphs')
-ggsave("predictingFutureGraphs.png")
+ggsave("Paper/predictingFutureGraphs.png")
 
-losses = rbind(c(model='Existence', cases=46638.0, losses=3251.0, epoch=1, averageLoss=0.0697071057935589),
-c(model='Cost', cases=46638.0, losses=3779.0, epoch=1, averageLoss=0.08102834598396158),
-c(model='Existence', cases=46604.0, losses=1128.0, epoch=2, averageLoss=0.024203930993047806),
-c(model='Cost', cases=46604.0, losses=1759.0, epoch=2, averageLoss=0.03774354132692473),
-c(model='Existence', cases=47211.0, losses=907.0, epoch=3, averageLoss=0.01921162440956557),
-c(model='Cost', cases=47211.0, losses=1380.0, epoch=3, averageLoss=0.029230475948401856),
-c(model='Existence', cases=47461.0, losses=813.0, epoch=4, averageLoss=0.017129853985377468),
-c(model='Cost', cases=47461.0, losses=1123.0, epoch=4, averageLoss=0.02366153262678831),
-c(model='Existence', cases=48033.0, losses=806.0, epoch=5, averageLoss=0.01678013032706681),
-c(model='Cost', cases=48033.0, losses=1310.0, epoch=5, averageLoss=0.02727291653654779),
-c(model='Existence', cases=47875.0, losses=762.0, epoch=6, averageLoss=0.01591644908616188),
-c(model='Cost', cases=47875.0, losses=1195.0, epoch=6, averageLoss=0.02496083550913838),
-c(model='Existence', cases=48586.0, losses=702.0, epoch=7, averageLoss=0.014448606594492241),
-c(model='Cost', cases=48586.0, losses=1224.0, epoch=7, averageLoss=0.025192442267319804),
-c(model='Existence', cases=47749.0, losses=788.0, epoch=8, averageLoss=0.016502963412846343),
-c(model='Cost', cases=47749.0, losses=1269.0, epoch=8, averageLoss=0.026576472805713208),
-c(model='Existence', cases=48513.0, losses=710.0, epoch=9, averageLoss=0.014635252406571434),
-c(model='Cost', cases=48513.0, losses=1156.0, epoch=9, averageLoss=0.023828664481685323),
-c(model='Existence', cases=48993.0, losses=753.0, epoch=10, averageLoss=0.015369542587716613),
-c(model='Cost', cases=48993.0, losses=1251.0, epoch=10, averageLoss=0.025534259996326004),
-c(model='Existence', cases=48498.0, losses=706.0, epoch=11, averageLoss=0.01455730133201369),
-c(model='Cost', cases=48498.0, losses=1198.0, epoch=11, averageLoss=0.024702049569054394),
-c(model='Existence', cases=48983.0, losses=778.0, epoch=12, averageLoss=0.015883061470306024),
-c(model='Cost', cases=48983.0, losses=1171.0, epoch=12, averageLoss=0.023906253189882203),
-c(model='Existence', cases=49521.0, losses=812.0, epoch=13, averageLoss=0.016397084065346016),
-c(model='Cost', cases=49521.0, losses=1268.0, epoch=13, averageLoss=0.025605298762141314),
-c(model='Existence', cases=48679.0, losses=723.0, epoch=14, averageLoss=0.01485240041907188),
-c(model='Cost', cases=48679.0, losses=1173.0, epoch=14, averageLoss=0.024096633045050227),
-c(model='Existence', cases=49244.0, losses=791.0, epoch=15, averageLoss=0.016062870603525303),
-c(model='Cost', cases=49244.0, losses=1334.0, epoch=15, averageLoss=0.027089594671432054))
-
+losses = rbind(
+    c(model='Existence', cases=46638.0, losses=2758.0, epoch=1, averageLoss=0.0591363266006261),
+    c(model='Cost', cases=46638.0, losses=5875.0, epoch=1, averageLoss=0.12597023886101463),
+    c(model='Existence', cases=46604.0, losses=241.0, epoch=2, averageLoss=0.005171229937344434),
+    c(model='Cost', cases=46604.0, losses=965.0, epoch=2, averageLoss=0.02070637713500987),
+    c(model='Existence', cases=47211.0, losses=159.0, epoch=3, averageLoss=0.003367859185359344),
+    c(model='Cost', cases=47211.0, losses=1028.0, epoch=3, averageLoss=0.02177458643112834),
+    c(model='Existence', cases=47461.0, losses=140.0, epoch=4, averageLoss=0.002949790354185542),
+    c(model='Cost', cases=47461.0, losses=509.0, epoch=4, averageLoss=0.010724594930574576),
+    c(model='Existence', cases=48033.0, losses=121.0, epoch=5, averageLoss=0.002519101451085712),
+    c(model='Cost', cases=48033.0, losses=1231.0, epoch=5, averageLoss=0.02562821393625216),
+    c(model='Existence', cases=47875.0, losses=134.0, epoch=6, averageLoss=0.0027989556135770235),
+    c(model='Cost', cases=47875.0, losses=833.0, epoch=6, averageLoss=0.01739947780678851),
+    c(model='Existence', cases=48586.0, losses=115.0, epoch=7, averageLoss=0.00236693697773021),
+    c(model='Cost', cases=48586.0, losses=756.0, epoch=7, averageLoss=0.015560037870991644),
+    c(model='Existence', cases=47749.0, losses=115.0, epoch=8, averageLoss=0.0024084274016209764),
+    c(model='Cost', cases=47749.0, losses=956.0, epoch=8, averageLoss=0.02002136170391003),
+    c(model='Existence', cases=48513.0, losses=108.0, epoch=9, averageLoss=0.002226207408323542),
+    c(model='Cost', cases=48513.0, losses=679.0, epoch=9, averageLoss=0.013996248428256343),
+    c(model='Existence', cases=48993.0, losses=116.0, epoch=10, averageLoss=0.002367685179515441),
+    c(model='Cost', cases=48993.0, losses=770.0, epoch=10, averageLoss=0.015716530932990427),
+    c(model='Existence', cases=48498.0, losses=127.0, epoch=11, averageLoss=0.002618664687203596),
+    c(model='Cost', cases=48498.0, losses=691.0, epoch=11, averageLoss=0.014248010227225865),
+    c(model='Existence', cases=48983.0, losses=113.0, epoch=12, averageLoss=0.002306922809954474),
+    c(model='Cost', cases=48983.0, losses=688.0, epoch=12, averageLoss=0.014045689320784762),
+    c(model='Existence', cases=49521.0, losses=130.0, epoch=13, averageLoss=0.002625148926717958),
+    c(model='Cost', cases=49521.0, losses=827.0, epoch=13, averageLoss=0.0166999858645827),
+    c(model='Existence', cases=48679.0, losses=129.0, epoch=14, averageLoss=0.00265001335278046),
+    c(model='Cost', cases=48679.0, losses=767.0, epoch=14, averageLoss=0.015756280942500873),
+    c(model='Existence', cases=49244.0, losses=107.0, epoch=15, averageLoss=0.0021728535456096176),
+    c(model='Cost', cases=49244.0, losses=1207.0, epoch=15, averageLoss=0.024510600276175777)
+    )
+    
 Epoch=as.numeric(losses[,'epoch'])
 AverageLoss=as.numeric(losses[,'averageLoss'])
+Losses=as.numeric(losses[,'losses'])
 Model=losses[,'model']
-qplot(Epoch, AverageLoss, shape=Model, color=Model,   
+qplot(Epoch, Losses, linetype=Model, color=Model,   
       geom=c("point", "smooth"), alpha=I(1/50),
-      ylim=c(0.0, 1.0),
+      size= I(1),
+      main='Training Losses')
+ggsave("Paper/trainingLosses.png")
+
+qplot(Epoch, AverageLoss, linetype=Model, color=Model,          
+      geom=c("point", "smooth"), alpha=I(1/50),
+      ylim=c(0.0, 0.25), size= I(1),
       main='Training Average Loss')
-ggsave("Training Average Loss.png")
+ggsave("Paper/trainingAverageLoss.png")
+
+edges = c(freeEdges=119276, paidEdges=603312)
+edges/sum(edges)
+
+
+# See how much our optimality predictions differ when computed upon our predicted 
+# graph for epoch 11 versus the actual graph for epoch 11
+setwd('/Users/deflaux/rework/competitions/facebook2/data')
+foo=read.table('optimalPathPredsPredicted11.txt', header=F)
+bar=read.table('optimalPathPredsActual11.txt', header=F)
+sum(foo$V1 != bar$V1)
+length(foo$V1)
+sum(foo$V1 != bar$V1)/length(foo$V1)
+
+
+# Sanity check, compute optimality predictions upon the normalized _training_ data to see
+# if the normalization process was okay
+computeHistoricalMean <- function() {
+    foo = lapply(seq(1,15), function(i) {
+        bar=read.table(paste('optimalPathPredsActual', i, '.txt', sep=''), header=F)
+        bar$V1
+    })
+    data = as.data.frame(do.call(cbind,foo))
+    expect_that(dim(data), equals(c(10000,15)))
+    meanPred = apply(data, 1,mean)
+    expect_that(length(meanPred), equals(10000))
+    write(rep(meanPred,5), file="historicalMean.txt", ncolumns=1) 
+    modePred = rowSums(data) > 7
+    expect_that(length(modePred), equals(10000))
+    write(rep(as.numeric(modePred),5), file="historicalMode.txt", ncolumns=1) 
+}
+setwd('/Users/deflaux/rework/competitions/facebook2/data')
+computeHistoricalMean()
+setwd('/Users/deflaux/rework/competitions/facebook2/data/FromPosterSession')
+computeHistoricalMean()
