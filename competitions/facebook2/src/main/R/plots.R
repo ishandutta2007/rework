@@ -82,11 +82,21 @@ edges/sum(edges)
 # See how much our optimality predictions differ when computed upon our predicted 
 # graph for epoch 11 versus the actual graph for epoch 11
 setwd('/Users/deflaux/rework/competitions/facebook2/data')
-foo=read.table('optimalPathPredsPredicted11.txt', header=F)
-bar=read.table('optimalPathPredsActual11.txt', header=F)
-sum(foo$V1 != bar$V1)
-length(foo$V1)
-sum(foo$V1 != bar$V1)/length(foo$V1)
+optimalityDelta <- lapply(seq(11,15), function(i) {
+    foo=read.table(paste('optimalPathPredsPredicted', i, '.txt', sep=''), header=F)
+    bar=read.table(paste('optimalPathPredsActual', i, '.txt', sep=''), header=F)
+    expect_that(length(foo$V1), equals(10000))
+    expect_that(length(bar$V1), equals(10000))
+    sum(foo$V1 != bar$V1)/length(foo$V1)
+})
+
+setwd('/Users/deflaux/rework/competitions/facebook2')
+qplot(x=seq(11,15), y=unlist(optimalityDelta),          
+      geom=c("point", "smooth"), alpha=I(1/50),
+      ylim=c(0.0, 1.0), size= I(1),
+      ylab='Average Loss', xlab='Epoch',
+      main='Optimality Prediction Average Loss')
+ggsave("Paper/predictionAverageLoss.png")
 
 
 # Sanity check, compute optimality predictions upon the normalized _training_ data to see

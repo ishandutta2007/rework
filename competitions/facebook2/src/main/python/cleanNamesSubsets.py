@@ -6,6 +6,14 @@ import unittest, string, re, cPickle, os, sys
 DATA_DIR = '/Users/deflaux/rework/competitions/facebook2/data'
 
 class CleanNames(unittest.TestCase):
+    '''This code implements an O(n^2) algorithm for cleaning the mangled node names in the facebook2 competition data.  At a high level it:
+    (1) normalizes the node name (lowercase, collapse whitespace, strip punctuation, etc.)
+    (2) then it turns the normalize name into a "key" by sorting the letters in each word, sorting the words, and removing duplicate words.
+    (3) then it inserts it into a map using the key and the value being the original name.  This map is later printed out for spot-checking by humans to see if the original names grouped together seem like a reasonable consolidation.
+    (4) It also specifically parses for names that look like AS names.
+
+    During the next phase it treats the map like a Union-Find data structure and merges "similar" keys.  In this implementation keys are considered similar if the words of the key are a subset of any other longer key; then those two mappings are merged together.'''
+    
 
     def test_keyify(self):
         self.assertEqual((['abr', 'foo'], []), self.keyify('foo bar'))
