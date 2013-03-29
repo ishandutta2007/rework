@@ -1,4 +1,4 @@
-package org.deflaux.facebook2;
+package org.deflaux.ml;
 
 import static org.junit.Assert.*;
 

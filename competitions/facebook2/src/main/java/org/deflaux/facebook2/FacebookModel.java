@@ -9,6 +9,12 @@ import org.apache.log4j.Logger;
 import org.deflaux.ml.ErrorMetrics;
 
 /**
+ * This abstract class encapsulates the logic common to both the cost model and the existence model.
+ * 
+ * In general its usually better to prefer composition over inheritance.  It was expedient in this 
+ * case to use inheritance, but if this code were to be used more generally, it should be refactored 
+ * to support that generalization.
+ * 
  * Note: not thread safe
  * 
  * @author deflaux
