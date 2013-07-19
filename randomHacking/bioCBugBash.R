@@ -1,3 +1,8 @@
+# from http://www.bioconductor.org/help/course-materials/2013/BioC2013/developer-day-debug/
+
+# http://bioconductor.org/help/course-materials/2013/BioC2013/developer-day-debug.md
+# http://bioconductor.org/help/course-materials/2013/BioC2013/developer-day-debug_full.md
+
 ## Example
 isIn <- function(x, y) {
   sel <- match(x, y)
