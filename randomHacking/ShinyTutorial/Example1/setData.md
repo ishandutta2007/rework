@@ -1,0 +1,83 @@
+Extract and Store Some Data
+========================================================
+
+We'll first want to install the `curatedOvarianData` package from Bioconductor. Note that this package is a few hundred MB.
+
+
+```r
+source("http://bioconductor.org/biocLite.R")
+biocLite("curatedOvarianData")
+```
+
+
+Now we'll load the package and load in one of the datasets.
+
+
+```r
+library(curatedOvarianData)
+data(TCGA_eset)
+```
+
+
+Let's write out the clinical data so we have it for later. We'll trim out the "uncurated" metadata column to save some space and make the printing a bit easier.
+
+
+```r
+clinical <- phenoData(TCGA_eset)
+pData(clinical) <- pData(clinical)[, colnames(pData(clinical)) != "uncurated_author_metadata"]
+```
+
+
+We won't want to store all of the tumor samples available in the dataset, so let's grab 20 tumor samples at random and keep all of the normal samples.
+
+
+```r
+# Get all normal phenotypic data
+normalClinical <- clinical
+pData(normalClinical) <- pData(clinical)[pData(clinical)$sample_type == "adjacentnormal", 
+    ]
+
+# Sample 20 samples from the tumor phenotypic data
+tumorIndices <- sample(which(pData(clinical)$sample_type == "tumor"), 20)
+tumorClinical <- clinical
+pData(tumorClinical) <- pData(clinical)[tumorIndices, ]
+```
+
+
+Filtering
+---------
+
+For the sake of demonstration, we'll want to keep the dataset fairly small. So let's filter the data to the few dozen samples we selected above and only 8 genes.
+
+
+```r
+# Provide the HGNC symbols of 8 genes
+geneList <- c("EGFR", "KLF6", "FOXO1", "KRAS", "JAK2", "BRCA1", "BRCA2", "PPM1D")
+
+# Extract the relevant probeset to gene mappings
+featureList <- fData(TCGA_eset)
+featureList <- featureList[featureList$gene %in% geneList, ]
+featureList <- featureList[match(geneList, rownames(featureList)), ]  #order
+featureList <- AnnotatedDataFrame(featureList)
+
+# Filter the tumor expression data to only relevant genes and samples
+tumor <- exprs(TCGA_eset[, tumorIndices])
+tumor <- tumor[match(geneList, rownames(tumor)), ]
+tumor <- ExpressionSet(tumor, tumorClinical, featureList, experimentData(TCGA_eset))
+saveRDS(tumor, "tumorExpr.Rds")
+```
+
+
+And grab all of the normal tissue samples:
+
+
+```r
+# Filter the normal expression data to only relevant genes and samples
+normal <- exprs(TCGA_eset[, TCGA_eset@phenoData@data$sample_type == "adjacentnormal"])
+normal <- normal[match(geneList, rownames(normal)), ]
+normal <- ExpressionSet(normal, normalClinical, featureList, experimentData(TCGA_eset))
+saveRDS(normal, "normalExpr.Rds")
+```
+
+
+Now we should be able to use this sampled data from our apps!

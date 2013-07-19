@@ -1,0 +1,48 @@
+Compute Gene Network
+========================================================
+
+```{r, results='hide', message=FALSE}
+library(Biobase)
+library(ENA)
+library(shiny)
+```
+
+## Reconstruct the Full Network
+
+We'll take advantage of the ENA (Ensemble Network Aggregation) package to reconstruct the gene expression network we already loaded.
+
+```{r}
+# Load in the sampled matrices we've generated ahead of time.
+tumor <- readRDS("tumorExpr.Rds")
+# Distill the expression data away from the ExpressionSet object.
+tumorExp <- exprs(tumor)
+
+# Reconstruct the gene network. Note that this could potentially be
+# distributed across a compute cluster.
+gn <- buildWgcna(tumorExp)
+```
+
+## Filter the Graph Edges
+
+We'll take a quick look at the distribution of the edge weights in the generated network.
+
+```{r}
+weights <- abs(gn)[upper.tri(gn)]
+hist(weights)
+summary(weights)
+```
+
+We'll now filter the edges to only include strong connections.
+
+```{r}
+cutoff <- runApp()
+filtered <- abs(gn) > cutoff
+```
+
+## Write the Output
+
+We'll finally write out the adjacency matrix as a CSV file.
+
+```{r}
+write.csv(mat2adj(filtered), file="geneNet.csv")
+```
