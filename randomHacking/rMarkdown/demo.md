@@ -28,7 +28,7 @@ You can also embed plots, for example:
 plot(cars)
 ```
 
-![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2.png) 
+<img src="figure/unnamed-chunk-2.png" title="plot of chunk unnamed-chunk-2" alt="plot of chunk unnamed-chunk-2" style="display: block; margin: auto;" />
 
 
 And some plots constructed while teaching myself ggplot2.
@@ -43,49 +43,49 @@ dsmall = diamonds[sample(nrow(diamonds), 100), ]
 qplot(carat, price, data = diamonds)
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-31.png) 
+<img src="figure/unnamed-chunk-31.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(log(carat), log(price), data = diamonds)
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-32.png) 
+<img src="figure/unnamed-chunk-32.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, x * y * z, data = diamonds)
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-33.png) 
+<img src="figure/unnamed-chunk-33.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, price, data = dsmall, color = color)
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-34.png) 
+<img src="figure/unnamed-chunk-34.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, price, data = dsmall, shape = cut)
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-35.png) 
+<img src="figure/unnamed-chunk-35.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, price, data = diamonds, alpha = I(1/10))
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-36.png) 
+<img src="figure/unnamed-chunk-36.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, price, data = diamonds, alpha = I(1/100))
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-37.png) 
+<img src="figure/unnamed-chunk-37.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, price, data = diamonds, alpha = I(1/200))
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-38.png) 
+<img src="figure/unnamed-chunk-38.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 # color and shape work well for categorical values, size works well for
@@ -97,7 +97,7 @@ qplot(carat, price, data = dsmall, geom = c("point", "smooth"))
 ## geom_smooth: method="auto" and size of largest group is <1000, so using loess. Use 'method = x' to change the smoothing method.
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-39.png) 
+<img src="figure/unnamed-chunk-39.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, price, data = diamonds, geom = c("point", "smooth"))
@@ -107,7 +107,7 @@ qplot(carat, price, data = diamonds, geom = c("point", "smooth"))
 ## geom_smooth: method="auto" and size of largest group is >=1000, so using gam with formula: y ~ s(x, bs = "cs"). Use 'method = x' to change the smoothing method.
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-310.png) 
+<img src="figure/unnamed-chunk-310.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, price, data = dsmall, geom = c("point", "smooth"), span = 0.2)
@@ -117,7 +117,7 @@ qplot(carat, price, data = dsmall, geom = c("point", "smooth"), span = 0.2)
 ## geom_smooth: method="auto" and size of largest group is <1000, so using loess. Use 'method = x' to change the smoothing method.
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-311.png) 
+<img src="figure/unnamed-chunk-311.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, price, data = dsmall, geom = c("point", "smooth"), span = 1)
@@ -127,7 +127,7 @@ qplot(carat, price, data = dsmall, geom = c("point", "smooth"), span = 1)
 ## geom_smooth: method="auto" and size of largest group is <1000, so using loess. Use 'method = x' to change the smoothing method.
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-312.png) 
+<img src="figure/unnamed-chunk-312.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 
@@ -136,14 +136,14 @@ qplot(carat, price, data = dsmall, geom = c("point", "smooth"), method = "gam",
     formula = y ~ s(x))
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-313.png) 
+<img src="figure/unnamed-chunk-313.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, price, data = dsmall, geom = c("point", "smooth"), method = "gam", 
     formula = y ~ s(x, bs = "cs"))
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-314.png) 
+<img src="figure/unnamed-chunk-314.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 
@@ -151,14 +151,14 @@ library(splines)
 qplot(carat, price, data = dsmall, geom = c("point", "smooth"), method = "lm")
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-315.png) 
+<img src="figure/unnamed-chunk-315.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, price, data = dsmall, geom = c("point", "smooth"), method = "lm", 
     formula = y ~ ns(x, 5))
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-316.png) 
+<img src="figure/unnamed-chunk-316.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 
@@ -166,32 +166,32 @@ library(MASS)
 qplot(carat, price, data = dsmall, geom = c("point", "smooth"), method = "rlm")
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-317.png) 
+<img src="figure/unnamed-chunk-317.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 
 qplot(color, price/carat, data = diamonds, geom = "boxplot")
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-318.png) 
+<img src="figure/unnamed-chunk-318.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(color, price/carat, data = diamonds, geom = "jitter", alpha = I(1/5))
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-319.png) 
+<img src="figure/unnamed-chunk-319.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(color, price/carat, data = diamonds, geom = "jitter", alpha = I(1/50))
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-320.png) 
+<img src="figure/unnamed-chunk-320.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(color, price/carat, data = diamonds, geom = "jitter", alpha = I(1/200))
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-321.png) 
+<img src="figure/unnamed-chunk-321.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 
@@ -202,27 +202,27 @@ qplot(carat, data = diamonds, geom = "histogram")
 ## stat_bin: binwidth defaulted to range/30. Use 'binwidth = x' to adjust this.
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-322.png) 
+<img src="figure/unnamed-chunk-322.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, data = diamonds, geom = "density")
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-323.png) 
+<img src="figure/unnamed-chunk-323.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, data = diamonds, geom = "histogram", binwidth = 1, xlim = c(0, 
     3))
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-324.png) 
+<img src="figure/unnamed-chunk-324.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, data = diamonds, geom = "histogram", binwidth = 0.1, xlim = c(0, 
     3))
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-325.png) 
+<img src="figure/unnamed-chunk-325.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, data = diamonds, geom = "histogram", binwidth = 0.01, xlim = c(0, 
@@ -233,7 +233,7 @@ qplot(carat, data = diamonds, geom = "histogram", binwidth = 0.01, xlim = c(0,
 ## Warning: position_stack requires constant width: output may be incorrect
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-326.png) 
+<img src="figure/unnamed-chunk-326.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, data = diamonds, geom = "histogram", fill = color)
@@ -243,39 +243,39 @@ qplot(carat, data = diamonds, geom = "histogram", fill = color)
 ## stat_bin: binwidth defaulted to range/30. Use 'binwidth = x' to adjust this.
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-327.png) 
+<img src="figure/unnamed-chunk-327.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(carat, data = diamonds, geom = "density", color = color)
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-328.png) 
+<img src="figure/unnamed-chunk-328.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 
 qplot(color, data = diamonds, geom = "bar")
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-329.png) 
+<img src="figure/unnamed-chunk-329.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(color, data = diamonds, geom = "bar", weight = carat) + scale_y_continuous("carat")
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-330.png) 
+<img src="figure/unnamed-chunk-330.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 
 qplot(date, unemploy/pop, data = economics, geom = "line")
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-331.png) 
+<img src="figure/unnamed-chunk-331.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 qplot(date, uempmed, data = economics, geom = "line")
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-332.png) 
+<img src="figure/unnamed-chunk-332.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 
@@ -299,25 +299,25 @@ p <- ggplot(df, aes(x, y, label = label)) + xlab(NULL) + ylab(NULL)
 p + geom_point()
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-333.png) 
+<img src="figure/unnamed-chunk-333.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 p + geom_point() + geom_text()
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-334.png) 
+<img src="figure/unnamed-chunk-334.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 p + geom_text()
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-335.png) 
+<img src="figure/unnamed-chunk-335.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 p + geom_bar(stat = "identity")
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-336.png) 
+<img src="figure/unnamed-chunk-336.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
 ```r
 
@@ -328,5 +328,5 @@ map <- qplot(long, lat, data = big_cities)
 map + borders("state", size = 0.5)
 ```
 
-![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-337.png) 
+<img src="figure/unnamed-chunk-337.png" title="plot of chunk unnamed-chunk-3" alt="plot of chunk unnamed-chunk-3" style="display: block; margin: auto;" />
 
