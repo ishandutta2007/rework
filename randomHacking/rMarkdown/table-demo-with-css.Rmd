@@ -1,10 +1,3 @@
-<style type="text/css">
-table, td, th {
-   border: 1px solid #ccc;
-}
-</style>
-
-
 Title
 ========================================================
 
@@ -31,4 +24,15 @@ print(xtable(head(cars)), type = "html", include.rownames = F)
 Let's try a wide table
 ```{r echo=FALSE, warning=FALSE, comment=NA, results='asis'}
 print(xtable(t(cars)), type = "html", include.rownames = F)
+```
+
+In .Rprofile, do something like this:
+```
+options(markdown.HTML.header='<style type="text/css">table, td, th { border: 1px solid #ccc;}</style>')
+options(rstudio.markdownToHTML = 
+  function(inputFile, outputFile) {      
+    require(markdown)
+    markdownToHTML(inputFile, outputFile)   
+  }
+)
 ```
